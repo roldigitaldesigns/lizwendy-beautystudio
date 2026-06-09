@@ -1,0 +1,8 @@
+{
+  "name": "lizwendy-booking-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Liz Wendy Beauty Studio booking system",
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

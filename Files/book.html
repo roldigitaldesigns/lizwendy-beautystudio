@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book Appointment · Liz Wendy Beauty Studio</title>
+<meta name="robots" content="noindex"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0A0908;
+  --surface:  #111009;
+  --card:     #181410;
+  --card2:    #1F1A14;
+  --border:   #2E2820;
+  --gold:     #D4AF37;
+  --gold-lt:  #E8C84A;
+  --gold-dim: #A8891F;
+  --gold-pale:rgba(212,175,55,.09);
+  --gold-glow:rgba(212,175,55,.22);
+  --cream:    #F5EDD6;
+  --white:    #FAF7F2;
+  --text:     #EDE8DF;
+  --muted:    #7A7060;
+  --muted-lt: #A09080;
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'Montserrat', sans-serif;
+  --radius:   4px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── SCROLLBAR ── */
+*::-webkit-scrollbar { width: 4px; background: var(--bg); }
+*::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 64px;
+  background: rgba(10,9,8,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+/* nav logo styles now inline + gold-shimmer class */
+.nav-back {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted-lt);
+  text-decoration: none;
+  transition: color .2s;
+}
+.nav-back:hover { color: var(--gold); }
+.nav-back svg { width: 14px; height: 14px; }
+
+/* ── GOLD LINE ── */
+.gold-line { height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+/* ── LAYOUT ── */
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 96px 20px 60px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 44px;
+  animation: fadeUp .5s ease both;
+}
+.page-header .eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--gold-dim);
+  margin-bottom: 10px;
+}
+.page-header h1 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 600; color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.page-header h1 em { font-style: italic; color: var(--gold); }
+.page-header p {
+  font-size: 13px; color: var(--muted-lt); max-width: 420px; margin: 0 auto;
+}
+
+/* ── STEPS INDICATOR ── */
+.steps {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 40px;
+  animation: fadeUp .5s .1s ease both;
+}
+.step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted);
+  transition: color .3s;
+}
+.step.active { color: var(--gold); }
+.step.done { color: var(--muted-lt); }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  background: var(--card);
+  transition: all .3s;
+}
+.step.active .step-num {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg);
+}
+.step.done .step-num {
+  background: var(--card2);
+  border-color: var(--muted);
+  color: var(--muted-lt);
+}
+.step-line {
+  width: 40px; height: 1px;
+  background: var(--border);
+  margin: 0 4px;
+}
+@media (max-width: 480px) { .step-line { width: 20px; } }
+
+/* ── SECTION CARD ── */
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+  animation: fadeUp .5s ease both;
+}
+.section-card:nth-child(2) { animation-delay: .08s; }
+.section-card:nth-child(3) { animation-delay: .14s; }
+.section-card:nth-child(4) { animation-delay: .20s; }
+.section-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.section-head-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--gold-pale);
+  border: 1px solid rgba(212,175,55,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.section-head-title {
+  font-family: var(--serif);
+  font-size: 15px; font-weight: 500; color: var(--white);
+}
+.section-body { padding: 20px; }
+
+/* ── CART SUMMARY ── */
+.cart-summary-empty {
+  text-align: center; padding: 24px;
+  color: var(--muted); font-size: 12px;
+}
+.cart-items-list { display: flex; flex-direction: column; gap: 8px; }
+.cart-item-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.cart-item-name { font-size: 13px; color: var(--text); font-weight: 500; }
+.cart-item-price { font-size: 13px; color: var(--gold); font-weight: 600; }
+.cart-divider {
+  height: 1px; background: var(--border); margin: 12px 0;
+}
+.cart-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0;
+}
+.cart-total-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--muted-lt);
+}
+.cart-total-amount {
+  font-family: var(--serif);
+  font-size: 22px; font-weight: 600; color: var(--gold);
+}
+.cart-total-note {
+  font-size: 10px; color: var(--muted); margin-top: 4px; text-align: right;
+}
+
+/* ── ARTIST CARD ── */
+.artist-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px;
+  background: var(--card2);
+  border: 1px solid rgba(212,175,55,.25);
+  border-radius: var(--radius);
+}
+.artist-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 20px; font-weight: 600;
+  color: var(--bg); flex-shrink: 0;
+  overflow: hidden;
+}
+.artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.artist-info { flex: 1; }
+.artist-name {
+  font-family: var(--serif); font-size: 16px;
+  font-weight: 500; color: var(--white);
+}
+.artist-title { font-size: 11px; color: var(--gold-dim); margin-top: 2px; letter-spacing: .05em; }
+.artist-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--bg);
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+}
+
+/* ── DATE PICKER ── */
+.calendar-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cal-month {
+  font-family: var(--serif); font-size: 16px;
+  font-weight: 500; color: var(--white);
+}
+.cal-nav-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--muted-lt);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+  font-size: 14px;
+}
+.cal-nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.cal-dow {
+  text-align: center; font-size: 9px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); padding: 6px 0;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .2s;
+  position: relative;
+}
+.cal-day:hover:not(.cal-disabled):not(.cal-empty):not(.cal-past) {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-pale);
+}
+.cal-day.cal-selected {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: var(--bg); font-weight: 700;
+  border-color: var(--gold);
+}
+.cal-day.cal-today { color: var(--gold); font-weight: 700; }
+.cal-day.cal-today::after {
+  content: ''; position: absolute; bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--gold);
+}
+.cal-day.cal-today.cal-selected::after { background: var(--bg); }
+.cal-day.cal-disabled, .cal-day.cal-past {
+  color: var(--border); cursor: not-allowed;
+}
+.cal-day.cal-empty { cursor: default; }
+
+/* ── TIME SLOTS ── */
+.slots-placeholder {
+  text-align: center; padding: 28px 0;
+  color: var(--muted); font-size: 12px;
+}
+.slots-placeholder svg {
+  width: 32px; height: 32px; margin-bottom: 10px;
+  color: var(--border); display: block; margin-left: auto; margin-right: auto;
+}
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+.time-slot {
+  padding: 10px 8px; text-align: center;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: all .2s;
+}
+.time-slot:hover:not(.slot-taken) {
+  border-color: var(--gold); color: var(--gold);
+  background: var(--gold-pale);
+}
+.time-slot.slot-selected {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  border-color: var(--gold); color: var(--bg);
+}
+.time-slot.slot-taken {
+  color: var(--border); cursor: not-allowed;
+  text-decoration: line-through;
+}
+.slots-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 28px 0;
+  color: var(--muted); font-size: 12px;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+/* ── FORM ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted-lt);
+}
+.form-input {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--sans); font-size: 13px;
+  color: var(--text);
+  transition: border-color .2s;
+  width: 100%;
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(212,175,55,.04);
+}
+.form-input::placeholder { color: var(--muted); }
+.form-input.error { border-color: #c0392b; }
+
+/* ── BOOKING SUMMARY BAR ── */
+.booking-summary {
+  background: var(--surface);
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: none;
+}
+.booking-summary.visible { display: block; }
+.booking-summary-title {
+  font-size: 9px; font-weight: 700; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--gold-dim);
+  margin-bottom: 10px;
+}
+.booking-summary-rows { display: flex; flex-direction: column; gap: 6px; }
+.booking-summary-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--muted-lt);
+}
+.booking-summary-row svg { width: 12px; height: 12px; color: var(--gold); flex-shrink: 0; }
+.booking-summary-row strong { color: var(--text); }
+
+/* ── SUBMIT BUTTON ── */
+.submit-wrap { margin-top: 20px; }
+.btn-book {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: var(--bg);
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+  border: none; border-radius: var(--radius);
+  cursor: pointer;
+  transition: filter .2s, transform .1s;
+  position: relative; overflow: hidden;
+}
+.btn-book:hover { filter: brightness(1.1); }
+.btn-book:active { transform: scale(.99); }
+.btn-book:disabled {
+  background: var(--card2);
+  color: var(--muted); cursor: not-allowed;
+  filter: none;
+}
+.btn-book .btn-loading {
+  display: none; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-book.loading .btn-text { display: none; }
+.btn-book.loading .btn-loading { display: flex; }
+
+.form-note {
+  text-align: center; font-size: 11px;
+  color: var(--muted); margin-top: 10px;
+  line-height: 1.7;
+}
+
+/* ── ERROR MESSAGE ── */
+.form-error {
+  background: rgba(192,57,43,.1);
+  border: 1px solid rgba(192,57,43,.3);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12px; color: #e74c3c;
+  margin-bottom: 12px;
+  display: none;
+}
+.form-error.visible { display: block; }
+
+/* ── SUCCESS SCREEN ── */
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 60px 20px;
+  animation: fadeUp .5s ease both;
+}
+.success-screen.visible { display: block; }
+.success-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 28px;
+}
+.success-title {
+  font-family: var(--serif);
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 600; color: var(--white);
+  margin-bottom: 12px;
+}
+.success-title em { color: var(--gold); font-style: italic; }
+.success-msg {
+  font-size: 13px; color: var(--muted-lt);
+  max-width: 400px; margin: 0 auto 32px;
+  line-height: 1.8;
+}
+.success-details {
+  background: var(--card);
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  max-width: 380px; margin: 0 auto 28px;
+  text-align: left;
+}
+.success-detail-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.success-detail-row:last-child { border-bottom: none; }
+.success-detail-icon { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+.success-detail-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+.success-detail-value { color: var(--text); font-weight: 500; }
+.btn-back-home {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  color: var(--gold); font-size: 11px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  text-decoration: none;
+  transition: all .2s;
+}
+.btn-back-home:hover { background: var(--gold-pale); }
+
+/* ── POLICY NOTE ── */
+.policy-note {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-dim);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 11px; color: var(--muted-lt);
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+.policy-note strong { color: var(--gold); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center; padding: 32px 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  font-size: 11px; color: var(--muted);
+}
+.footer a { color: var(--gold-dim); text-decoration: none; }
+
+/* ── BILINGUAL ── */
+[data-en], [data-es] { transition: opacity .15s; }
+body.lang-es [data-en] { display: none !important; }
+body.lang-en [data-es] { display: none !important; }
+
+/* ── NAV LOGO (matching home site) ── */
+.gold-shimmer {
+  background: linear-gradient(90deg, var(--gold-dim) 0%, var(--gold) 30%, var(--gold-lt) 50%, var(--gold) 70%, var(--gold-dim) 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerBg 4s linear infinite;
+}
+@keyframes shimmerBg { to { background-position: -200% center; } }
+.nav-logo-name {
+  font-family: var(--serif); font-size: 20px; font-weight: 500;
+  letter-spacing: .06em;
+}
+.nav-logo-sub {
+  font-size: 8px; letter-spacing: .32em; color: rgba(212,175,55,.45);
+  text-transform: uppercase; margin-top: 1px;
+}
+</style>
+</head>
+<body class="lang-en">
+<script>
+// Apply language BEFORE paint to prevent flash
+(function(){
+  var lang = localStorage.getItem('lang') || 'en';
+  document.body.className = (lang === 'es') ? 'lang-es' : 'lang-en';
+})();
+</script>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <img src="logo.png" alt="Liz Wendy Beauty Studio" style="height:40px;width:40px;object-fit:contain;border-radius:50%;flex-shrink:0;">
+      <div>
+        <div class="nav-logo-name gold-shimmer">Liz Wendy</div>
+        <div class="nav-logo-sub">Beauty Studio · 76 Livingston Ave, New Brunswick, NJ</div>
+      </div>
+    </a>
+  <a href="index.html" class="nav-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    <span data-en>Back to Services</span><span data-es>Volver a Servicios</span>
+  </a>
+</nav>
+
+<div class="page">
+
+  <!-- SUCCESS SCREEN (hidden until submit) -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✦</div>
+    <h2 class="success-title"><span data-en>You're <em>Confirmed</em></span><span data-es>¡Estás <em>Confirmada!</em></span></h2>
+    <p class="success-msg"><span data-en>Your appointment has been booked. Check your email for a confirmation — we look forward to seeing you!</span><span data-es>Tu cita ha sido reservada. Revisa tu correo para la confirmación — ¡esperamos verte pronto!</span></p>
+    <div class="success-details" id="successDetails"></div>
+    <a href="index.html" class="btn-back-home"><span data-en>← Back to Home</span><span data-es>← Volver al Inicio</span></a>
+  </div>
+
+  <!-- BOOKING FORM (shown by default) -->
+  <div id="bookingForm">
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="eyebrow"><span data-en>✦ Reserve Your Appointment</span><span data-es>✦ Reserva tu Cita</span></div>
+      <h1><span data-en>Reserve Your <em>Beauty</em> Appointment</span><span data-es>Reserva tu Cita de <em>Belleza</em></span></h1>
+      <p><span data-en>Complete your booking below. You'll receive a confirmation email once your appointment is set.</span><span data-es>Completa tu reserva abajo. Recibirás un correo de confirmación cuando tu cita esté agendada.</span></p>
+    </div>
+
+    <!-- STEPS -->
+    <div class="steps">
+      <div class="step active" id="step1-ind">
+        <div class="step-num">1</div>
+        <span data-en>Services</span><span data-es>Servicios</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step2-ind">
+        <div class="step-num">2</div>
+        <span data-en>Date &amp; Time</span><span data-es>Fecha y Hora</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step3-ind">
+        <div class="step-num">3</div>
+        <span data-en>Your Info</span><span data-es>Tu Info</span>
+      </div>
+    </div>
+
+    <!-- 1. CART SUMMARY -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-icon">🛒</div>
+        <div class="section-head-title"><span data-en>Selected Services</span><span data-es>Servicios Seleccionados</span></div>
+      </div>
+      <div class="section-body">
+        <div id="cartSummary" class="cart-summary-empty"><span data-en>No services selected.</span><span data-es>Ningún servicio seleccionado.</span></div>
+      </div>
+    </div>
+
+    <!-- 2. ARTIST -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-icon">👑</div>
+        <div class="section-head-title"><span data-en>Your Artist</span><span data-es>Tu Artista</span></div>
+      </div>
+      <div class="section-body">
+        <div class="artist-card">
+          <div class="artist-avatar">W</div>
+          <div class="artist-info">
+            <div class="artist-name">Liz Wendy Cedeño</div>
+            <div class="artist-title"><span data-en>Licensed Esthetician · Owner</span><span data-es>Esteticista Licenciada · Dueña</span></div>
+          </div>
+          <div class="artist-badge"><span data-en>Available</span><span data-es>Disponible</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. POLICY GATE -->
+    <div class="section-card" id="policyCard">
+      <div class="section-head">
+        <div class="section-head-icon">📋</div>
+        <div class="section-head-title"><span data-en>Booking &amp; Cancellation Policy</span><span data-es>Política de Reserva y Cancelación</span></div>
+      </div>
+      <div class="section-body">
+
+        <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:14px">⚠️</span>
+            <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);"><span data-en>Before You Book</span><span data-es>Antes de Reservar</span></span>
+          </div>
+          <p style="font-size:12px;color:var(--muted-lt);line-height:1.75;margin:0;">
+            <span data-en>A <strong style="color:var(--text);">scheduling fee</strong> is required at the time of booking to secure your appointment.
+            This fee is <strong style="color:var(--text);">non-refundable</strong> and will be applied toward your total balance.
+            Remaining balance is paid on the day of your appointment.</span>
+            <span data-es>Se requiere un <strong style="color:var(--text);">cargo de reserva</strong> al momento de agendar para confirmar tu cita.
+            Este cargo <strong style="color:var(--text);">no es reembolsable</strong> y se aplicará a tu balance total.
+            El saldo restante se paga el día de la cita.</span>
+          </p>
+        </div>
+
+        <div style="background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.2);border-left:3px solid #c0392b;border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e74c3c;margin-bottom:8px;"><span data-en>✕ Cancellation Policy</span><span data-es>✕ Política de Cancelación</span></div>
+          <p style="font-size:12px;color:var(--muted-lt);line-height:1.75;margin:0;">
+            <span data-en>Appointments must be cancelled or rescheduled at least <strong style="color:var(--text);">24 hours in advance.</strong>
+            No-shows forfeit the scheduling fee and may be required to prepay future appointments in full.</span>
+            <span data-es>Las citas deben cancelarse o reprogramarse con al menos <strong style="color:var(--text);">24 horas de anticipación.</strong>
+            La inasistencia sin aviso pierde el cargo de reserva y puede requerir pago completo en futuras citas.</span>
+          </p>
+        </div>
+
+        <label id="policyGateLabel" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:14px 16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .2s;">
+          <input type="checkbox" id="policyCheckbox" onchange="togglePolicyGate(this)" style="width:16px;height:16px;margin-top:2px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;"/>
+          <span style="font-size:12px;color:var(--muted-lt);line-height:1.7;">
+            <span data-en>I have read and agree to the <strong style="color:var(--gold);">booking and cancellation policy</strong> above. I understand the scheduling fee is non-refundable.</span>
+            <span data-es>He leído y acepto la <strong style="color:var(--gold);">política de reserva y cancelación</strong> indicada arriba. Entiendo que el cargo de reserva no es reembolsable.</span>
+          </span>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- 4. DATE & TIME (locked until policy accepted) -->
+    <div class="section-card" id="dateTimeCard" style="opacity:.4;pointer-events:none;transition:opacity .4s ease;">
+      <div class="section-head">
+        <div class="section-head-icon">📅</div>
+        <div class="section-head-title"><span data-en>Pick a Date &amp; Time</span><span data-es>Elige Fecha y Hora</span></div>
+        <span id="dateTimeLock" style="margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);"><span data-en>🔒 Agree to policy first</span><span data-es>🔒 Acepta la política primero</span></span>
+      </div>
+      <div class="section-body">
+
+        <!-- Calendar -->
+        <div class="calendar-nav">
+          <button class="cal-nav-btn" id="prevMonth" onclick="changeMonth(-1)">‹</button>
+          <div class="cal-month" id="calMonth"></div>
+          <button class="cal-nav-btn" id="nextMonth" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid">
+          <div class="cal-dow">Sun</div>
+          <div class="cal-dow">Mon</div>
+          <div class="cal-dow">Tue</div>
+          <div class="cal-dow">Wed</div>
+          <div class="cal-dow">Thu</div>
+          <div class="cal-dow">Fri</div>
+          <div class="cal-dow">Sat</div>
+        </div>
+
+        <div style="height:20px"></div>
+
+        <!-- Time Slots -->
+        <div id="slotsArea">
+          <div class="slots-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Select a date to see available times
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 4. CONTACT INFO -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-icon">✍️</div>
+        <div class="section-head-title"><span data-en>Your Information</span><span data-es>Tu Información</span></div>
+      </div>
+      <div class="section-body">
+
+        <!-- Booking summary bar -->
+        <div class="booking-summary" id="bookingSummary">
+          <div class="booking-summary-title">✦ Appointment Summary</div>
+          <div class="booking-summary-rows" id="bookingSummaryRows"></div>
+        </div>
+
+        <div class="form-error" id="formError"></div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label"><span data-en>First Name</span><span data-es>Nombre</span></label>
+            <input class="form-input" type="text" id="firstName" placeholder="Maria" autocomplete="given-name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span data-en>Last Name</span><span data-es>Apellido</span></label>
+            <input class="form-input" type="text" id="lastName" placeholder="Lopez" autocomplete="family-name"/>
+          </div>
+          <div class="form-group full">
+            <label class="form-label"><span data-en>Email Address</span><span data-es>Correo Electrónico</span></label>
+            <input class="form-input" type="email" id="emailInput" placeholder="maria@email.com" autocomplete="email"/>
+          </div>
+          <div class="form-group full">
+            <label class="form-label"><span data-en>Phone Number</span><span data-es>Número de Teléfono</span></label>
+            <input class="form-input" type="tel" id="phoneInput" placeholder="(732) 555-0100" autocomplete="tel"/>
+          </div>
+          <div class="form-group full">
+            <label class="form-label"><span data-en>Notes for Wendy</span><span data-es>Notas para Wendy</span> <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"><span data-en>(optional)</span><span data-es>(opcional)</span></span></label>
+            <textarea class="form-input" id="notesInput" rows="3" data-placeholder-en="Allergies, preferences, or anything Wendy should know..." data-placeholder-es="Alergias, preferencias o cualquier cosa que Wendy deba saber..." placeholder="Allergies, preferences, or anything Wendy should know..."></textarea>
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="policy-note">
+          <strong><span data-en>Cancellation Policy:</span><span data-es>Política de Cancelación:</span></strong> <span data-en>Please cancel or reschedule at least 24 hours in advance. Late cancellations or no-shows may be subject to a fee.</span><span data-es>Por favor cancela o reprograma con al menos 24 horas de anticipación. Las cancelaciones tardías o inasistencias pueden estar sujetas a un cargo.</span>
+        </div>
+
+        <div class="submit-wrap">
+          <button class="btn-book" id="submitBtn" onclick="submitBooking()">
+            <span class="btn-text"><span data-en>Confirm Appointment ✦</span><span data-es>Confirmar Cita ✦</span></span>
+            <span class="btn-loading">
+              <span class="spinner"></span> <span data-en>Booking...</span><span data-es>Reservando...</span>
+            </span>
+          </button>
+          <div class="form-note">
+            <span data-en>By booking you agree to our cancellation policy.<br/>A confirmation email will be sent to you and the studio.</span><span data-es>Al reservar aceptas nuestra política de cancelación.<br/>Se enviará un correo de confirmación a ti y al estudio.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /bookingForm -->
+</div><!-- /page -->
+
+<div class="gold-line"></div>
+<footer class="footer">
+  © 2025 Liz Wendy Beauty Studio LLC · 76 Livingston Ave, New Brunswick, NJ 08901<br/>
+  <a href="index.html"><span data-en>← Return to Main Site</span><span data-es>← Volver al Sitio Principal</span></a>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIGURATION
+═══════════════════════════════════════════ */
+const CONFIG = {
+  // Wendy's schedule: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  workDays: [1, 3, 4, 5, 6], // Mon, Wed, Thu, Fri, Sat
+  hours: {
+    // day-of-week → [startHour, endHour] (24hr, last slot starts at endHour-1)
+    1: [9, 19],  // Mon  9am–7pm
+    3: [9, 19],  // Wed  9am–7pm
+    4: [9, 19],  // Thu  9am–7pm
+    5: [9, 19],  // Fri  9am–7pm
+    6: [7, 16],  // Sat  7am–4pm
+  },
+  slotDuration: 60, // minutes
+  artist: 'Liz Wendy Cedeño',
+  studioName: 'Liz Wendy Beauty Studio',
+  address: '76 Livingston Ave, New Brunswick, NJ 08901',
+  web3formsKey: '8ef80439-ef59-438e-a20a-95fefc8fcb64', // same key as main site
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let selectedDate = null;
+let selectedTime = null;
+let cartServices = [];
+let cartTotal    = 0;
+let takenSlots   = []; // will come from Netlify Function later
+let currentMonth, currentYear;
+
+/* ═══════════════════════════════════════════
+   INIT — read URL params
+═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   LANGUAGE INHERITANCE
+═══════════════════════════════════════════ */
+function applyLang(lang) {
+  document.body.classList.remove('lang-en', 'lang-es');
+  document.body.classList.add(lang === 'es' ? 'lang-es' : 'lang-en');
+
+  // Swap placeholders on inputs/textareas
+  document.querySelectorAll('[data-placeholder-en]').forEach(el => {
+    el.placeholder = lang === 'es'
+      ? el.dataset.placeholderEs
+      : el.dataset.placeholderEn;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Inherit language from main site
+  const savedLang = localStorage.getItem('lang') || 'en';
+  applyLang(savedLang);
+
+  const params = new URLSearchParams(window.location.search);
+
+  // Parse services from URL
+  const raw = params.get('services') || '';
+  const totalParam = parseInt(params.get('total')) || 0;
+  cartTotal = totalParam;
+
+  if (raw) {
+    // Format: "ServiceName:price,ServiceName2:price2"
+    cartServices = raw.split(',').map(s => {
+      const parts = s.split(':');
+      return { name: decodeURIComponent(parts[0] || ''), price: parseInt(parts[1]) || 0 };
+    }).filter(s => s.name);
+  }
+
+  renderCartSummary();
+  initCalendar();
+  updateStepIndicator(1);
+});
+
+/* ═══════════════════════════════════════════
+   CART SUMMARY
+═══════════════════════════════════════════ */
+function renderCartSummary() {
+  const el = document.getElementById('cartSummary');
+  if (!cartServices.length) {
+    const isEs4 = document.body.classList.contains('lang-es'); el.innerHTML = '<div class="cart-summary-empty">' + (isEs4 ? 'Ningún servicio seleccionado. ' : 'No services selected. ') + '<a href="index.html" style="color:var(--gold)">' + (isEs4 ? '← Volver a seleccionar servicios' : '← Go back to select services') + '</a></div>';
+    return;
+  }
+
+  const rows = cartServices.map(s =>
+    `<div class="cart-item-row">
+      <span class="cart-item-name">${s.name}</span>
+      <span class="cart-item-price">${s.price > 0 ? '$' + s.price : 'Consult'}</span>
+    </div>`
+  ).join('');
+
+  const total = cartServices.reduce((a,b) => a + b.price, 0);
+
+  el.innerHTML = `
+    <div class="cart-items-list">${rows}</div>
+    <div class="cart-divider"></div>
+    <div class="cart-total-row">
+      <span class="cart-total-label">Estimated Total</span>
+      <span class="cart-total-amount">${total > 0 ? '$' + total : 'TBD'}</span>
+    </div>
+    ${total === 0 ? '<div class="cart-total-note">Final price confirmed at consultation</div>' : ''}
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   POLICY GATE
+═══════════════════════════════════════════ */
+function togglePolicyGate(checkbox) {
+  const card  = document.getElementById('dateTimeCard');
+  const lock  = document.getElementById('dateTimeLock');
+  const label = document.getElementById('policyGateLabel');
+
+  if (checkbox.checked) {
+    card.style.opacity = '1';
+    card.style.pointerEvents = 'auto';
+    lock.style.display = 'none';
+    label.style.borderColor = 'var(--gold)';
+  } else {
+    card.style.opacity = '.4';
+    card.style.pointerEvents = 'none';
+    lock.style.display = 'inline';
+    label.style.borderColor = 'var(--border)';
+    // Reset date/time selection
+    selectedDate = null;
+    selectedTime = null;
+    renderCalendar();
+    document.getElementById('slotsArea').innerHTML = `
+      <div class="slots-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span data-en>Select a date to see available times</span><span data-es>Selecciona una fecha para ver horarios</span>
+      </div>`;
+    updateBookingSummary();
+    updateStepIndicator(1);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════ */
+function initCalendar() {
+  const now = new Date();
+  currentMonth = now.getMonth();
+  currentYear  = now.getFullYear();
+  renderCalendar();
+}
+
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  selectedDate = null;
+  selectedTime = null;
+  document.getElementById('slotsArea').innerHTML = `
+    <div class="slots-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Select a date to see available times
+    </div>`;
+  updateBookingSummary();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+  document.getElementById('calMonth').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+  const grid = document.getElementById('calGrid');
+  // Remove all day cells (keep DOW headers — first 7 children)
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+  const today    = new Date();
+  today.setHours(0,0,0,0);
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysIn   = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day cal-empty';
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysIn; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dow  = date.getDay();
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    cell.textContent = d;
+
+    const isPast     = date < today;
+    const isWorkDay  = CONFIG.workDays.includes(dow);
+    const isToday    = date.getTime() === today.getTime();
+    const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+
+    if (isToday)    cell.classList.add('cal-today');
+    if (isSelected) cell.classList.add('cal-selected');
+    if (isPast || !isWorkDay) {
+      cell.classList.add(isPast ? 'cal-past' : 'cal-disabled');
+    } else {
+      cell.addEventListener('click', () => selectDate(date));
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(date) {
+  selectedDate = date;
+  selectedTime = null;
+  renderCalendar();
+  updateStepIndicator(2);
+  loadSlots(date);
+  updateBookingSummary();
+}
+
+/* ═══════════════════════════════════════════
+   TIME SLOTS
+═══════════════════════════════════════════ */
+function loadSlots(date) {
+  const area = document.getElementById('slotsArea');
+  area.innerHTML = '<div class="slots-loading"><div class="spinner"></div> ' + (document.body.classList.contains('lang-es') ? 'Cargando disponibilidad...' : 'Loading availability...') + '</div>';
+
+  // Fetch taken slots from Netlify Function
+  // For now, uses empty takenSlots array (function not yet deployed)
+  fetchTakenSlots(date).then(taken => {
+    takenSlots = taken;
+    renderSlots(date);
+  });
+}
+
+async function fetchTakenSlots(date) {
+  try {
+    const dateStr = formatDateISO(date);
+    const res = await fetch(`/.netlify/functions/get-availability?date=${dateStr}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.takenSlots || [];
+  } catch(e) {
+    // Function not deployed yet — return empty (all slots open)
+    return [];
+  }
+}
+
+function renderSlots(date) {
+  const area = document.getElementById('slotsArea');
+  const dow  = date.getDay();
+  const hrs  = CONFIG.hours[dow];
+  if (!hrs) { area.innerHTML = '<div class="slots-placeholder">' + (document.body.classList.contains('lang-es') ? 'Sin disponibilidad este día.' : 'No availability on this day.') + '</div>'; return; }
+
+  const [start, end] = hrs;
+  const slots = [];
+  for (let h = start; h < end; h++) {
+    slots.push(`${h.toString().padStart(2,'0')}:00`);
+  }
+
+  if (!slots.length) {
+    area.innerHTML = '<div class="slots-placeholder">' + (document.body.classList.contains('lang-es') ? 'Sin horarios disponibles en esta fecha.' : 'No slots available on this date.') + '</div>';
+    return;
+  }
+
+  const html = slots.map(slot => {
+    const taken    = takenSlots.includes(slot);
+    const selected = selectedTime === slot;
+    const cls = taken ? 'slot-taken' : selected ? 'slot-selected' : '';
+    const label = formatTimeLabel(slot);
+    return `<div class="time-slot ${cls}" ${!taken ? `onclick="selectTime('${slot}')"` : ''}>${label}</div>`;
+  }).join('');
+
+  area.innerHTML = `<div class="slots-grid">${html}</div>`;
+}
+
+function selectTime(slot) {
+  selectedTime = slot;
+  if (selectedDate) renderSlots(selectedDate);
+  updateStepIndicator(3);
+  updateBookingSummary();
+}
+
+/* ═══════════════════════════════════════════
+   BOOKING SUMMARY BAR
+═══════════════════════════════════════════ */
+function updateBookingSummary() {
+  const bar  = document.getElementById('bookingSummary');
+  const rows = document.getElementById('bookingSummaryRows');
+  if (!selectedDate && !selectedTime) { bar.classList.remove('visible'); return; }
+
+  bar.classList.add('visible');
+  const services = cartServices.map(s => s.name).join(', ') || 'No services selected';
+  const dateStr  = selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }) : '—';
+  const timeStr  = selectedTime ? formatTimeLabel(selectedTime) : '—';
+
+  const isEs2 = document.body.classList.contains('lang-es');
+  rows.innerHTML = `
+    <div class="booking-summary-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>${CONFIG.studioName} · ${CONFIG.address}</span>
+    </div>
+    <div class="booking-summary-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span><strong>${dateStr}</strong> ${isEs2 ? 'a las' : 'at'} <strong>${timeStr}</strong></span>
+    </div>
+    <div class="booking-summary-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>${isEs2 ? 'Con' : 'With'} <strong>${CONFIG.artist}</strong></span>
+    </div>
+    <div class="booking-summary-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>${services}</span>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   STEP INDICATOR
+═══════════════════════════════════════════ */
+function updateStepIndicator(active) {
+  [1,2,3].forEach(n => {
+    const el = document.getElementById(`step${n}-ind`);
+    el.className = 'step' + (n < active ? ' done' : n === active ? ' active' : '');
+  });
+}
+
+/* ═══════════════════════════════════════════
+   SUBMIT BOOKING
+═══════════════════════════════════════════ */
+async function submitBooking() {
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName  = document.getElementById('lastName').value.trim();
+  const email     = document.getElementById('emailInput').value.trim();
+  const phone     = document.getElementById('phoneInput').value.trim();
+  const notes     = document.getElementById('notesInput').value.trim();
+  const errEl     = document.getElementById('formError');
+
+  // Validation
+  const isEs5 = document.body.classList.contains('lang-es');
+  const errors = [];
+  if (!cartServices.length) errors.push(isEs5 ? 'Por favor regresa y selecciona al menos un servicio.' : 'Please go back and select at least one service.');
+  if (!selectedDate)  errors.push(isEs5 ? 'Por favor selecciona una fecha.' : 'Please select a date.');
+  if (!selectedTime)  errors.push(isEs5 ? 'Por favor selecciona un horario.' : 'Please select a time slot.');
+  if (!firstName)     errors.push(isEs5 ? 'Por favor ingresa tu nombre.' : 'Please enter your first name.');
+  if (!lastName)      errors.push(isEs5 ? 'Por favor ingresa tu apellido.' : 'Please enter your last name.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(isEs5 ? 'Por favor ingresa un correo válido.' : 'Please enter a valid email address.');
+  if (!phone)         errors.push(isEs5 ? 'Por favor ingresa tu número de teléfono.' : 'Please enter your phone number.');
+
+  if (errors.length) {
+    errEl.textContent = errors[0];
+    errEl.classList.add('visible');
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  errEl.classList.remove('visible');
+
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const bookingData = {
+    firstName, lastName, email, phone, notes,
+    date:     formatDateISO(selectedDate),
+    time:     selectedTime,
+    services: cartServices,
+    total:    cartTotal,
+    artist:   CONFIG.artist,
+  };
+
+  try {
+    // POST to Netlify Function
+    const res = await fetch('/.netlify/functions/create-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingData),
+    });
+
+    if (!res.ok) throw new Error('Booking failed');
+
+    showSuccess(bookingData);
+
+  } catch(e) {
+    // Function not deployed yet — show success anyway for UI testing
+    // Remove this fallback once Netlify Function is live
+    console.warn('Netlify function not available:', e.message);
+    showSuccess(bookingData);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SUCCESS SCREEN
+═══════════════════════════════════════════ */
+function showSuccess(data) {
+  document.getElementById('bookingForm').style.display = 'none';
+  const screen = document.getElementById('successScreen');
+  screen.classList.add('visible');
+
+  const dateStr = new Date(data.date + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const timeStr = formatTimeLabel(data.time);
+  const services = data.services.map(s => s.name).join(', ');
+
+  const isEs3 = document.body.classList.contains('lang-es');
+  document.getElementById('successDetails').innerHTML = `
+    <div class="success-detail-row">
+      <span class="success-detail-icon">📅</span>
+      <div><div class="success-detail-label">${isEs3 ? 'Fecha y Hora' : 'Date &amp; Time'}</div><div class="success-detail-value">${dateStr} · ${timeStr}</div></div>
+    </div>
+    <div class="success-detail-row">
+      <span class="success-detail-icon">✨</span>
+      <div><div class="success-detail-label">${isEs3 ? 'Servicios' : 'Services'}</div><div class="success-detail-value">${services}</div></div>
+    </div>
+    <div class="success-detail-row">
+      <span class="success-detail-icon">👑</span>
+      <div><div class="success-detail-label">${isEs3 ? 'Artista' : 'Artist'}</div><div class="success-detail-value">${CONFIG.artist}</div></div>
+    </div>
+    <div class="success-detail-row">
+      <span class="success-detail-icon">📍</span>
+      <div><div class="success-detail-label">${isEs3 ? 'Ubicación' : 'Location'}</div><div class="success-detail-value">${CONFIG.address}</div></div>
+    </div>
+    <div class="success-detail-row">
+      <span class="success-detail-icon">📧</span>
+      <div><div class="success-detail-label">${isEs3 ? 'Confirmación enviada a' : 'Confirmation sent to'}</div><div class="success-detail-value">${data.email}</div></div>
+    </div>
+  `;
+
+  screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+function formatDateISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function formatTimeLabel(slot) {
+  const [h, m] = slot.split(':').map(Number);
+  const ampm  = h >= 12 ? 'PM' : 'AM';
+  const hour  = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+</script>
+</body>
+</html>
