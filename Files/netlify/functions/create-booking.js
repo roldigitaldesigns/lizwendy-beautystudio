@@ -71,7 +71,7 @@ exports.handler = async (event) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { firstName, lastName, email, phone, notes, date, time, services, total, artist } = data;
+    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes } = data;
 
     // Basic validation
     if (!firstName || !lastName || !email || !phone || !date || !time || !services?.length) {
@@ -95,7 +95,14 @@ exports.handler = async (event) => {
     // ── 2. DOUBLE-CHECK SLOT IS FREE ──
     const [slotH] = time.split(':').map(Number);
     const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:00:00-04:00`);
-    const eventEnd   = new Date(`${date}T${String(slotH + 1).padStart(2,'0')}:00:00-04:00`);
+
+    // Duration comes from the front end (sum of selected services' estimated
+    // times, rounded up to the nearest 15 min). Fall back to 60 min if
+    // missing or invalid, so older clients / bad input never break booking.
+    const safeDuration = (Number.isFinite(durationMinutes) && durationMinutes > 0)
+      ? durationMinutes
+      : 60;
+    const eventEnd = new Date(eventStart.getTime() + safeDuration * 60 * 1000);
 
     const existing = await calendar.events.list({
       calendarId:   CALENDAR_ID,
