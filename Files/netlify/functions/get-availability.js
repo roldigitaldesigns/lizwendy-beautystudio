@@ -5,10 +5,19 @@
  * artist's Google Calendar (artistId: liz | yudelkys | johanna).
  * Defaults to Wendy's calendar if artistId is missing (back-compat).
  *
+ * Working hours are read from schedules.json (same file the front-end
+ * fetches), so the calendar shown to customers and the hours enforced
+ * here can never disagree. See schedules.json's "_readme" for how to
+ * edit hours — no code changes needed to update someone's schedule.
+ *
  * Response: { takenSlots: ["09:00", "11:00", ...] }
  */
 
 const { google } = require('googleapis');
+
+// schedules.json must sit in this same folder (next to this function file)
+// so it gets bundled and deployed automatically with the function.
+const SCHEDULES = require('./schedules.json');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -23,32 +32,21 @@ const CALENDAR_IDS = {
   johanna:  process.env.JOHANNA_CALENDAR_ID,  // placeholder — set in Netlify when available
 };
 
-// ── ARTIST → WORKING HOURS ──
-// (0=Sun…6=Sat) → [startHour, endHour]. Defaults to Wendy's hours for any
-// artist without a specific schedule defined yet — update once known.
-const ARTIST_HOURS = {
-  liz: {
-    1: [9, 19],  // Mon
-    3: [9, 19],  // Wed
-    4: [9, 19],  // Thu
-    5: [9, 19],  // Fri
-    6: [7, 16],  // Sat
-  },
-  yudelkys: {
-    1: [9, 19],  // Mon
-    3: [9, 19],  // Wed
-    4: [9, 19],  // Thu
-    5: [9, 19],  // Fri
-    6: [7, 16],  // Sat
-  },
-  johanna: {
-    1: [9, 19],  // Mon
-    3: [9, 19],  // Wed
-    4: [9, 19],  // Thu
-    5: [9, 19],  // Fri
-    6: [7, 16],  // Sat
-  },
+// Fallback hours, used ONLY if schedules.json is ever missing/malformed,
+// so the calendar never breaks entirely. Keep schedules.json as the real
+// source of truth — this is a safety net, not something to edit routinely.
+const DEFAULT_HOURS = {
+  1: [9, 19],  // Mon
+  3: [9, 19],  // Wed
+  4: [9, 19],  // Thu
+  5: [9, 19],  // Fri
+  6: [7, 16],  // Sat
 };
+
+function getArtistHours(artistId) {
+  if (SCHEDULES && SCHEDULES[artistId]) return SCHEDULES[artistId];
+  return DEFAULT_HOURS;
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -70,7 +68,7 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: [] }) };
     }
 
-    const HOURS = ARTIST_HOURS[artistId] || ARTIST_HOURS.liz;
+    const HOURS = getArtistHours(artistId);
 
     // Check it's a work day
     const date = new Date(dateStr + 'T00:00:00');
