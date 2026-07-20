@@ -35,6 +35,16 @@ const CALENDAR_IDS = {
   'Johanna':           process.env.JOHANNA_CALENDAR_ID,  // placeholder
 };
 
+// ── ARTIST → CALENDAR COLOR ──
+// Lets Wendy tell whose appointment is whose at a glance when viewing
+// multiple artists' calendars overlaid together. Google Calendar colorId
+// reference: 5=Banana(yellow), 7=Peacock(blue-teal), 11=Tomato(red).
+const CALENDAR_COLORS = {
+  'Liz Wendy Cedeño': '11', // Tomato — Wendy's existing/signature color
+  'Yudelkys':          '7',  // Peacock
+  'Johanna':           '5',  // Banana
+};
+
 // Routes each booking notification to the correct artist's inbox.
 // Wendy is CC'd on every booking regardless of artist, so she retains full visibility.
 const ARTIST_EMAILS = {
@@ -141,7 +151,7 @@ exports.handler = async (event) => {
       ].filter(Boolean).join('\n'),
       start: { dateTime: eventStart.toISOString(), timeZone: 'America/New_York' },
       end:   { dateTime: eventEnd.toISOString(),   timeZone: 'America/New_York' },
-      colorId: '11', // Tomato red — visible on calendar
+      colorId: CALENDAR_COLORS[artist] || '11', // per-artist color, defaults to Tomato
     };
 
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: calEvent });
