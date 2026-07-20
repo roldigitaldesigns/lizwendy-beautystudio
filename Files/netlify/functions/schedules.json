@@ -1,4 +1,4 @@
-{
+Hi{
   "_readme": [
     "This file controls each artist's normal working days and hours.",
     "It is the ONE place to edit hours — both the website calendar and the",
@@ -36,7 +36,7 @@
   },
   "johanna": {
     "1": [9, 19],
-    “2”: [9, 19],
+    "3": [9, 19],
     "4": [9, 19],
     "5": [9, 19],
     "6": [7, 16]
