@@ -161,7 +161,7 @@ exports.handler = async (event) => {
 
     try {
       const [customerResult, studioResult] = await Promise.all([
-        sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes }),
+        sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist }),
         sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist }),
       ]);
       console.log('Customer email result:', JSON.stringify(customerResult));
@@ -187,7 +187,7 @@ exports.handler = async (event) => {
 };
 
 /* ── EMAIL: Customer Confirmation (via EmailJS) ── */
-async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes }) {
+async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist }) {
   const notesLine = notes ? `Your notes: ${notes}\n\n` : '';
 
   console.log('sendCustomerEmail → sending to:', email);
@@ -201,13 +201,14 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
       user_id:     EMAILJS_PUBLIC_KEY,
       accessToken: EMAILJS_PRIVATE_KEY,
       template_params: {
-        to_email:   email,
-        first_name: firstName,
-        date:       dateReadable,
-        time:       timeReadable,
-        services:   serviceList,
-        total:      totalStr,
-        notes_line: notesLine,
+        to_email:    email,
+        first_name:  firstName,
+        date:        dateReadable,
+        time:        timeReadable,
+        services:    serviceList,
+        total:       totalStr,
+        notes_line:  notesLine,
+        artist_name: artist || 'Liz Wendy Cedeño',
       },
     }),
   });
