@@ -1,25 +1,4 @@
-
-  "_readme": [
-    "This file controls each artist's normal working days and hours.",
-    "It is the ONE place to edit hours — both the website calendar and the",
-    "backend booking system read from this same file, so they can never disagree.",
-    "",
-    "HOW TO READ/EDIT:",
-    "- Each artist has their own block below: 'liz', 'yudelkys', 'johanna'.",
-    "- Inside each artist's block, the keys are day-of-week numbers:",
-    "    0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday,",
-    "    4 = Thursday, 5 = Friday, 6 = Saturday",
-    "- The value is [startHour, endHour] in 24-hour time.",
-    "    Example: \"5\": [9, 19]  means Friday, 9:00 AM to 7:00 PM.",
-    "- A day that is NOT listed for an artist means she does not work that day",
-    "    at all — it will not appear as an option on the calendar for her.",
-    "- To give someone a day off going forward, just delete that day's line.",
-    "- To change hours, just change the two numbers in the brackets.",
-    "- After editing, save this file and upload it to GitHub the same way",
-    "    you update index.html — Netlify will redeploy automatically.",
-    "- Keep this file valid JSON: every line except the last in each block",
-    "    needs a comma at the end, and don't remove any commas/quotes/brackets."
-  ],
+{
   "liz": {
     "1": [9, 19],
     "3": [9, 19],
@@ -35,9 +14,10 @@
     "6": [7, 16]
   },
   "johanna": {
-  "1": [9, 19],
-  "2": [9, 19],
-  "4": [9, 19],
-  "5": [9, 19],
-  "6": [7, 16]
+    "1": [9, 19],
+    "2": [9, 19],
+    "4": [9, 19],
+    "5": [9, 19],
+    "6": [7, 16]
+  }
 }
