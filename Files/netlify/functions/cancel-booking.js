@@ -34,10 +34,13 @@ const STUDIO_EMAIL   = process.env.STUDIO_EMAIL;
 const YUDELKYS_EMAIL = process.env.YUDELKYS_EMAIL;
 const JOHANNA_EMAIL  = process.env.JOHANNA_EMAIL;
 
-const EMAILJS_SERVICE_ID      = process.env.EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_CANCEL = process.env.EMAILJS_TEMPLATE_CANCEL; // new template — see setup notes
-const EMAILJS_PUBLIC_KEY      = process.env.EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY     = process.env.EMAILJS_PRIVATE_KEY;
+const EMAILJS_SERVICE_ID       = process.env.EMAILJS_SERVICE_ID;
+// Reuses the existing customer confirmation template — no third template needed.
+// The subject, intro, and outro are passed as dynamic variables so the same
+// template handles both confirmations and cancellation notices cleanly.
+const EMAILJS_TEMPLATE_CUSTOMER = process.env.EMAILJS_TEMPLATE_CUSTOMER;
+const EMAILJS_PUBLIC_KEY        = process.env.EMAILJS_PUBLIC_KEY;
+const EMAILJS_PRIVATE_KEY       = process.env.EMAILJS_PRIVATE_KEY;
 
 const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
@@ -179,13 +182,14 @@ exports.handler = async (event) => {
   }
 };
 
-/* ── EMAIL: Cancellation notice (shared template, parameterized content) ──
-   Uses ONE new EmailJS template (EMAILJS_TEMPLATE_CANCEL) for both the
-   customer notice and the artist heads-up — the intro/outro lines carry
-   the audience-specific wording so only one template needs creating. */
+/* ── EMAIL: Cancellation notice ──
+   Reuses EMAILJS_TEMPLATE_CUSTOMER with dynamic intro_override, outro_override,
+   and subject_override fields so no third template is needed.
+   The customer template must expose {{intro_override}}, {{outro_override}},
+   and use {{subject_override}} as its subject line — see setup notes. */
 async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outroLine, details }) {
-  if (!EMAILJS_TEMPLATE_CANCEL) {
-    console.error('cancel-booking: EMAILJS_TEMPLATE_CANCEL not set — skipping email to', toEmail);
+  if (!EMAILJS_TEMPLATE_CUSTOMER) {
+    console.error('cancel-booking: EMAILJS_TEMPLATE_CUSTOMER not set — skipping email to', toEmail);
     return { ok: false, skipped: 'no_template' };
   }
 
@@ -194,19 +198,25 @@ async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       service_id:  EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_CANCEL,
+      template_id: EMAILJS_TEMPLATE_CUSTOMER,
       user_id:     EMAILJS_PUBLIC_KEY,
       accessToken: EMAILJS_PRIVATE_KEY,
       template_params: {
-        to_email:     toEmail,
-        cc_email:     cc || '',
-        subject_line: subjectLine,
-        intro_line:   introLine,
-        outro_line:   outroLine,
-        date:         details.date,
-        time:         details.time,
-        services:     details.services,
-        artist_name:  details.artistName,
+        to_email:         toEmail,
+        cc_email:         cc || '',
+        subject_override: subjectLine,
+        intro_override:   introLine,
+        outro_override:   outroLine,
+        date:             details.date,
+        time:             details.time,
+        services:         details.services,
+        artist_name:      details.artistName,
+        // Unused by cancellation but required fields in the template —
+        // pass empty strings so EmailJS doesn't reject missing variables.
+        first_name:  '',
+        total:       '',
+        notes_line:  '',
+        cancel_url:  '',
       },
     }),
   });
