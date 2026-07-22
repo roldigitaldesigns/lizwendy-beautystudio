@@ -18,6 +18,9 @@
  */
 
 const { google } = require('googleapis');
+const crypto = require('crypto');
+
+const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
 const CLIENT_EMAIL  = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY   = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -33,6 +36,15 @@ const CALENDAR_IDS = {
   'Liz Wendy Cedeño': process.env.GOOGLE_CALENDAR_ID,
   'Yudelkys':          process.env.YUDELKYS_CALENDAR_ID, // placeholder
   'Johanna':           process.env.JOHANNA_CALENDAR_ID,  // placeholder
+};
+
+// Short artistId used in cancel links (matches get-availability.js /
+// get-itinerary.js convention) — needed so cancel-booking.js knows which
+// calendar to search without exposing the raw calendar ID in the URL.
+const ARTIST_IDS = {
+  'Liz Wendy Cedeño': 'liz',
+  'Yudelkys':          'yudelkys',
+  'Johanna':           'johanna',
 };
 
 // ── ARTIST → CALENDAR COLOR ──
@@ -137,6 +149,16 @@ exports.handler = async (event) => {
     const timeReadable = formatTime(time);
     const fullName     = `${firstName} ${lastName}`;
 
+    // ── Cancel link setup ──
+    // A random token (not the calendar event ID, which shouldn't be exposed
+    // directly) identifies this booking. It's stored on the event itself via
+    // Google Calendar's private extended properties, so no separate database
+    // is needed — cancel-booking.js looks the event up by searching for this
+    // token on the correct artist's calendar.
+    const cancelToken = crypto.randomBytes(16).toString('hex');
+    const artistId = ARTIST_IDS[artist] || 'liz';
+    const cancelUrl = `${SITE_URL}/cancel.html?token=${cancelToken}&artist=${artistId}`;
+
     const calEvent = {
       summary: `💅 ${fullName} — ${serviceList}`,
       description: [
@@ -152,6 +174,17 @@ exports.handler = async (event) => {
       start: { dateTime: eventStart.toISOString(), timeZone: 'America/New_York' },
       end:   { dateTime: eventEnd.toISOString(),   timeZone: 'America/New_York' },
       colorId: CALENDAR_COLORS[artist] || '11', // per-artist color, defaults to Tomato
+      extendedProperties: {
+        private: {
+          cancelToken:   cancelToken,
+          customerFirst: firstName,
+          customerEmail: email,
+          artistName:    artist || 'Liz Wendy Cedeño',
+          dateReadable:  dateReadable,
+          timeReadable:  timeReadable,
+          serviceList:   serviceList,
+        },
+      },
     };
 
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: calEvent });
@@ -161,8 +194,8 @@ exports.handler = async (event) => {
 
     try {
       const [customerResult, studioResult] = await Promise.all([
-        sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist }),
-        sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist }),
+        sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }),
+        sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }),
       ]);
       console.log('Customer email result:', JSON.stringify(customerResult));
       console.log('Studio email result:', JSON.stringify(studioResult));
@@ -187,7 +220,7 @@ exports.handler = async (event) => {
 };
 
 /* ── EMAIL: Customer Confirmation (via EmailJS) ── */
-async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist }) {
+async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
   const notesLine = notes ? `Your notes: ${notes}\n\n` : '';
 
   console.log('sendCustomerEmail → sending to:', email);
@@ -209,6 +242,7 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
         total:       totalStr,
         notes_line:  notesLine,
         artist_name: artist || 'Liz Wendy Cedeño',
+        cancel_url:  cancelUrl,
       },
     }),
   });
@@ -219,7 +253,7 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
 }
 
 /* ── EMAIL: Studio Notification (via EmailJS) ── */
-async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist }) {
+async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
   const notesLine = notes ? `📝 Notes: ${notes}` : '';
 
   // Route to the booked artist's inbox. Fall back to STUDIO_EMAIL if artist is unrecognized.
@@ -250,6 +284,7 @@ async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReada
         services:      serviceList,
         total:         totalStr,
         notes_line:    notesLine,
+        cancel_url:    cancelUrl,
       },
     }),
   });
