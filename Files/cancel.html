@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Cancel Appointment — Liz Wendy Beauty Studio</title>
+<style>
+  :root {
+    --bg: #0a0908;
+    --card: #151311;
+    --gold: #d4af37;
+    --gold-dim: rgba(212,175,55,.35);
+    --muted: #9a9088;
+    --white: #f5f1ea;
+    --maroon: #8b1a1a;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  body.lang-es [data-en] { display: none !important; }
+  body.lang-en [data-es] { display: none !important; }
+  .brand {
+    font-family: var(--serif); font-size: 22px; color: var(--gold);
+    margin-bottom: 6px; text-align: center;
+  }
+  .brand-sub {
+    font-size: 9px; letter-spacing: .3em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 28px; text-align: center;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--gold-dim);
+    border-radius: 16px; padding: 32px 26px; max-width: 440px; width: 100%;
+    text-align: center;
+  }
+  .card h1 { font-family: var(--serif); font-size: 20px; margin-bottom: 14px; }
+  .detail-box {
+    border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--gold-dim);
+    padding: 16px 0; margin: 18px 0; text-align: left; font-size: 14px; line-height: 2;
+  }
+  .detail-box strong { color: var(--gold); }
+  .btn-cancel {
+    display: inline-block; background: var(--maroon); color: #fff;
+    border: none; cursor: pointer; padding: 13px 30px; border-radius: 8px;
+    font-weight: bold; font-size: 14px; letter-spacing: .02em;
+  }
+  .btn-cancel:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-keep {
+    display: block; margin: 16px auto 0; background: none; border: none;
+    color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer;
+  }
+  .btn-book {
+    display: inline-block; background: linear-gradient(135deg, #a8872a, var(--gold));
+    color: var(--bg); text-decoration: none; padding: 13px 30px;
+    border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px;
+  }
+  .status-icon { font-size: 40px; margin-bottom: 12px; }
+  .muted-note { font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+  .lang-toggle {
+    position: fixed; top: 16px; right: 16px; display: flex; gap: 4px;
+    border: 1px solid var(--gold-dim); border-radius: 20px; padding: 3px;
+  }
+  .lang-toggle button {
+    background: none; border: none; color: var(--muted); font-size: 11px;
+    font-weight: bold; padding: 5px 12px; border-radius: 16px; cursor: pointer;
+  }
+  .lang-toggle button.active { background: var(--gold); color: var(--bg); }
+  .spinner {
+    width: 28px; height: 28px; border: 3px solid var(--gold-dim);
+    border-top-color: var(--gold); border-radius: 50%;
+    margin: 10px auto; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body class="lang-en">
+
+<div class="lang-toggle">
+  <button id="btn-en" onclick="setPageLang('en')">EN</button>
+  <button id="btn-es" onclick="setPageLang('es')">ES</button>
+</div>
+
+<div class="brand">Liz Wendy</div>
+<div class="brand-sub">Beauty Studio · New Brunswick, NJ</div>
+
+<div class="card">
+
+  <!-- LOADING -->
+  <div id="view-loading">
+    <div class="spinner"></div>
+    <p style="font-size:13px;color:var(--muted)">
+      <span data-en>Looking up your appointment…</span>
+      <span data-es>Buscando tu cita…</span>
+    </p>
+  </div>
+
+  <!-- CONFIRM -->
+  <div id="view-confirm" class="hidden">
+    <div class="status-icon">🗓️</div>
+    <h1>
+      <span data-en>Cancel this appointment?</span>
+      <span data-es>¿Cancelar esta cita?</span>
+    </h1>
+    <div class="detail-box" id="bookingDetails"></div>
+    <button class="btn-cancel" id="confirmBtn" onclick="confirmCancel()">
+      <span data-en>Yes, Cancel My Appointment</span>
+      <span data-es>Sí, Cancelar Mi Cita</span>
+    </button>
+    <button class="btn-keep" onclick="window.location.href='https://lizwendybeautystudiollc.com'">
+      <span data-en>No — keep my appointment</span>
+      <span data-es>No — mantener mi cita</span>
+    </button>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="view-success" class="hidden">
+    <div class="status-icon">✅</div>
+    <h1>
+      <span data-en>Your appointment has been cancelled</span>
+      <span data-es>Tu cita ha sido cancelada</span>
+    </h1>
+    <p class="muted-note">
+      <span data-en>Would you like to reschedule? We'd love to see you — book a new time whenever you're ready.</span>
+      <span data-es>¿Te gustaría reagendar? Nos encantaría verte — reserva una nueva cita cuando quieras.</span>
+    </p>
+    <div style="margin-top:20px">
+      <a class="btn-book" href="https://lizwendybeautystudiollc.com">
+        <span data-en>Book a New Appointment →</span>
+        <span data-es>Reservar Nueva Cita →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- NOT FOUND / ALREADY CANCELLED -->
+  <div id="view-notfound" class="hidden">
+    <div class="status-icon">🤔</div>
+    <h1>
+      <span data-en>Appointment not found</span>
+      <span data-es>Cita no encontrada</span>
+    </h1>
+    <p class="muted-note">
+      <span data-en>This appointment may have already been cancelled, or the link is no longer valid. If you have questions, message us and we'll help you out.</span>
+      <span data-es>Es posible que esta cita ya haya sido cancelada, o que el enlace ya no sea válido. Si tienes preguntas, escríbenos y con gusto te ayudamos.</span>
+    </p>
+    <div style="margin-top:20px">
+      <a class="btn-book" href="https://lizwendybeautystudiollc.com">
+        <span data-en>Book an Appointment →</span>
+        <span data-es>Reservar una Cita →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="view-error" class="hidden">
+    <div class="status-icon">⚠️</div>
+    <h1>
+      <span data-en>Something went wrong</span>
+      <span data-es>Algo salió mal</span>
+    </h1>
+    <p class="muted-note">
+      <span data-en>We couldn't process this right now. Please try again in a moment, or message us directly for help.</span>
+      <span data-es>No pudimos procesar esto en este momento. Intenta de nuevo en un momento, o escríbenos directamente para ayudarte.</span>
+    </p>
+    <div style="margin-top:16px">
+      <button class="btn-cancel" style="background:var(--gold);color:var(--bg)" onclick="window.location.reload()">
+        <span data-en>Try Again</span>
+        <span data-es>Intentar de Nuevo</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<p class="muted-note" style="margin-top:22px">lizwendybeautystudiollc.com</p>
+
+<script>
+/* ── LANGUAGE (shares the main site's saved preference) ── */
+function setPageLang(lang) {
+  document.body.className = 'lang-' + lang;
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-es').classList.toggle('active', lang === 'es');
+  try { localStorage.setItem('lw-lang', lang); } catch(e){}
+}
+(function(){
+  var lang = 'en';
+  try { lang = localStorage.getItem('lw-lang') || 'en'; } catch(e){}
+  setPageLang(lang === 'es' ? 'es' : 'en');
+})();
+
+/* ── STATE ── */
+const params  = new URLSearchParams(window.location.search);
+const token   = params.get('token')  || '';
+const artist  = params.get('artist') || '';
+let isSubmitting = false;
+
+function show(viewId) {
+  ['view-loading','view-confirm','view-success','view-notfound','view-error'].forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', id !== viewId);
+  });
+}
+
+/* ── STEP 1: LOOK UP THE BOOKING (no deletion) ── */
+async function lookupBooking() {
+  if (!token || !artist) { show('view-notfound'); return; }
+  try {
+    const res = await fetch('/.netlify/functions/cancel-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lookup', token: token, artistId: artist }),
+    });
+    if (res.status === 404 || res.status === 400) { show('view-notfound'); return; }
+    if (!res.ok) { show('view-error'); return; }
+
+    const data = await res.json();
+    const b = data.booking || {};
+    const es = document.body.classList.contains('lang-es');
+
+    document.getElementById('bookingDetails').innerHTML =
+      '📅 <strong>' + escapeHtml(b.date) + '</strong><br/>' +
+      '🕐 <strong>' + escapeHtml(b.time) + '</strong><br/>' +
+      '✨ ' + escapeHtml(b.services) + '<br/>' +
+      '💅 ' + (es ? 'Con' : 'With') + ': ' + escapeHtml(b.artistName);
+
+    show('view-confirm');
+  } catch (e) {
+    show('view-error');
+  }
+}
+
+/* ── STEP 2: CONFIRMED CANCELLATION ── */
+async function confirmCancel() {
+  if (isSubmitting) return;
+  isSubmitting = true;
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+
+  const lang = document.body.classList.contains('lang-es') ? 'es' : 'en';
+  try {
+    const res = await fetch('/.netlify/functions/cancel-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cancel', token: token, artistId: artist, lang: lang }),
+    });
+    if (res.status === 404) { show('view-notfound'); return; }
+    if (!res.ok) { show('view-error'); btn.disabled = false; isSubmitting = false; return; }
+    show('view-success');
+  } catch (e) {
+    show('view-error');
+    btn.disabled = false;
+    isSubmitting = false;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+lookupBooking();
+</script>
+</body>
+</html>
