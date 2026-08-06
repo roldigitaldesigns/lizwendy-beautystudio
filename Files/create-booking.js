@@ -38,16 +38,14 @@ const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 const CLIENT_EMAIL  = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY   = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 const STUDIO_EMAIL  = process.env.STUDIO_EMAIL; // ramonlopez30798@gmail.com for dev
-const YUDELKYS_EMAIL = process.env.YUDELKYS_EMAIL; // yudelkys.msantana@gmail.com
 const JOHANNA_EMAIL  = process.env.JOHANNA_EMAIL;  // Jaimejohanna11@gmail.com
 
 // ── ARTIST → CALENDAR ID ROUTING ──
-// Yudelkys and Johanna IDs are placeholders until their dedicated studio
-// calendars are created and shared with the service account. Swap the
-// env vars in Netlify once you have them — no code changes needed.
+// Johanna's ID is a placeholder until her dedicated studio calendar is
+// created and shared with the service account. Swap the env var in
+// Netlify once you have it — no code changes needed.
 const CALENDAR_IDS = {
   'Liz Wendy Cedeño': process.env.GOOGLE_CALENDAR_ID,
-  'Yudelkys':          process.env.YUDELKYS_CALENDAR_ID, // placeholder
   'Johanna':           process.env.JOHANNA_CALENDAR_ID,  // placeholder
 };
 
@@ -56,7 +54,6 @@ const CALENDAR_IDS = {
 // calendar to search without exposing the raw calendar ID in the URL.
 const ARTIST_IDS = {
   'Liz Wendy Cedeño': 'liz',
-  'Yudelkys':          'yudelkys',
   'Johanna':           'johanna',
 };
 
@@ -66,7 +63,6 @@ const ARTIST_IDS = {
 // reference: 5=Banana(yellow), 7=Peacock(blue-teal), 11=Tomato(red).
 const CALENDAR_COLORS = {
   'Liz Wendy Cedeño': '11', // Tomato — Wendy's existing/signature color
-  'Yudelkys':          '7',  // Peacock
   'Johanna':           '5',  // Banana
 };
 
@@ -74,7 +70,6 @@ const CALENDAR_COLORS = {
 // Wendy is CC'd on every booking regardless of artist, so she retains full visibility.
 const ARTIST_EMAILS = {
   'Liz Wendy Cedeño': STUDIO_EMAIL,
-  'Yudelkys':          YUDELKYS_EMAIL,
   'Johanna':           JOHANNA_EMAIL,
 };
 
@@ -113,7 +108,17 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
-    const CALENDAR_ID = CALENDAR_IDS[artist] || CALENDAR_IDS['Liz Wendy Cedeño'];
+    // Resolve which artist this booking is for. Only fall back to Wendy when
+    // no artist was specified at all (legacy/empty case) — a NAMED artist
+    // that isn't recognized (e.g. someone who has left the studio, or a
+    // stale cached page still offering them) must be explicitly rejected,
+    // never silently redirected onto Wendy's calendar.
+    const knownArtist = Object.prototype.hasOwnProperty.call(CALENDAR_IDS, artist);
+    if (artist && !knownArtist) {
+      console.error(`create-booking: unrecognized artist "${artist}" — rejecting rather than silently falling back.`);
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'The selected artist is no longer available for booking. Please refresh the page and choose another artist.' }) };
+    }
+    const CALENDAR_ID = knownArtist ? CALENDAR_IDS[artist] : CALENDAR_IDS['Liz Wendy Cedeño'];
     if (!CALENDAR_ID) {
       console.error(`create-booking: no calendar configured for artist "${artist}"`);
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Booking is temporarily unavailable for this artist. Please try again later or call us directly.' }) };

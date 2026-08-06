@@ -2,7 +2,7 @@
  * GET /.netlify/functions/get-availability?date=YYYY-MM-DD&artistId=liz
  *
  * Returns taken 1-hour slots for a given date by reading the correct
- * artist's Google Calendar (artistId: liz | yudelkys | johanna).
+ * artist's Google Calendar (artistId: liz | johanna).
  * Defaults to Wendy's calendar if artistId is missing (back-compat).
  *
  * Working hours are read from schedules.json (same file the front-end
@@ -23,12 +23,11 @@ const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 // ── ARTIST → CALENDAR ID ROUTING ──
-// Yudelkys and Johanna IDs are placeholders until their dedicated studio
-// calendars are created and shared with the service account. Swap the
-// env vars in Netlify once you have them — no code changes needed.
+// Johanna's ID is a placeholder until her dedicated studio calendar is
+// created and shared with the service account. Swap the env var in
+// Netlify once you have it — no code changes needed.
 const CALENDAR_IDS = {
   liz:      process.env.GOOGLE_CALENDAR_ID,
-  yudelkys: process.env.YUDELKYS_CALENDAR_ID, // placeholder — set in Netlify when available
   johanna:  process.env.JOHANNA_CALENDAR_ID,  // placeholder — set in Netlify when available
 };
 
