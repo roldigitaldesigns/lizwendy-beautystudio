@@ -42,6 +42,16 @@ const EMAILJS_TEMPLATE_CUSTOMER = process.env.EMAILJS_TEMPLATE_CUSTOMER;
 const EMAILJS_PUBLIC_KEY        = process.env.EMAILJS_PUBLIC_KEY;
 const EMAILJS_PRIVATE_KEY       = process.env.EMAILJS_PRIVATE_KEY;
 
+// ── TWILIO WHATSAPP (cancellation notice when no email was given at booking) ──
+// Same credentials used for booking confirmations in create-booking.js.
+const TWILIO_ACCOUNT_SID     = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN      = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
+// Separate template recommended for cancellations (different message intent
+// than a confirmation) — falls back to the confirmation template's SID only
+// if a dedicated cancellation template hasn't been created/approved yet.
+const TWILIO_CANCEL_TEMPLATE_SID = process.env.TWILIO_CANCEL_TEMPLATE_SID || process.env.TWILIO_TEMPLATE_SID;
+
 const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
 // Same artistId convention as get-availability.js / create-booking.js
@@ -121,6 +131,10 @@ exports.handler = async (event) => {
       time:       props.timeReadable  || '',
       services:   props.serviceList   || '',
     };
+    // Kept separate from `details` (not shown on the cancel.html confirmation
+    // screen) — only used internally to route the cancellation notice below.
+    const customerEmail = props.customerEmail || '';
+    const customerPhone = props.customerPhone || '';
 
     // ── STEP 1: LOOKUP ONLY ──
     if (action === 'lookup') {
@@ -132,27 +146,35 @@ exports.handler = async (event) => {
       await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: booking.id });
       console.log(`cancel-booking: deleted event ${booking.id} (${details.services} / ${details.date})`);
 
-      // Emails are isolated — a send failure must never make the customer
-      // think the cancellation didn't happen (the event is already gone).
+      // Notifications are isolated — a send failure must never make the
+      // customer think the cancellation didn't happen (the event is already gone).
       try {
-        const customerEmail = props.customerEmail || '';
+        // Same routing rule as booking confirmations: email wins if present,
+        // otherwise fall back to WhatsApp via the stored phone number.
+        let customerNotification;
+        if (customerEmail) {
+          customerNotification = sendCancellationEmail({
+            toEmail: customerEmail,
+            cc: '',
+            subjectLine: (lang === 'es')
+              ? `Cita Cancelada — ${details.date}`
+              : `Appointment Cancelled — ${details.date}`,
+            introLine: (lang === 'es')
+              ? `Hola ${details.firstName}, tu cita ha sido cancelada.`
+              : `Hi ${details.firstName}, your appointment has been cancelled.`,
+            outroLine: (lang === 'es')
+              ? `¿Te gustaría reagendar? Reserva una nueva cita cuando quieras en lizwendybeautystudiollc.com — ¡nos encantaría verte pronto! ✨`
+              : `Would you like to reschedule? Book a new time anytime at lizwendybeautystudiollc.com — we'd love to see you soon! ✨`,
+            details,
+          });
+        } else if (customerPhone) {
+          customerNotification = sendWhatsAppCancellation({ phone: customerPhone, details, lang });
+        } else {
+          customerNotification = Promise.resolve({ skipped: 'no_contact_on_record' });
+        }
+
         const results = await Promise.all([
-          customerEmail
-            ? sendCancellationEmail({
-                toEmail: customerEmail,
-                cc: '',
-                subjectLine: (lang === 'es')
-                  ? `Cita Cancelada — ${details.date}`
-                  : `Appointment Cancelled — ${details.date}`,
-                introLine: (lang === 'es')
-                  ? `Hola ${details.firstName}, tu cita ha sido cancelada.`
-                  : `Hi ${details.firstName}, your appointment has been cancelled.`,
-                outroLine: (lang === 'es')
-                  ? `¿Te gustaría reagendar? Reserva una nueva cita cuando quieras en lizwendybeautystudiollc.com — ¡nos encantaría verte pronto! ✨`
-                  : `Would you like to reschedule? Book a new time anytime at lizwendybeautystudiollc.com — we'd love to see you soon! ✨`,
-                details,
-              })
-            : Promise.resolve({ skipped: true }),
+          customerNotification,
           sendCancellationEmail({
             toEmail: ARTIST_EMAILS[artistId] || STUDIO_EMAIL,
             cc: (ARTIST_EMAILS[artistId] && ARTIST_EMAILS[artistId] !== STUDIO_EMAIL) ? STUDIO_EMAIL : '',
@@ -223,5 +245,54 @@ async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outr
 
   const text = await res.text();
   console.log(`sendCancellationEmail → ${toEmail} | status:`, res.status, '| response:', text);
+  return { ok: res.ok, status: res.status, response: text };
+}
+
+/* ── WHATSAPP: Cancellation notice (used when no email was given at booking) ──
+   Mirrors sendWhatsAppConfirmation in create-booking.js. Requires an approved
+   Twilio WhatsApp utility template (TWILIO_CANCEL_TEMPLATE_SID). If Twilio
+   isn't configured, logs and returns a skipped result — the calendar event
+   is already deleted regardless, so this must never throw. */
+async function sendWhatsAppCancellation({ phone, details, lang }) {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_NUMBER || !TWILIO_CANCEL_TEMPLATE_SID) {
+    console.error('sendWhatsAppCancellation: Twilio not fully configured — skipping WhatsApp send to', phone);
+    return { ok: false, skipped: 'twilio_not_configured' };
+  }
+
+  const digits = String(phone).replace(/\D/g, '');
+  const e164 = digits.length === 10 ? `+1${digits}` : `+${digits}`;
+  const toWhatsApp = `whatsapp:${e164}`;
+
+  console.log('sendWhatsAppCancellation → sending to:', toWhatsApp);
+
+  const body = new URLSearchParams({
+    From: TWILIO_WHATSAPP_NUMBER,
+    To: toWhatsApp,
+    ContentSid: TWILIO_CANCEL_TEMPLATE_SID,
+    // Template variables — must match the approved cancellation template's
+    // placeholder order exactly (e.g. {{1}} firstName, {{2}} service,
+    // {{3}} date, {{4}} time). Update once the template SID is confirmed.
+    ContentVariables: JSON.stringify({
+      '1': details.firstName,
+      '2': details.services,
+      '3': details.date,
+      '4': details.time,
+    }),
+  });
+
+  const res = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
+      },
+      body,
+    }
+  );
+
+  const text = await res.text();
+  console.log('sendWhatsAppCancellation → status:', res.status, '| response:', text);
   return { ok: res.ok, status: res.status, response: text };
 }
