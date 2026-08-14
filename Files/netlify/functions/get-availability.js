@@ -174,24 +174,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(
-        event.queryStringParameters && event.queryStringParameters.debug === '1'
-          ? {
-              takenSlots,
-              debug: {
-                dateStr,
-                artistId,
-                timeMin,
-                timeMax,
-                rawEvents: events.map(ev => ({
-                  summary: ev.summary,
-                  start: ev.start,
-                  end: ev.end,
-                })),
-              },
-            }
-          : { takenSlots }
-      ),
+      body: JSON.stringify({ takenSlots }),
     };
 
   } catch (err) {
