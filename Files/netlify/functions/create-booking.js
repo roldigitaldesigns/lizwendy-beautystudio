@@ -185,7 +185,10 @@ exports.handler = async (event) => {
     }
 
     // ── 3. CREATE CALENDAR EVENT ──
-    const serviceList = services.map(s => s.name).join(', ');
+    // Supports both plain strings (voice agent bookings) and {name, price}
+    // objects (website bookings) — Vapi's tool schema can't send nested
+    // objects in arrays, so voice sends service names as plain strings.
+    const serviceList = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
     const totalStr    = total > 0 ? `$${total}` : 'TBD (consultation)';
     const dateObj     = new Date(date + 'T12:00:00');
     const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
