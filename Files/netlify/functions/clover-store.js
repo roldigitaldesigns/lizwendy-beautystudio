@@ -57,6 +57,18 @@ const AMOUNT_MATCH_WINDOW_MIN = 30;
 const EXPECTED_DEPOSIT_CENTS = 2000; // $20.00
 
 function store() {
+  // Netlify's automatic Blobs context injection doesn't always land
+  // reliably (a known platform gap — MissingBlobsEnvironmentError even on
+  // a clean deploy). BLOBS_SITE_ID / BLOBS_TOKEN are the manual fallback:
+  // an explicit Project ID + Personal Access Token, set in Netlify env
+  // vars. If both are present, use them. If not, fall back to letting
+  // @netlify/blobs auto-detect — so this keeps working unmodified if
+  // Netlify's auto-injection starts working reliably in the future.
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token  = process.env.BLOBS_TOKEN;
+  if (siteID && token) {
+    return getStore({ name: STORE_NAME, siteID, token });
+  }
   return getStore(STORE_NAME);
 }
 
