@@ -147,11 +147,20 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body);
     const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, orderRef, overridePin } = data;
 
+    // Normalize services into an array of names. The website sends an array
+    // (either plain strings or {name, price} objects). The Vapi voice agent
+    // sends a single comma-separated string (e.g. "Gel Manicure, Regular
+    // Pedicure") because Vapi's tool schema reliably generates string fields
+    // but was producing empty arguments for array-typed body fields.
+    const servicesArray = typeof services === 'string'
+      ? services.split(',').map(s => s.trim()).filter(Boolean)
+      : services;
+
     // Basic validation
     // lastName and email are optional — phone is the required contact method
     // so confirmations can always reach the customer (email if given, else
     // WhatsApp). See sendCustomerEmail/sendWhatsAppConfirmation routing below.
-    if (!firstName || !phone || !date || !time || !services?.length) {
+    if (!firstName || !phone || !date || !time || !servicesArray?.length) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
@@ -284,7 +293,7 @@ exports.handler = async (event) => {
     // Supports both plain strings (voice agent bookings) and {name, price}
     // objects (website bookings) — Vapi's tool schema can't send nested
     // objects in arrays, so voice sends service names as plain strings.
-    const serviceList = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
+    const serviceList = servicesArray.map(s => typeof s === 'string' ? s : s.name).join(', ');
     const totalStr    = total > 0 ? `$${total}` : 'TBD (consultation)';
     const dateObj     = new Date(date + 'T12:00:00');
     const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
