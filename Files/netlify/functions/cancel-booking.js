@@ -31,7 +31,6 @@ const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 const STUDIO_EMAIL   = process.env.STUDIO_EMAIL;
-const YUDELKYS_EMAIL = process.env.YUDELKYS_EMAIL;
 const JOHANNA_EMAIL  = process.env.JOHANNA_EMAIL;
 
 const EMAILJS_SERVICE_ID       = process.env.EMAILJS_SERVICE_ID;
@@ -57,13 +56,11 @@ const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 // Same artistId convention as get-availability.js / create-booking.js
 const CALENDAR_IDS = {
   liz:      process.env.GOOGLE_CALENDAR_ID,
-  yudelkys: process.env.YUDELKYS_CALENDAR_ID,
   johanna:  process.env.JOHANNA_CALENDAR_ID,
 };
 
 const ARTIST_EMAILS = {
   liz:      STUDIO_EMAIL,
-  yudelkys: YUDELKYS_EMAIL,
   johanna:  JOHANNA_EMAIL,
 };
 
