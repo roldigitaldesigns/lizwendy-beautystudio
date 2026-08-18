@@ -18,6 +18,135 @@
  */
 
 const { google } = require('googleapis');
+
+// ── SERVICE DURATIONS (server-side fallback for voice bookings) ──
+// The website computes durationMinutes client-side from each service's
+// exact catalog entry, rounded up to the nearest 15 min. Voice bookings
+// can NEVER send durationMinutes — adding a number-type field to Vapi's
+// create_booking schema broke argument population entirely on real calls
+// (confirmed Aug 2026: removing it fixed two consecutive real test calls).
+// So this table is the same duration data, sourced directly from
+// index.html's service catalog, kept here so voice bookings get an
+// accurate slot length too instead of a flat 60-minute guess.
+//
+// IMPORTANT: if the service catalog in index.html changes (new service,
+// renamed service, changed time estimate), this table needs a matching
+// manual update — there's no automatic sync between the two files.
+const SERVICE_DURATIONS = {
+  'Occasion Makeup': 45,
+  'Occasion Makeup + Lashes': 60,
+  'Bridal Makeup': 60,
+  'Elaborate / Complex Look': 60,
+  'Quinceañera': 60,
+  'Regular Manicure': 30,
+  'Gel Manicure': 45,
+  'Acrylic Full Set': 90,
+  'Acrylic Refill': 60,
+  'Gel X / Soft Gel Tips': 75,
+  'Dip Powder / SNS': 60,
+  'Regular Pedicure': 45,
+  'Spa / Deluxe Pedicure': 60,
+  'Nail Art / Designs': 60,
+  'Eyebrows': 15,
+  'Upper Lip': 10,
+  'Underarms': 15,
+  'Bikini Line': 20,
+  'Brazilian Wax': 30,
+  'Full Legs': 45,
+  'Half Legs': 25,
+  'Full Arms': 25,
+  'Back Wax': 30,
+  'Full Face Wax': 30,
+  'Full Body Wax': 90,
+  'Eyebrow Tinting': 20,
+  'Eyebrow Lamination': 45,
+  'Lamination + Tint': 60,
+  'Natural Glow': 60,
+  'Lam + Shaping + Wax': 75,
+  'Powder Brows / Ombré': 120,
+  'Combo Brows': 120,
+  'Lip Blush (PMU)': 120,
+  'Permanent Eyeliner': 90,
+  '6–8 Week PMU Touch-up': 60,
+  'Annual PMU Touch-up': 90,
+  'Classic Lash Extensions': 120,
+  'Hybrid Lash Extensions': 120,
+  'Volume Lash Extensions': 120,
+  'Lash Lift': 45,
+  'Lash Lift + Tint': 60,
+  'Soft Glam': 60,
+  'Brow Queen': 75,
+  'Doll Eyes': 75,
+  'Full Face Beauty': 90,
+  'Luxury Beauty': 120,
+  'Mobile Makeup (No Lashes)': 60,
+  'Mobile Makeup + Lashes': 75,
+  'Bridal Party Mobile': 60,
+  'Express Facial': 30,
+  'Deep Cleansing Facial': 75,
+  'Hydrating Facial': 60,
+  'Calming Facial': 60,
+  'Vitamin C Brightening Facial': 60,
+  'Acne Facial': 75,
+  'Anti-Aging Facial': 75,
+  'Dermaplaning Facial': 60,
+  'Microdermabrasion': 60,
+  'Premium Facial': 90,
+  'Glow Skin Package': 90,
+  'Luxury Facial Package': 105,
+  'LED Light Therapy': 15,
+  'Eye Contour Treatment': 15,
+  'Collagen Mask': 15,
+  'High Frequency': 15,
+  'Facial Massage & Lymphatic Drainage': 20,
+  'Neck & Décolletage Treatment': 20,
+};
+
+// Used per-service when a service name isn't found in the table above
+// (typo, mishear on a call, future catalog addition not yet synced here)
+// — matches the website's own fallback default so behavior stays
+// consistent either way.
+const DEFAULT_SERVICE_MINUTES = 60;
+
+// Sums each requested service's known duration, rounded up to the nearest
+// 15 minutes — same rounding convention the website uses. Accepts services
+// as plain strings (voice) or {name, price} objects (website), matching
+// the same tolerant handling already used elsewhere in this file.
+//
+// Matching is exact first, then falls back to a case-insensitive substring
+// match against the catalog (either direction) — voice transcription can
+// legitimately shorten a name (e.g. "Full Body" instead of the catalog's
+// "Full Body Wax"), and an exact-only match would silently mis-price that
+// as the 60-minute default instead of the real 90 minutes.
+const SERVICE_DURATIONS_LOWER = Object.keys(SERVICE_DURATIONS).map(name => ({
+  name, lower: name.toLowerCase(), minutes: SERVICE_DURATIONS[name],
+}));
+
+function lookupServiceDuration(rawName) {
+  if (!rawName) return DEFAULT_SERVICE_MINUTES;
+  if (SERVICE_DURATIONS[rawName] != null) return SERVICE_DURATIONS[rawName];
+
+  const lower = String(rawName).toLowerCase().trim();
+  for (const entry of SERVICE_DURATIONS_LOWER) {
+    if (entry.lower === lower) return entry.minutes;
+  }
+  for (const entry of SERVICE_DURATIONS_LOWER) {
+    if (entry.lower.includes(lower) || lower.includes(entry.lower)) return entry.minutes;
+  }
+  return DEFAULT_SERVICE_MINUTES;
+}
+
+function computeDurationFromServices(services) {
+  if (!Array.isArray(services) || services.length === 0) return DEFAULT_SERVICE_MINUTES;
+
+  const total = services.reduce((sum, s) => {
+    const name = typeof s === 'string' ? s : (s && s.name);
+    return sum + lookupServiceDuration(name);
+  }, 0);
+
+  return Math.ceil(total / 15) * 15;
+}
+
 const crypto = require('crypto');
 
 // schedules.json must sit in this same folder (next to this function file)
@@ -147,20 +276,11 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body);
     const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, orderRef, overridePin } = data;
 
-    // Normalize services into an array of names. The website sends an array
-    // (either plain strings or {name, price} objects). The Vapi voice agent
-    // sends a single comma-separated string (e.g. "Gel Manicure, Regular
-    // Pedicure") because Vapi's tool schema reliably generates string fields
-    // but was producing empty arguments for array-typed body fields.
-    const servicesArray = typeof services === 'string'
-      ? services.split(',').map(s => s.trim()).filter(Boolean)
-      : services;
-
     // Basic validation
     // lastName and email are optional — phone is the required contact method
     // so confirmations can always reach the customer (email if given, else
     // WhatsApp). See sendCustomerEmail/sendWhatsAppConfirmation routing below.
-    if (!firstName || !phone || !date || !time || !servicesArray?.length) {
+    if (!firstName || !phone || !date || !time || !services?.length) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
@@ -266,12 +386,20 @@ exports.handler = async (event) => {
     const [slotH] = time.split(':').map(Number);
     const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:00:00-04:00`);
 
-    // Duration comes from the front end (sum of selected services' estimated
-    // times, rounded up to the nearest 15 min). Fall back to 60 min if
-    // missing or invalid, so older clients / bad input never break booking.
+    // Duration: prefer durationMinutes if the caller sent one (website
+    // already computes this precisely client-side). If it's missing or
+    // invalid — which is ALWAYS the case for voice bookings, since Vapi's
+    // apiRequest schema can't safely carry a number-type field (see Aug
+    // 2026 investigation: adding durationMinutes broke argument population
+    // on real calls) — fall back to summing each requested service's known
+    // duration from SERVICE_DURATIONS below, so voice bookings get an
+    // accurate slot length too, not a flat 60-minute guess. Services not
+    // found in the table (a name mismatch, a future catalog addition) fall
+    // back to DEFAULT_SERVICE_MINUTES individually, so one unknown service
+    // never breaks the whole booking.
     const safeDuration = (Number.isFinite(durationMinutes) && durationMinutes > 0)
       ? durationMinutes
-      : 60;
+      : computeDurationFromServices(services);
     const eventEnd = new Date(eventStart.getTime() + safeDuration * 60 * 1000);
 
     const existing = await calendar.events.list({
@@ -293,7 +421,7 @@ exports.handler = async (event) => {
     // Supports both plain strings (voice agent bookings) and {name, price}
     // objects (website bookings) — Vapi's tool schema can't send nested
     // objects in arrays, so voice sends service names as plain strings.
-    const serviceList = servicesArray.map(s => typeof s === 'string' ? s : s.name).join(', ');
+    const serviceList = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
     const totalStr    = total > 0 ? `$${total}` : 'TBD (consultation)';
     const dateObj     = new Date(date + 'T12:00:00');
     const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
