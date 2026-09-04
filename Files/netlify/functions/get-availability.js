@@ -1,7 +1,7 @@
 /**
  * GET /.netlify/functions/get-availability?date=YYYY-MM-DD&artistId=liz
  *
- * Returns taken 1-hour slots for a given date by reading the correct
+ * Returns taken 30-min slots for a given date by reading the correct
  * artist's Google Calendar (artistId: liz | johanna).
  * Defaults to Wendy's calendar if artistId is missing (back-compat).
  *
@@ -10,7 +10,7 @@
  * here can never disagree. See schedules.json's "_readme" for how to
  * edit hours — no code changes needed to update someone's schedule.
  *
- * Response: { takenSlots: ["09:00", "11:00", ...] }
+ * Response: { takenSlots: ["09:00", "09:30", "11:00", ...] }
  */
 
 const { google } = require('googleapis');
@@ -45,6 +45,28 @@ const DEFAULT_HOURS = {
 function getArtistHours(artistId) {
   if (SCHEDULES && SCHEDULES[artistId]) return SCHEDULES[artistId];
   return DEFAULT_HOURS;
+}
+
+// ── SLOT + BUFFER CONFIG ──
+// Slots are offered every 30 minutes (":00" and ":30"). After any booked
+// appointment, an additional buffer is blocked so the artist has turnaround
+// time between clients — cleanup, sanitizing, reset. The buffer is added on
+// top of the appointment's real duration (a 90-min set at 10:00 blocks until
+// 11:30 + buffer). Applies to ALL artists.
+const SLOT_STEP_MIN = 30;      // minutes between offered start times
+const BUFFER_MIN     = 60;     // turnaround blocked after each appointment ends
+
+// Build every "HH:MM" start time from `start` (inclusive) to `end`
+// (exclusive) in SLOT_STEP_MIN increments. `start`/`end` are whole-hour
+// numbers from schedules.json (e.g. 9 → "09:00", "09:30", ...).
+function buildSlots(start, end) {
+  const slots = [];
+  for (let mins = start * 60; mins < end * 60; mins += SLOT_STEP_MIN) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  }
+  return slots;
 }
 
 // Checks an artist's optional "blackout" date ranges in schedules.json
@@ -90,8 +112,7 @@ exports.handler = async (event) => {
     // request bypasses the calendar UI's greyed-out day.
     if (isDateBlackedOut(artistId, dateStr)) {
       const [bStart, bEnd] = HOURS[dow];
-      const blockedSlots = [];
-      for (let h = bStart; h < bEnd; h++) blockedSlots.push(`${String(h).padStart(2, '0')}:00`);
+      const blockedSlots = buildSlots(bStart, bEnd);
       return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: blockedSlots, blackout: true }) };
     }
 
@@ -133,12 +154,9 @@ exports.handler = async (event) => {
 
     const events = res.data.items || [];
 
-    // Generate all slots for the day
+    // Generate all slots for the day — every 30 minutes.
     const [start, end] = HOURS[dow];
-    const allSlots = [];
-    for (let h = start; h < end; h++) {
-      allSlots.push(`${String(h).padStart(2, '0')}:00`);
-    }
+    const allSlots = buildSlots(start, end);
 
     // An all-day event's start.date/end.date are plain YYYY-MM-DD strings
     // (end.date is EXCLUSIVE per Google's API — a single-day all-day event
@@ -152,11 +170,17 @@ exports.handler = async (event) => {
       return dateStr >= startDate && dateStr < endDate;
     }
 
-    // Mark slots as taken if any calendar event overlaps them
+    // Mark slots as taken if any calendar event overlaps them.
+    //
+    // Each slot is a 30-minute window [slotStart, slotStart + SLOT_STEP_MIN).
+    // A timed event blocks not just its own span but an extra BUFFER_MIN
+    // afterward, giving the artist turnaround time — so the event's blocking
+    // window is [evStart, evEnd + BUFFER_MIN). Any slot that overlaps that
+    // extended window is unavailable.
     const takenSlots = allSlots.filter(slot => {
-      const [slotH] = slot.split(':').map(Number);
-      const slotStart = new Date(`${dateStr}T${String(slotH).padStart(2,'0')}:00:00-04:00`);
-      const slotEnd   = new Date(`${dateStr}T${String(slotH + 1).padStart(2,'0')}:00:00-04:00`);
+      const [slotH, slotM] = slot.split(':').map(Number);
+      const slotStart = new Date(`${dateStr}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00-04:00`);
+      const slotEnd   = new Date(slotStart.getTime() + SLOT_STEP_MIN * 60 * 1000);
 
       return events.some(ev => {
         if (!ev.start) return false;
@@ -165,8 +189,9 @@ exports.handler = async (event) => {
         // window can return neighboring days' all-day events too).
         if (ev.start.date && !ev.start.dateTime) return isAllDayEventOnDate(ev);
         const evStart = new Date(ev.start.dateTime);
-        const evEnd   = new Date(ev.end.dateTime);
-        // Overlap check
+        // Extend the event's blocking window by the turnaround buffer.
+        const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
+        // Overlap check against the buffered window.
         return evStart < slotEnd && evEnd > slotStart;
       });
     });

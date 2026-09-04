@@ -40,13 +40,14 @@ const SERVICE_DURATIONS = {
   'Quinceañera': 60,
   'Regular Manicure': 30,
   'Gel Manicure': 45,
-  'Acrylic Full Set': 90,
-  'Acrylic Refill': 60,
+  'Acrylic Full Set': 120,
+  'Acrylic Refill': 90,
   'Gel X / Soft Gel Tips': 75,
   'Dip Powder / SNS': 60,
   'Regular Pedicure': 45,
   'Spa / Deluxe Pedicure': 60,
-  'Nail Art / Designs': 60,
+  'Nail Art / Design': 30,   // add-on to Acrylic Refill (website sends this exact name); ~30 min
+  'Nail Art / Designs': 60,  // standalone nail art (kept for voice phrasing / back-compat)
   'Eyebrows': 15,
   'Upper Lip': 10,
   'Underarms': 15,
@@ -383,8 +384,12 @@ exports.handler = async (event) => {
     const calendar = google.calendar({ version: 'v3', auth });
 
     // ── 2. DOUBLE-CHECK SLOT IS FREE ──
-    const [slotH] = time.split(':').map(Number);
-    const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:00:00-04:00`);
+    // Slots are offered on 30-minute boundaries ("HH:00" / "HH:30"), so the
+    // minutes must be preserved — parsing only the hour would silently book
+    // a 10:30 request at 10:00. Fall back to :00 if a time somehow arrives
+    // without minutes (older/hourly callers, voice edge cases).
+    const [slotH, slotM = 0] = time.split(':').map(Number);
+    const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00-04:00`);
 
     // Duration: prefer durationMinutes if the caller sent one (website
     // already computes this precisely client-side). If it's missing or
@@ -668,8 +673,8 @@ async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReada
 
 /* ── UTIL ── */
 function formatTime(slot) {
-  const [h] = slot.split(':').map(Number);
+  const [h, m = 0] = slot.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
-  return `${hour}:00 ${ampm}`;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
