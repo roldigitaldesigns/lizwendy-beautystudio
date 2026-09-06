@@ -2777,8 +2777,10 @@ function renderSlots(date) {
 
   const [start, end] = hrs;
   const slots = [];
-  for (let h = start; h < end; h++) {
-    slots.push(String(h).padStart(2,'0') + ':00');
+  for (let mins = start * 60; mins < end * 60; mins += 30) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
   }
 
   // If the selected date is today, disable any slot that's already passed
@@ -2790,8 +2792,8 @@ function renderSlots(date) {
   const bufferCutoff = new Date(now.getTime() + 30 * 60 * 1000);
 
   const html = slots.map(slot => {
-    const [slotH] = slot.split(':').map(Number);
-    const slotDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slotH, 0, 0);
+    const [slotH, slotM] = slot.split(':').map(Number);
+    const slotDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slotH, slotM, 0);
     const tooSoon  = isToday && slotDateTime < bufferCutoff;
     const taken    = takenSlots.includes(slot) || tooSoon;
     const sel      = selectedTime === slot;
@@ -2820,10 +2822,10 @@ function formatDateISO(date) {
 }
 
 function formatTimeLabel(slot) {
-  const [h] = slot.split(':').map(Number);
+  const [h, m = 0] = slot.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
-  return `${hour}:00 ${ampm}`;
+  return `${hour}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
 /* ═══════════════════════════════════════════
