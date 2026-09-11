@@ -1503,14 +1503,14 @@ body.lang-en [data-es] { display: none !important; }
           <span data-es>Se requiere un <strong style="color:var(--text)">depósito de $20</strong> para confirmar tu reserva. Serás redirigido a nuestra página de pago seguro de Clover. El depósito se aplica a tu balance total.</span>
         </p>
 
-        <a href="https://link.clover.com/urlshortener/VZSmPk"
+        <a href="https://link.clover.com/urlshortener/VZSmPk" target="_blank"
            class="btn-deposit" onclick="onDepositClick()">
           <span data-en>Pay $20 Deposit to Book ✦</span>
           <span data-es>Pagar Depósito de $20 para Reservar ✦</span>
         </a>
         <p class="deposit-note">
-          <span data-en>Secure payment · Powered by Clover · You'll return here automatically</span>
-          <span data-es>Pago seguro · Con tecnología de Clover · Regresarás aquí automáticamente</span>
+          <span data-en>Opens securely in a new tab · Powered by Clover</span>
+          <span data-es>Se abre de forma segura en una nueva pestaña · Con tecnología de Clover</span>
         </p>
       </div>
 
@@ -2941,39 +2941,10 @@ let depositPollTimeoutId  = null;
 let depositPollStartedAt  = 0;
 
 function onDepositClick() {
-  // ── SAME-TAB REDIRECT FLOW ──
-  // The deposit button now navigates the SAME tab to Clover (no new tab), so
-  // there's no backgrounded tab whose timers get throttled by mobile browsers.
-  // Before we leave, snapshot everything submitBooking() will need so it
-  // survives the round-trip to Clover and back. Clover's Success URL
-  // (…/?paid=1) returns the customer here, where handlePaidReturn() picks this
-  // up and completes the booking automatically.
-  try {
-    const payload = {
-      state: window.BOOKING_STATE || {},
-      fields: {
-        firstName: (document.getElementById('firstName')?.value || '').trim(),
-        lastName:  (document.getElementById('lastName')?.value || '').trim(),
-        email:     (document.getElementById('emailInput')?.value || '').trim(),
-        phone:     (document.getElementById('phoneInput')?.value || '').trim(),
-        notes:     (document.getElementById('notesInput')?.value || '').trim(),
-      },
-      staffOverridePin: staffOverridePin || '',
-      lang: isEs() ? 'es' : 'en',
-      savedAt: Date.now(),
-    };
-    sessionStorage.setItem('lw_pending_booking', JSON.stringify(payload));
-  } catch (e) {
-    // If sessionStorage is unavailable (rare), fall back to the old polling
-    // behavior — the customer can still return to the tab and be picked up.
-    console.warn('Could not persist booking before payment:', e);
-  }
-  // Also keep the legacy polling path alive as a fallback: if the customer
-  // opens Clover in a new tab anyway (e.g. long-press "open in new tab"),
-  // the original tab still detects the payment the old way.
+  // Small delay so the Clover tab opens, then show the auto-detect status row.
+  // Booking only proceeds via confirmed payment detection or staff PIN override.
   setTimeout(() => {
-    const row = document.getElementById('depositConfirmRow');
-    if (row) row.classList.add('visible');
+    document.getElementById('depositConfirmRow').classList.add('visible');
   }, 800);
   startDepositPolling();
 }
@@ -3226,159 +3197,6 @@ function goToStep1() {
 
   scrollTop();
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   PAID RETURN HANDLER
-   Clover's Success URL sends the customer back to …/?paid=1 after a
-   completed payment, in the SAME tab. This runs on page load: if it sees
-   that flag AND we have a booking snapshot from onDepositClick(), it
-   restores everything submitBooking() needs, shows the "confirming"
-   screen, verifies the payment, and creates the booking automatically —
-   no polling, no tab-switching, no customer action.
-═══════════════════════════════════════════════════════════════════ */
-(function handlePaidReturn() {
-  let params;
-  try { params = new URLSearchParams(window.location.search); }
-  catch (e) { return; }
-
-  const isPaid     = params.get('paid') === '1';
-  const isCanceled = params.get('canceled') === '1';
-  if (!isPaid && !isCanceled) return; // normal load — nothing to do
-
-  // Pull the snapshot saved right before the redirect to Clover.
-  let payload = null;
-  try {
-    const raw = sessionStorage.getItem('lw_pending_booking');
-    if (raw) payload = JSON.parse(raw);
-  } catch (e) { /* storage unavailable — handled below */ }
-
-  // Clean the query flag off the URL immediately so a refresh or back-button
-  // can't re-trigger this flow. For PAID, this prevents replaying against a
-  // consumed payment; for CANCELED it just avoids re-showing the message.
-  try { history.replaceState({}, '', window.location.pathname); } catch (e) {}
-
-  if (isCanceled) {
-    // Payment was NOT completed. Do NOT book, do NOT clear the snapshot —
-    // restore their selections and let them try again from the Pay button.
-    if (payload && payload.state) restoreBookingUI(payload, /*booking=*/false);
-    // If there's no snapshot, a canceled return just lands on the normal
-    // site — nothing was lost because nothing was paid.
-    return;
-  }
-
-  // isPaid:
-  if (!payload || !payload.state) {
-    showPaidReturnError();
-    return;
-  }
-  restoreBookingUI(payload, /*booking=*/true);
-  window.bookingAutoSubmitted = true; // guard against poller double-submit
-  verifyThenBook(payload.savedAt || (Date.now() - 5 * 60 * 1000));
-})();
-
-/* Shared restore: rebuild in-memory state + form fields and land on the
-   confirm panel. `booking` = true shows the "confirming payment" status
-   (paid path); false shows the "selections saved, try again" message
-   (cancel path). */
-function restoreBookingUI(payload, booking) {
-  try { if (payload.lang && payload.lang !== (isEs() ? 'es' : 'en')) setLang(payload.lang); }
-  catch (e) { /* non-fatal */ }
-
-  window.BOOKING_STATE = payload.state || {};
-  selectedArtist = window.BOOKING_STATE.artist || selectedArtist;
-  selectedDate   = window.BOOKING_STATE.date || null;
-  selectedTime   = window.BOOKING_STATE.time || null;
-  staffOverridePin = payload.staffOverridePin || '';
-
-  const f = payload.fields || {};
-  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-  setVal('firstName', f.firstName);
-  setVal('lastName',  f.lastName);
-  setVal('emailInput', f.email);
-  setVal('phoneInput', f.phone);
-  setVal('notesInput', f.notes);
-
-  // Rebuild the confirm summary so the restored picks are visible.
-  try { if (typeof buildConfirmSummary === 'function') buildConfirmSummary(); } catch (e) {}
-
-  try {
-    document.getElementById('panel-step1')?.classList.remove('active');
-    document.getElementById('panel-step2')?.classList.remove('active');
-    document.getElementById('panel-step3')?.classList.remove('active');
-    document.getElementById('panel-step4')?.classList.remove('active');
-    const p5 = document.getElementById('panel-step5');
-    if (p5) p5.classList.add('active');
-    if (typeof setFunnelStep === 'function') setFunnelStep(5);
-
-    const statusEl = document.getElementById('depositAutoStatus');
-    const txt = document.getElementById('depositAutoStatusText');
-    if (booking) {
-      if (statusEl) statusEl.classList.add('visible');
-      if (txt) txt.innerHTML =
-        '<span data-en>Payment received! Confirming your appointment…</span>' +
-        '<span data-es>¡Pago recibido! Confirmando tu cita…</span>';
-    } else {
-      // Cancel path: gentle retry message, Pay button remains available.
-      if (statusEl) statusEl.classList.remove('visible');
-      const err = document.getElementById('formError');
-      if (err) {
-        err.textContent = isEs()
-          ? 'No hay problema — tus selecciones están guardadas. Cuando estés listo/a, toca el botón para completar tu depósito de $20.'
-          : 'No worries — your selections are saved. Whenever you\u2019re ready, tap the button below to complete your $20 deposit.';
-        err.classList.add('visible');
-      }
-      p5?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  } catch (e) { /* UI positioning best-effort */ }
-}
-
-async function verifyThenBook(sinceTs, attempt) {
-  attempt = attempt || 1;
-  const MAX_ATTEMPTS = 8;      // ~24s worst case
-  const GAP_MS       = 3000;
-  try {
-    const res = await fetch(`/.netlify/functions/check-deposit-status?since=${sinceTs}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.paid) {
-        if (window.isSubmittingBooking) return;
-        submitBooking();
-        return;
-      }
-    }
-  } catch (e) { /* transient — retry below */ }
-
-  if (attempt < MAX_ATTEMPTS) {
-    setTimeout(() => verifyThenBook(sinceTs, attempt + 1), GAP_MS);
-  } else {
-    // Payment happened (they were redirected by Clover's Success URL) but we
-    // couldn't confirm it in time. Book anyway would be unsafe; instead show
-    // recovery so the studio can reconcile — the payment is real and in Clover.
-    showPaidReturnError();
-  }
-}
-
-function showPaidReturnError() {
-  const es = isEs();
-  // Reuse the form error area if present; otherwise alert as a last resort.
-  const errEl = document.getElementById('formError');
-  const msg = es
-    ? 'Tu pago fue recibido, pero hubo un problema al confirmar la cita automáticamente. Por favor contáctanos por WhatsApp al 848-389-1934 con tu nombre y horario deseado y lo confirmaremos de inmediato. No se te cobrará de nuevo.'
-    : 'Your payment was received, but there was a problem confirming the appointment automatically. Please contact us on WhatsApp at 848-389-1934 with your name and desired time and we\u2019ll confirm it right away. You will not be charged again.';
-  if (errEl) {
-    errEl.textContent = msg;
-    errEl.classList.add('visible');
-    try {
-      document.getElementById('panel-step1')?.classList.remove('active');
-      const p5 = document.getElementById('panel-step5') || document.getElementById('panel-step4');
-      if (p5) p5.classList.add('active');
-      errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } catch (e) {}
-  } else {
-    alert(msg);
-  }
-}
-
 </script>
 </body>
 </html>
