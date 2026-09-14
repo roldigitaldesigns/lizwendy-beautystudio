@@ -2834,6 +2834,10 @@ function formatTimeLabel(slot) {
 
 function goToStep5() {
   if (!selectedDate || !selectedTime) return;
+  // In resume mode, the step-4 "next" button completes the rebooking via the
+  // resume endpoint (reusing the original payment) instead of proceeding to
+  // the normal payment step.
+  if (window.RESUME_MODE) { submitResume(); return; }
   window.BOOKING_STATE = window.BOOKING_STATE || {};
   window.BOOKING_STATE.date = selectedDate;
   window.BOOKING_STATE.time = selectedTime;
@@ -2941,12 +2945,63 @@ let depositPollTimeoutId  = null;
 let depositPollStartedAt  = 0;
 
 function onDepositClick() {
+  // ── SAFETY-NET SAVE (fire-and-forget) ──
+  // Before the customer leaves for Clover, quietly save their appointment
+  // details server-side so the booking can be rescued if their browser dies
+  // after paying. This must never block or delay them heading to Clover, so
+  // it's fully fire-and-forget: no await, and any failure is swallowed. The
+  // normal fast path is completely unaffected whether this succeeds or not.
+  try {
+    savePendingBooking();
+  } catch (e) {
+    // Never let this interfere with the payment flow.
+    console.warn('pending-booking save skipped:', e);
+  }
+
   // Small delay so the Clover tab opens, then show the auto-detect status row.
   // Booking only proceeds via confirmed payment detection or staff PIN override.
   setTimeout(() => {
     document.getElementById('depositConfirmRow').classList.add('visible');
   }, 800);
   startDepositPolling();
+}
+
+/**
+ * Fire-and-forget POST of the current appointment details to the
+ * save-pending-booking function. Mirrors the exact shape submitBooking()
+ * sends to create-booking.js, so a later background rescue has everything
+ * it needs. Deliberately not awaited and never throws to the caller.
+ */
+function savePendingBooking() {
+  const s = window.BOOKING_STATE || {};
+  const firstName = (document.getElementById('firstName')?.value || '').trim();
+  const lastName  = (document.getElementById('lastName')?.value || '').trim();
+  const email     = (document.getElementById('emailInput')?.value || '').trim();
+  const phone     = (document.getElementById('phoneInput')?.value || '').trim();
+  const notes     = (document.getElementById('notesInput')?.value || '').trim();
+
+  // Same duration + total math submitBooking() uses, so the rescued booking
+  // matches what the normal path would have created.
+  const rawDuration = (s.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
+  const durationMinutes = Math.ceil(rawDuration / 15) * 15;
+
+  const payload = {
+    firstName, lastName, email, phone, notes,
+    date:     s.date ? formatDateISO(s.date) : '',
+    time:     s.time || '',
+    services: s.services || [],
+    total:    (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
+    artist:   s.artist || 'Liz Wendy Cedeño',
+    durationMinutes,
+  };
+
+  // Fire and forget — do not await, swallow all errors.
+  fetch('/.netlify/functions/save-pending-booking', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+    keepalive: true, // let the request survive even if the tab navigates away
+  }).catch(() => { /* best-effort; ignore */ });
 }
 
 function startDepositPolling() {
@@ -3197,6 +3252,165 @@ function goToStep1() {
 
   scrollTop();
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESUME MODE (Phase 4b)
+   When the page loads with ?resume=<pendingId>, a customer whose paid
+   booking hit a slot conflict is coming back to pick a new time. We skip
+   the whole funnel (no artist/services/payment) and drop them straight on
+   the date & time picker, then complete via the resume endpoint reusing
+   their original payment.
+═══════════════════════════════════════════════════════════════════ */
+window.RESUME_MODE = null; // holds { pendingId } when active
+
+(function handleResumeMode() {
+  let params;
+  try { params = new URLSearchParams(window.location.search); }
+  catch (e) { return; }
+  const pendingId = params.get('resume');
+  if (!pendingId) return;
+
+  // Clean the URL so a refresh doesn't re-trigger oddly.
+  try { history.replaceState({}, '', window.location.pathname); } catch (e) {}
+
+  startResume(pendingId);
+})();
+
+async function startResume(pendingId) {
+  const es = isEs();
+  try {
+    const res = await fetch('/.netlify/functions/resume-booking?pendingId=' + encodeURIComponent(pendingId));
+    const data = await res.json();
+
+    if (!data.ok) {
+      showResumeMessage(resumeReason(data.code, es));
+      return;
+    }
+
+    // Valid link — set up resume mode and jump to the date/time picker.
+    window.RESUME_MODE = { pendingId };
+    selectedArtist = data.artist || 'Liz Wendy Cedeño';
+    window.BOOKING_STATE = window.BOOKING_STATE || {};
+    window.BOOKING_STATE.artist   = selectedArtist;
+    window.BOOKING_STATE.artistId = selectedArtist === 'Johanna' ? 'johanna' : 'liz';
+    window.BOOKING_STATE.services = data.services || [];
+
+    // Jump straight to step 4 (Date & Time).
+    document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-step4').classList.add('active');
+    if (typeof setFunnelStep === 'function') setFunnelStep(3);
+
+    // A short banner explaining why they're here.
+    showResumeBanner(data, es);
+
+    await initCalendar();
+    scrollTop();
+  } catch (e) {
+    showResumeMessage(es
+      ? 'No pudimos cargar tu enlace de reprogramación. Por favor contáctanos directamente.'
+      : 'We couldn\u2019t load your reschedule link. Please contact us directly.');
+  }
+}
+
+function resumeReason(code, es) {
+  switch (code) {
+    case 'expired':
+      return es
+        ? 'Este enlace de reprogramación ha expirado. Contáctanos directamente y aplicaremos tu depósito a una nueva cita.'
+        : 'This reschedule link has expired. Please contact us directly and we\u2019ll apply your deposit to a new appointment.';
+    case 'already_used':
+      return es
+        ? 'Esta reserva ya fue reprogramada. Si no fuiste tú, contáctanos.'
+        : 'This booking has already been rescheduled. If that wasn\u2019t you, please contact us.';
+    case 'not_found':
+    default:
+      return es
+        ? 'No pudimos encontrar esta reserva. Contáctanos directamente y te ayudaremos a reprogramar.'
+        : 'We couldn\u2019t find this booking. Please contact us directly and we\u2019ll help you reschedule.';
+  }
+}
+
+function showResumeBanner(data, es) {
+  const host = document.getElementById('panel-step4');
+  if (!host) return;
+  let banner = document.getElementById('resumeBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'resumeBanner';
+    banner.style.cssText = 'background:rgba(212,175,55,.1);border:1px solid var(--gold-dim,#8a6d1f);border-radius:12px;padding:14px 16px;margin-bottom:16px;color:var(--white,#fff);font-size:13px;line-height:1.5;';
+    host.insertBefore(banner, host.firstChild);
+  }
+  const svc = (data.services || []).map(function (s) { return (typeof s === 'string' ? s : s.name); }).join(', ');
+  banner.innerHTML = es
+    ? '<strong>Reprogramando tu cita</strong><br>' + svc + ' con ' + (data.artist || '') + '. Tu depósito de $20 ya está aplicado — solo elige un nuevo horario. Este enlace es válido por ' + (data.minutesLeft || 0) + ' minutos más.'
+    : '<strong>Rescheduling your appointment</strong><br>' + svc + ' with ' + (data.artist || '') + '. Your $20 deposit is already applied — just pick a new time. This link is valid for ' + (data.minutesLeft || 0) + ' more minutes.';
+}
+
+function showResumeMessage(msg) {
+  document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
+  const host = document.getElementById('bookingFunnel') || document.body;
+  const box = document.createElement('div');
+  box.style.cssText = 'max-width:520px;margin:60px auto;padding:28px;text-align:center;background:var(--panel-bg,#151515);border:1px solid var(--gold-dim,#8a6d1f);border-radius:16px;color:var(--white,#fff);font-size:15px;line-height:1.6;';
+  box.innerHTML = '<div style="font-size:30px;margin-bottom:12px;">\u23f0</div>' + msg;
+  host.innerHTML = '';
+  host.appendChild(box);
+}
+
+/* Called by the step-4 "next" button. In resume mode, complete via the
+   resume endpoint instead of proceeding to the normal payment step. */
+async function submitResume() {
+  const es = isEs();
+  const rm = window.RESUME_MODE;
+  if (!rm) return;
+  if (!selectedDate || !selectedTime) return;
+
+  const btn = document.getElementById('step4Next');
+  if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+
+  try {
+    const res = await fetch('/.netlify/functions/resume-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pendingId: rm.pendingId,
+        date: formatDateISO(selectedDate),
+        time: selectedTime,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      if (typeof showSuccess === 'function') {
+        showSuccess({ date: formatDateISO(selectedDate), time: selectedTime, artist: selectedArtist });
+      } else {
+        showResumeMessage(es ? '\u00a1Tu cita ha sido confirmada!' : 'Your appointment has been confirmed!');
+      }
+      return;
+    }
+
+    // Not ok — surface a helpful message and let them try again where sensible.
+    let msg;
+    if (data.code === 'slot_taken') {
+      msg = es ? 'Ese horario acaba de ser tomado. Por favor elige otro.' : 'That time was just taken. Please choose another available time.';
+    } else if (data.code === 'expired') {
+      msg = es ? 'Este enlace ha expirado. Contáctanos directamente — tu depósito está seguro.' : 'This link has expired. Please contact us directly — your deposit is safe.';
+    } else {
+      msg = es ? 'No pudimos completar tu reserva. Por favor intenta de nuevo o contáctanos.' : 'We couldn\u2019t complete your booking. Please try again or contact us directly.';
+    }
+    const errEl = document.getElementById('formError') || (function () {
+      const e = document.createElement('div'); e.id = 'formError'; e.className = 'form-error';
+      document.getElementById('panel-step4').appendChild(e); return e;
+    })();
+    errEl.textContent = msg;
+    errEl.classList.add('visible');
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) {
+    showResumeMessage(es ? 'Algo salió mal. Por favor intenta de nuevo.' : 'Something went wrong. Please try again.');
+  } finally {
+    if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+}
+
 </script>
 </body>
 </html>
