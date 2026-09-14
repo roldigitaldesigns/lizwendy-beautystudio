@@ -167,7 +167,7 @@ function isDateBlackedOut(artistId, dateStr) {
 // Shared layer over Netlify Blobs. The Clover webhook writes confirmed
 // payments here; this function reads them. Only Wendy's bookings are
 // deposit-gated — Johanna bypasses the deposit entirely (business rule).
-const { findPaidOrder, consumePaidOrder, EXPECTED_DEPOSIT_CENTS } = require('./clover-store');
+const { findPaidOrder, getPaidOrderById, consumePaidOrder, EXPECTED_DEPOSIT_CENTS } = require('./clover-store');
 
 // Master switch for the hard-block deposit gate. Default OFF so this file can
 // be deployed BEFORE the Clover webhook is live and recording payments —
@@ -275,7 +275,7 @@ exports.handler = async (event) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, orderRef, overridePin } = data;
+    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, orderRef, overridePin, atTimeOverride, knownPaymentId } = data;
 
     // Basic validation
     // lastName and email are optional — phone is the required contact method
@@ -345,11 +345,28 @@ exports.handler = async (event) => {
 
       if (!depositOverride) {
         try {
-          paidRecord = await findPaidOrder(
-            orderRef
-              ? { orderRef }                                                  // preferred: exact match
-              : { amountCents: EXPECTED_DEPOSIT_CENTS, atTime: Date.now() }   // fallback: amount + time window
-          );
+          if (knownPaymentId) {
+            // Rescue/resume path: we already know the EXACT payment this
+            // booking belongs to (stored when the conflict was detected).
+            // Look it up directly instead of guessing by amount+time, which
+            // would fail once real time has passed. getPaidOrderById returns
+            // null if it's missing OR already consumed, so a reused payment
+            // can never satisfy a second booking.
+            paidRecord = await getPaidOrderById(knownPaymentId);
+          } else {
+            // Normal browser bookings anchor the amount+time fallback to
+            // "now" (payment just happened). The background rescue sweep
+            // passes atTimeOverride = when the customer actually paid, so a
+            // delayed rescue still falls inside the match window. When
+            // atTimeOverride is absent (every normal booking), this is
+            // identical to before — Date.now().
+            const anchorTime = Number.isFinite(atTimeOverride) ? atTimeOverride : Date.now();
+            paidRecord = await findPaidOrder(
+              orderRef
+                ? { orderRef }                                                  // preferred: exact match
+                : { amountCents: EXPECTED_DEPOSIT_CENTS, atTime: anchorTime }   // fallback: amount + time window
+            );
+          }
         } catch (e) {
           console.error('deposit gate: store lookup failed:', e);
           paidRecord = null;

@@ -324,6 +324,30 @@ async function findPaidOrderViaCloverApi({ amountCents, atTime, windowMs }) {
  * @param {string} [consumedBy]  booking identifier for the audit trail
  * @returns {Promise<object|null>} the updated record, or null if not found
  */
+/**
+ * Look up ONE payment by its exact id, with no amount/time guessing.
+ *
+ * The normal deposit match (findPaidOrder) searches "any $20 charge in
+ * roughly the last 30 minutes" — fine at booking time, but useless once
+ * real time has passed. The rescue/resume flow needs to reconfirm a
+ * SPECIFIC customer's SPECIFIC payment hours later, so it stores that
+ * payment's id and looks it up directly here.
+ *
+ * Returns the record only if it exists AND is still unconsumed (a consumed
+ * payment must never be reused for a second booking). Returns null
+ * otherwise.
+ *
+ * @param {string} paymentId
+ * @returns {Promise<object|null>}
+ */
+async function getPaidOrderById(paymentId) {
+  if (!paymentId) return null;
+  const rec = await store().get(paymentId, { type: 'json' });
+  if (!rec) return null;
+  if (rec.consumed) return null;
+  return rec;
+}
+
 async function consumePaidOrder(paymentId, consumedBy = null) {
   if (!paymentId) throw new Error('consumePaidOrder: paymentId is required');
   const s = store();
@@ -339,6 +363,7 @@ async function consumePaidOrder(paymentId, consumedBy = null) {
 module.exports = {
   recordPaidOrder,
   findPaidOrder,
+  getPaidOrderById,
   consumePaidOrder,
   EXPECTED_DEPOSIT_CENTS,
   AMOUNT_MATCH_WINDOW_MIN,
