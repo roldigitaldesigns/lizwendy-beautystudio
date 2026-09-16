@@ -2769,8 +2769,13 @@ function renderSlots(date) {
   }
 
   const [start, end] = hrs;
+  // Per-artist slot step so the displayed grid matches what the backend
+  // (get-availability.js / create-booking.js) will actually accept:
+  //   Wendy (liz): 60-minute (hourly) slots
+  //   Johanna:     30-minute slots
+  const step = ((window.BOOKING_STATE && window.BOOKING_STATE.artistId) === 'liz') ? 60 : 30;
   const slots = [];
-  for (let mins = start * 60; mins < end * 60; mins += 30) {
+  for (let mins = start * 60; mins < end * 60; mins += step) {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
