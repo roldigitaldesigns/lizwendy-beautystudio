@@ -163,40 +163,6 @@ function isDateBlackedOut(artistId, dateStr) {
   return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
 }
 
-// ── DEPOSIT VERIFICATION STORE ──
-// Shared layer over Netlify Blobs. The Clover webhook writes confirmed
-// payments here; this function reads them. Only Wendy's bookings are
-// deposit-gated — Johanna bypasses the deposit entirely (business rule).
-const { findPaidOrder, consumePaidOrder, EXPECTED_DEPOSIT_CENTS } = require('./clover-store');
-
-// Master switch for the hard-block deposit gate. Default OFF so this file can
-// be deployed BEFORE the Clover webhook is live and recording payments —
-// otherwise every real Wendy booking would be blocked with no paid records to
-// match against. Flip CLOVER_ENFORCE_DEPOSIT=true in Netlify only AFTER the
-// webhook is confirmed recording real payments.
-const ENFORCE_DEPOSIT = String(process.env.CLOVER_ENFORCE_DEPOSIT).toLowerCase() === 'true';
-
-// ── STAFF PIN OVERRIDE ──
-// Lets Wendy take a booking without a verified deposit (e.g. a walk-in or a
-// regular she's already collected from in person). The PIN itself lives ONLY
-// in the Netlify env var — it is never sent to the browser, never embedded in
-// client code, and never returned in a response. The frontend collects it and
-// posts it; all verification happens here.
-//
-// Compared as SHA-256 digests so the comparison is constant-time and does not
-// leak the PIN's length. Input is trimmed and case-folded because Wendy enters
-// it on a phone keyboard, where autocapitalize and stray whitespace are common
-// enough to cause false rejections on an otherwise correct PIN.
-function isValidStaffPin(submitted) {
-  const expected = process.env.STAFF_OVERRIDE_PIN;
-  if (!expected) return false;
-  if (typeof submitted !== 'string' || submitted.trim() === '') return false;
-
-  const norm = v => String(v).trim().toUpperCase();
-  const a = crypto.createHash('sha256').update(norm(submitted)).digest();
-  const b = crypto.createHash('sha256').update(norm(expected)).digest();
-  return crypto.timingSafeEqual(a, b);
-}
 
 const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
@@ -275,7 +241,7 @@ exports.handler = async (event) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, orderRef, overridePin } = data;
+    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes } = data;
 
     // Basic validation
     // lastName and email are optional — phone is the required contact method
@@ -324,60 +290,7 @@ exports.handler = async (event) => {
     // BEFORE auth and any calendar write, so an unverified booking never
     // results in a calendar event.
     //
-    // paidRecord is captured but NOT consumed here — it's consumed after the
-    // calendar event is successfully created, so a booking that fails
-    // downstream doesn't burn the customer's deposit.
-    let paidRecord = null;
-    let depositOverride = false;
 
-    // Deposit gate permanently disabled for Liz Wendy Cedeño (permanent
-    // business decision — no upfront deposit required for any artist).
-    // All payment infrastructure (clover-store, webhook, rescue system)
-    // remains in place but unreached. Change this condition to restore.
-    if (false && requestArtistId === 'liz') {
-      // Staff PIN is checked first: a valid override skips the store lookup
-      // entirely, so Wendy can complete a booking even if Netlify Blobs is
-      // unreachable or the webhook hasn't recorded anything.
-      depositOverride = isValidStaffPin(overridePin);
-
-      if (overridePin && !depositOverride) {
-        // Deliberately NOT surfaced to the caller. Returning "invalid PIN"
-        // would confirm to a guesser that the field is live and worth
-        // brute-forcing. A wrong PIN behaves exactly like no PIN at all.
-        console.warn('deposit gate: staff override attempted with an invalid PIN — treated as no override.');
-      }
-
-      if (!depositOverride) {
-        try {
-          paidRecord = await findPaidOrder(
-            orderRef
-              ? { orderRef }                                                  // preferred: exact match
-              : { amountCents: EXPECTED_DEPOSIT_CENTS, atTime: Date.now() }   // fallback: amount + time window
-          );
-        } catch (e) {
-          console.error('deposit gate: store lookup failed:', e);
-          paidRecord = null;
-        }
-      }
-
-      console.log(
-        'deposit gate → enforce:', ENFORCE_DEPOSIT,
-        '| staff override:', depositOverride,
-        '| orderRef:', orderRef || '(none)',
-        '| matched payment:', paidRecord ? paidRecord.paymentId : 'NONE'
-      );
-
-      if (ENFORCE_DEPOSIT && !depositOverride && !paidRecord) {
-        return {
-          statusCode: 402, // Payment Required
-          headers,
-          body: JSON.stringify({
-            error: 'We could not verify your $20 deposit payment. Please complete the deposit through the Clover link and try again. If you already paid, wait a moment and resubmit, or contact us directly.',
-            code: 'DEPOSIT_UNVERIFIED',
-          }),
-        };
-      }
-    }
 
     // ── 1. AUTH ──
     const auth = new google.auth.JWT({
@@ -456,10 +369,7 @@ exports.handler = async (event) => {
         `Services: ${serviceList}`,
         `Estimated Total: ${totalStr}`,
         notes ? `Notes: ${notes}` : '',
-        // Deposit audit trail — only meaningful on Wendy's calendar, since
-        // she's the only artist the deposit gate applies to.
-        depositOverride ? `⚠️ DEPOSIT BYPASSED — staff PIN override` : '',
-        paidRecord ? `✅ Deposit verified — Clover payment ${paidRecord.paymentId}` : '',
+
         '',
         `Booked via lizwendybeautystudiollc.com`,
       ].filter(Boolean).join('\n'),
@@ -482,21 +392,6 @@ exports.handler = async (event) => {
 
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: calEvent });
 
-    // ── CONSUME THE DEPOSIT RECORD ──
-    // Marks the payment used so one deposit can't satisfy two bookings. Runs
-    // only after the event is safely created, and is best-effort: a consume
-    // failure must never fail an already-created booking. Worst case a record
-    // stays reusable, which reconciliation would catch — far better than
-    // telling a paying customer their confirmed booking failed.
-    if (paidRecord && paidRecord.paymentId) {
-      try {
-        await consumePaidOrder(paidRecord.paymentId, `${fullName} · ${date} ${time}`);
-        console.log('deposit gate: consumed payment', paidRecord.paymentId);
-      } catch (consumeErr) {
-        console.error('deposit gate: consume failed (booking already confirmed, not failing it):', consumeErr);
-      }
-    }
-
     // ── 4. SEND EMAILS (isolated — must never break booking confirmation) ──
     console.log('Starting email sends. EMAILJS_SERVICE_ID present:', !!EMAILJS_SERVICE_ID, '| STUDIO_EMAIL:', STUDIO_EMAIL);
 
@@ -509,7 +404,7 @@ exports.handler = async (event) => {
 
       const [customerResult, studioResult] = await Promise.all([
         customerConfirmation,
-        sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, depositOverride, paidRecord }),
+        sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }),
       ]);
       console.log('Customer confirmation result:', JSON.stringify(customerResult));
       console.log('Studio email result:', JSON.stringify(studioResult));
@@ -624,17 +519,12 @@ async function sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeRe
 }
 
 /* ── EMAIL: Studio Notification (via EmailJS) ── */
-async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, depositOverride = false, paidRecord = null }) {
+async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
   // Deposit status is folded into the existing notes_line param rather than
   // introduced as a new template variable — that way the EmailJS studio
   // template needs no edit for this to show up in Wendy's inbox.
-  const depositLine = depositOverride
-    ? '⚠️ DEPOSIT BYPASSED — staff PIN override was used for this booking.'
-    : (paidRecord ? `✅ Deposit verified — Clover payment ${paidRecord.paymentId}` : '');
-
   const notesLine = [
     notes ? `📝 Notes: ${notes}` : '',
-    depositLine,
   ].filter(Boolean).join('\n');
 
   // Route to the booked artist's inbox. Fall back to STUDIO_EMAIL if artist is unrecognized.
