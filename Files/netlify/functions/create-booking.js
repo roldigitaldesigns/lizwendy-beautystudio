@@ -322,7 +322,21 @@ exports.handler = async (event) => {
     const safeDuration = (Number.isFinite(durationMinutes) && durationMinutes > 0)
       ? durationMinutes
       : computeDurationFromServices(services);
-    const eventEnd = new Date(eventStart.getTime() + safeDuration * 60 * 1000);
+
+    // ── PER-ARTIST SLOT SIZING ──
+    // Wendy is booked on whole-hour slots (9:00, 10:00, ...), so the TOTAL
+    // duration of everything selected is rounded UP to the nearest full hour
+    // before the event end is computed. This keeps the calendar block aligned
+    // to the hourly grid the customer picked from, so the next hourly slot
+    // lines up cleanly and get-availability's overlap math stays in sync.
+    // Examples: 45→60, 60→60, 75→120, 90→120, 120→120.
+    // Johanna keeps her exact duration (she stays on 30-minute slots).
+    // The 60-minute turnaround buffer is applied separately in
+    // get-availability.js, ON TOP of this rounded block — not here.
+    const roundedDuration = requestArtistId === 'liz'
+      ? Math.ceil(safeDuration / 60) * 60
+      : safeDuration;
+    const eventEnd = new Date(eventStart.getTime() + roundedDuration * 60 * 1000);
 
     const existing = await calendar.events.list({
       calendarId:   CALENDAR_ID,

@@ -53,15 +53,27 @@ function getArtistHours(artistId) {
 // time between clients — cleanup, sanitizing, reset. The buffer is added on
 // top of the appointment's real duration (a 90-min set at 10:00 blocks until
 // 11:30 + buffer). Applies to ALL artists.
-const SLOT_STEP_MIN = 30;      // minutes between offered start times
-const BUFFER_MIN     = 60;     // turnaround blocked after each appointment ends
+// Per-artist slot step (minutes between offered start times). This ALSO acts
+// as the width of each slot's overlap window in the availability check below,
+// so a slot correctly represents its whole block:
+//   Wendy (liz): 60 → hourly slots, each a 60-minute block (9:00, 10:00, ...)
+//   Johanna:     30 → half-hour slots, each a 30-minute block
+// Unknown artist falls back to 30 (the tighter, safer granularity).
+const SLOT_STEP_BY_ARTIST = { liz: 60, johanna: 30 };
+const DEFAULT_SLOT_STEP_MIN = 30;
+const BUFFER_MIN = 60;         // turnaround blocked after each appointment ends
+
+function getSlotStep(artistId) {
+  return SLOT_STEP_BY_ARTIST[artistId] || DEFAULT_SLOT_STEP_MIN;
+}
 
 // Build every "HH:MM" start time from `start` (inclusive) to `end`
-// (exclusive) in SLOT_STEP_MIN increments. `start`/`end` are whole-hour
-// numbers from schedules.json (e.g. 9 → "09:00", "09:30", ...).
-function buildSlots(start, end) {
+// (exclusive) in `step` increments. `start`/`end` are whole-hour numbers
+// from schedules.json (e.g. 9, step 60 → "09:00", "10:00", ...;
+// step 30 → "09:00", "09:30", ...).
+function buildSlots(start, end, step) {
   const slots = [];
-  for (let mins = start * 60; mins < end * 60; mins += SLOT_STEP_MIN) {
+  for (let mins = start * 60; mins < end * 60; mins += step) {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
@@ -99,6 +111,7 @@ exports.handler = async (event) => {
     }
 
     const HOURS = getArtistHours(artistId);
+    const SLOT_STEP_MIN = getSlotStep(artistId); // 60 for Wendy, 30 for Johanna
 
     // Check it's a work day
     const date = new Date(dateStr + 'T00:00:00');
@@ -112,7 +125,7 @@ exports.handler = async (event) => {
     // request bypasses the calendar UI's greyed-out day.
     if (isDateBlackedOut(artistId, dateStr)) {
       const [bStart, bEnd] = HOURS[dow];
-      const blockedSlots = buildSlots(bStart, bEnd);
+      const blockedSlots = buildSlots(bStart, bEnd, SLOT_STEP_MIN);
       return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: blockedSlots, blackout: true }) };
     }
 
@@ -154,9 +167,10 @@ exports.handler = async (event) => {
 
     const events = res.data.items || [];
 
-    // Generate all slots for the day — every 30 minutes.
+    // Generate all slots for the day at this artist's step (Wendy hourly,
+    // Johanna half-hourly).
     const [start, end] = HOURS[dow];
-    const allSlots = buildSlots(start, end);
+    const allSlots = buildSlots(start, end, SLOT_STEP_MIN);
 
     // An all-day event's start.date/end.date are plain YYYY-MM-DD strings
     // (end.date is EXCLUSIVE per Google's API — a single-day all-day event
@@ -172,7 +186,9 @@ exports.handler = async (event) => {
 
     // Mark slots as taken if any calendar event overlaps them.
     //
-    // Each slot is a 30-minute window [slotStart, slotStart + SLOT_STEP_MIN).
+    // Each slot is a SLOT_STEP_MIN-wide window [slotStart, slotStart + step):
+    // 60 min for Wendy (hourly), 30 min for Johanna. So a Wendy slot correctly
+    // represents its whole hour block when tested for overlap.
     // A timed event blocks not just its own span but an extra BUFFER_MIN
     // afterward, giving the artist turnaround time — so the event's blocking
     // window is [evStart, evEnd + BUFFER_MIN). Any slot that overlaps that
