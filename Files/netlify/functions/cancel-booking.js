@@ -135,7 +135,19 @@ exports.handler = async (event) => {
 
     // ── STEP 1: LOOKUP ONLY ──
     if (action === 'lookup') {
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, booking: details }) };
+      // appointmentStart is the event's real ISO start timestamp (from the
+      // calendar event itself, not the human-readable string). cancel.html
+      // uses it to enforce the "no reschedule within 24 hours" rule on the
+      // client side. The backend (reschedule-booking.js) enforces the same
+      // rule independently — this is only so the UI can hide the reschedule
+      // calendar early rather than letting the customer pick a time and then
+      // get rejected. All-day events (no dateTime) return null.
+      const appointmentStart = (booking.start && booking.start.dateTime) || null;
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, booking: details, appointmentStart }),
+      };
     }
 
     // ── STEP 2: CONFIRMED CANCELLATION ──
