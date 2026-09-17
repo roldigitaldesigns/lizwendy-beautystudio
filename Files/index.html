@@ -1113,7 +1113,7 @@ body.lang-en [data-es] { display: none !important; }
   </div>
 </div>
 
-<!-- NAIL ART / DESIGN ADD-ON POPUP (shown when Acrylic Refill is selected) -->
+<!-- NAIL ART / DESIGN ADD-ON POPUP (shown when any nail-art trigger service is selected) -->
 <div id="nailArtModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;">
     <div style="font-size:32px;margin-bottom:12px;">💅</div>
@@ -1122,16 +1122,16 @@ body.lang-en [data-es] { display: none !important; }
       <span data-es>¿Agregar arte o diseño de uñas?</span>
     </div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">
-      <span data-en>Would you like nail art or a design added to your acrylic refill? This extends your appointment to about 2 hours. Pricing for nail art varies by design and is confirmed at your appointment.</span>
-      <span data-es>¿Deseas agregar arte o diseño a tu relleno de acrílico? Esto extiende tu cita a aproximadamente 2 horas. El precio del diseño varía según la complejidad y se confirma durante tu cita.</span>
+      <span data-en>Would you like to add nail art or a design to your appointment? This adds about 30 minutes. Pricing varies by design and is confirmed at your appointment.</span>
+      <span data-es>¿Deseas agregar arte o diseño de uñas a tu cita? Esto agrega aproximadamente 30 minutos. El precio varía según el diseño y se confirma durante tu cita.</span>
     </p>
     <button onclick="confirmNailArt(true)" class="btn-next enabled" style="display:block;width:100%;margin-bottom:10px;">
       <span data-en>Yes, add nail art</span>
       <span data-es>Sí, agregar diseño</span>
     </button>
     <button onclick="confirmNailArt(false)" style="background:none;border:1px solid var(--gold-dim);color:var(--muted);font-size:13px;padding:11px 16px;border-radius:10px;cursor:pointer;width:100%;">
-      <span data-en>No, refill only</span>
-      <span data-es>No, solo relleno</span>
+      <span data-en>No, thanks</span>
+      <span data-es>No, gracias</span>
     </button>
   </div>
 </div>
@@ -2273,9 +2273,14 @@ function toggleAccordion(acc) {
 }
 
 /* ─── SERVICE ROW TOGGLE ────────────────────────────────────────── */
-// Whether the customer opted to add Nail Art / Design to an Acrylic Refill.
-// Tied to the nails-4 (Acrylic Refill) selection: set true only if they
-// answer "yes" to the popup, cleared whenever the refill is deselected.
+// Services that trigger the "add nail art?" popup when selected.
+// Gel Manicure · Acrylic Full Set · Acrylic Refill · Gel X / Soft Gel Tips.
+// Adding a service here is all that's needed to wire it into the popup flow.
+const NAIL_ART_TRIGGERS = new Set(['nails-2', 'nails-3', 'nails-4', 'nails-5']);
+
+// Whether the customer opted to add Nail Art / Design to their appointment.
+// Set true only if they answer "yes" to the popup. Cleared automatically
+// once no trigger service remains in the selection.
 let nailArtSelected = false;
 
 function toggleSvc(row) {
@@ -2284,15 +2289,21 @@ function toggleSvc(row) {
     selectedSvcIds.delete(id);
     row.classList.remove('selected');
     row.querySelector('.svc-row-check').textContent = '';
-    // Deselecting the Acrylic Refill also drops any nail-art add-on.
-    if (id === 'nails-4') { nailArtSelected = false; updateStep2Cta(); }
+    // Drop the nail-art add-on only when no trigger service remains selected.
+    // (If the customer has e.g. Gel Manicure + Acrylic Full Set and deselects
+    // one, the add-on stays — they already said yes and the other trigger is
+    // still active. It clears only when none of the triggers are left.)
+    if (NAIL_ART_TRIGGERS.has(id) && ![...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
+      nailArtSelected = false;
+    }
   } else {
     selectedSvcIds.add(id);
     row.classList.add('selected');
     row.querySelector('.svc-row-check').textContent = '✓';
-    // Selecting the Acrylic Refill asks whether they also want nail art /
-    // design — which turns the appointment into a ~2hr visit.
-    if (id === 'nails-4') openNailArtPopup();
+    // Ask about nail art when any trigger service is selected — but only
+    // once: if they already answered "yes" on a prior trigger service,
+    // don't re-ask (the add-on stays attached; no need to confirm again).
+    if (NAIL_ART_TRIGGERS.has(id) && !nailArtSelected) openNailArtPopup();
   }
 
   // Find which cat this row belongs to
@@ -2367,7 +2378,7 @@ function updateStep2Cta() {
 
   const lang = isEs();
   // Count the nail-art add-on in the visible service count when active.
-  const artOn = nailArtSelected && selectedSvcIds.has('nails-4');
+  const artOn = nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t));
   const shownCount = n + (artOn ? 1 : 0);
   countEl.textContent = shownCount === 1
     ? (lang ? '1 servicio seleccionado' : '1 service selected')
@@ -2499,10 +2510,10 @@ function goToStep3() {
       durationMinutes: parseDurationMinutes(row.dataset.time),
     });
   });
-  // Nail Art / Design add-on (only when chosen alongside an Acrylic Refill).
+  // Nail Art / Design add-on (when chosen alongside any trigger service).
   // No fixed price — cost depends on design complexity and is confirmed at
-  // the appointment. Adds 30 min so refill (90) + art (30) = ~2 hours.
-  if (nailArtSelected && selectedSvcIds.has('nails-4')) {
+  // the appointment. Adds 30 min to whatever service(s) were selected.
+  if (nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
     window.BOOKING_STATE.services.push({
       id:       'nail-art',
       name:     isEs() ? 'Arte / Diseño de Uñas' : 'Nail Art / Design',
@@ -3097,6 +3108,7 @@ async function submitBooking() {
     artist:   s.artist || 'Liz Wendy Cedeño',
     durationMinutes,
     overridePin: staffOverridePin || '', // ignored server-side unless artist is Liz
+    lang:     es ? 'es' : 'en',         // routes EN/ES copy in confirmation email
   };
 
   try {
