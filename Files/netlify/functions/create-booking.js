@@ -241,7 +241,7 @@ exports.handler = async (event) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes } = data;
+    const { firstName, lastName, email, phone, notes, date, time, services, total, artist, durationMinutes, lang } = data;
 
     // Basic validation
     // lastName and email are optional — phone is the required contact method
@@ -413,7 +413,7 @@ exports.handler = async (event) => {
       // Customer confirmation channel: email wins if provided (even when
       // phone is also given, per business rule); otherwise WhatsApp via phone.
       const customerConfirmation = email
-        ? sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl })
+        ? sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang })
         : sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeReadable, serviceList, totalStr, artist, cancelUrl });
 
       const [customerResult, studioResult] = await Promise.all([
@@ -443,10 +443,28 @@ exports.handler = async (event) => {
 };
 
 /* ── EMAIL: Customer Confirmation (via EmailJS) ── */
-async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
-  const notesLine = notes ? `Your notes: ${notes}\n\n` : '';
+async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang }) {
+  const artistDisplay = artist || 'Liz Wendy Cedeño';
+  const isEs = lang === 'es';
 
-  console.log('sendCustomerEmail → sending to:', email);
+  // ── EN/ES copy selection ──
+  // Both branches use dynamic values already in scope so subject/intro/outro
+  // are always accurate regardless of artist or language.
+  const emailCopy = isEs
+    ? {
+        subject: `Cita Confirmada: ${serviceList} el ${dateReadable}`,
+        intro:   `¡Hola ${firstName}! Tu cita con ${artistDisplay} ha sido confirmada. Por favor revisa los detalles a continuación.`,
+        outro:   (notes ? `Tus notas: ${notes}\n\n` : '') +
+                 'Por favor llega 5 minutos antes. Si necesitas reprogramar o cancelar, avísanos con al menos 24 horas de anticipación.\n\n¡Te esperamos pronto! ✨',
+      }
+    : {
+        subject: `Appointment Confirmed: ${serviceList} on ${dateReadable}`,
+        intro:   `Hi ${firstName}! Your appointment with ${artistDisplay} has been confirmed. Please review your details below.`,
+        outro:   (notes ? `Your notes: ${notes}\n\n` : '') +
+                 'Please arrive 5 minutes early. If you need to reschedule or cancel, kindly let us know at least 24 hours in advance.\n\nWe look forward to seeing you! ✨',
+      };
+
+  console.log('sendCustomerEmail → sending to:', email, '| lang:', lang || 'en');
 
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
@@ -459,15 +477,15 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
       template_params: {
         to_email:         email,
         first_name:       firstName,
-        subject_override: `Appointment Confirmed — ${dateReadable} at ${timeReadable}`,
-        intro_override:   `Hi ${firstName}, your appointment at Liz Wendy Beauty Studio has been confirmed! ✦`,
-        outro_override:   (notes ? `Your notes: ${notes}\n\n` : '') + 'Please arrive 5 minutes early. If you need to cancel or reschedule, kindly do so at least 24 hours in advance.\n\nWe look forward to seeing you!',
+        subject_override: emailCopy.subject,
+        intro_override:   emailCopy.intro,
+        outro_override:   emailCopy.outro,
         date:             dateReadable,
         time:             timeReadable,
         services:         serviceList,
         total:            totalStr,
         notes_line:       '',
-        artist_name:      artist || 'Liz Wendy Cedeño',
+        artist_name:      artistDisplay,
         cancel_url:       cancelUrl,
       },
     }),
