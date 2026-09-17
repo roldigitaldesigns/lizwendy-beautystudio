@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="robots" content="noindex, nofollow"/>
-<title>Cancel Appointment — Liz Wendy Beauty Studio</title>
+<title>Manage Appointment — Liz Wendy Beauty Studio</title>
 <style>
   :root {
     --bg: #0a0908;
@@ -35,7 +35,7 @@
   }
   .card {
     background: var(--card); border: 1px solid var(--gold-dim);
-    border-radius: 16px; padding: 32px 26px; max-width: 440px; width: 100%;
+    border-radius: 16px; padding: 32px 26px; max-width: 460px; width: 100%;
     text-align: center;
   }
   .card h1 { font-family: var(--serif); font-size: 20px; margin-bottom: 14px; }
@@ -44,20 +44,35 @@
     padding: 16px 0; margin: 18px 0; text-align: left; font-size: 14px; line-height: 2;
   }
   .detail-box strong { color: var(--gold); }
-  .btn-cancel {
-    display: inline-block; background: var(--maroon); color: #fff;
-    border: none; cursor: pointer; padding: 13px 30px; border-radius: 8px;
-    font-weight: bold; font-size: 14px; letter-spacing: .02em;
+  .scarcity {
+    font-size: 13px; color: var(--white); line-height: 1.6;
+    background: rgba(212,175,55,.08); border: 1px solid var(--gold-dim);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 6px;
   }
-  .btn-cancel:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-keep {
-    display: block; margin: 16px auto 0; background: none; border: none;
-    color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer;
+  /* Primary CTA (gold) — reschedule / keep spot */
+  .btn-primary {
+    display: inline-block; background: linear-gradient(135deg, #a8872a, var(--gold));
+    color: var(--bg); text-decoration: none; border: none; cursor: pointer;
+    padding: 14px 30px; border-radius: 8px; font-weight: bold; font-size: 14px;
+    letter-spacing: .02em; width: 100%;
+  }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  /* Ghost / destructive button (un-filled) — used ONLY inside the modal */
+  .btn-ghost {
+    display: inline-block; background: none; border: 1px solid var(--gold-dim);
+    color: var(--muted); cursor: pointer; padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; width: 100%; margin-top: 10px;
   }
   .btn-book {
     display: inline-block; background: linear-gradient(135deg, #a8872a, var(--gold));
     color: var(--bg); text-decoration: none; padding: 13px 30px;
     border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px;
+  }
+  /* Muted cancel text link — deliberately low-emphasis, decoupled from main UI */
+  .cancel-link {
+    display: inline-block; margin-top: 22px; background: none; border: none;
+    color: var(--muted); font-size: 12px; text-decoration: underline;
+    cursor: pointer; opacity: .75;
   }
   .status-icon { font-size: 40px; margin-bottom: 12px; }
   .muted-note { font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
@@ -77,6 +92,46 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .hidden { display: none !important; }
+
+  /* ── RESCHEDULE PICKER ── */
+  .resched-label {
+    font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--gold); margin: 20px 0 10px; text-align: left;
+  }
+  .date-strip {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .date-chip {
+    flex: 0 0 auto; min-width: 62px; padding: 10px 6px; border-radius: 10px;
+    border: 1px solid var(--gold-dim); background: none; color: var(--white);
+    cursor: pointer; text-align: center; font-size: 12px; line-height: 1.4;
+  }
+  .date-chip .dow { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .date-chip .num { font-size: 17px; font-weight: bold; }
+  .date-chip.selected { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .date-chip.selected .dow { color: var(--bg); }
+  .slots-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px;
+  }
+  .slot-btn {
+    padding: 11px 4px; border-radius: 8px; border: 1px solid var(--gold-dim);
+    background: none; color: var(--white); cursor: pointer; font-size: 13px;
+  }
+  .slot-btn.selected { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .slot-btn:disabled { opacity: .28; cursor: not-allowed; text-decoration: line-through; }
+  .slots-placeholder { font-size: 12px; color: var(--muted); padding: 14px 0; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.72);
+    display: flex; align-items: center; justify-content: center; padding: 22px; z-index: 999;
+  }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--gold-dim); border-radius: 16px;
+    padding: 28px 24px; max-width: 400px; width: 100%; text-align: center;
+  }
+  .modal-box .status-icon { font-size: 34px; }
 </style>
 </head>
 <body class="lang-en">
@@ -100,25 +155,81 @@
     </p>
   </div>
 
-  <!-- CONFIRM -->
-  <div id="view-confirm" class="hidden">
+  <!-- MANAGE (main state: reschedule-first, cancel muted) -->
+  <div id="view-manage" class="hidden">
     <div class="status-icon">🗓️</div>
     <h1>
-      <span data-en>Cancel this appointment?</span>
-      <span data-es>¿Cancelar esta cita?</span>
+      <span data-en>Manage your appointment</span>
+      <span data-es>Gestiona tu cita</span>
     </h1>
+
+    <!-- Scarcity copy -->
+    <div class="scarcity">
+      <span data-en>Liz Wendy's schedule books up quickly. To keep your spot, please select a new time below before releasing your current appointment.</span>
+      <span data-es>La agenda de Liz Wendy se llena rápido. Para conservar tu lugar, selecciona un nuevo horario abajo antes de liberar tu cita actual.</span>
+    </div>
+
     <div class="detail-box" id="bookingDetails"></div>
-    <button class="btn-cancel" id="confirmBtn" onclick="confirmCancel()">
-      <span data-en>Yes, Cancel My Appointment</span>
-      <span data-es>Sí, Cancelar Mi Cita</span>
-    </button>
-    <button class="btn-keep" onclick="window.location.href='https://lizwendybeautystudiollc.com'">
-      <span data-en>No — keep my appointment</span>
-      <span data-es>No — mantener mi cita</span>
+
+    <!-- Reschedule picker (shown only when > 24h out) -->
+    <div id="rescheduleSection">
+      <div class="resched-label">
+        <span data-en>Pick a new date</span>
+        <span data-es>Elige una nueva fecha</span>
+      </div>
+      <div class="date-strip" id="dateStrip"></div>
+
+      <div class="resched-label">
+        <span data-en>Pick a new time</span>
+        <span data-es>Elige un nuevo horario</span>
+      </div>
+      <div id="slotsArea">
+        <div class="slots-placeholder">
+          <span data-en>Select a date to see available times.</span>
+          <span data-es>Selecciona una fecha para ver horarios disponibles.</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="rescheduleBtn" style="margin-top:16px" onclick="submitReschedule()" disabled>
+        <span data-en>Reschedule Appointment</span>
+        <span data-es>Reprogramar Cita</span>
+      </button>
+    </div>
+
+    <!-- Within-24h note (shown instead of the picker when <= 24h out) -->
+    <div id="tooLateNote" class="hidden">
+      <p class="muted-note" style="margin-top:18px">
+        <span data-en>Rescheduling is available more than 24 hours before your appointment. To make a change now, please contact us directly.</span>
+        <span data-es>La reprogramación está disponible con más de 24 horas de anticipación. Para hacer un cambio ahora, contáctanos directamente.</span>
+      </p>
+      <a class="btn-book" id="tooLateWhatsapp" href="#" target="_blank" rel="noopener" style="margin-top:12px">
+        <span data-en>Message Us on WhatsApp →</span>
+        <span data-es>Escríbenos por WhatsApp →</span>
+      </a>
+    </div>
+
+    <!-- Muted cancel link (decoupled, low-emphasis) -->
+    <button class="cancel-link" onclick="openCancelModal()">
+      <span data-en>I no longer need this appointment. Cancel my reservation.</span>
+      <span data-es>Ya no necesito esta cita. Cancelar mi reservación.</span>
     </button>
   </div>
 
-  <!-- SUCCESS -->
+  <!-- RESCHEDULE SUCCESS -->
+  <div id="view-resched-success" class="hidden">
+    <div class="status-icon">✅</div>
+    <h1>
+      <span data-en>Your appointment has been rescheduled</span>
+      <span data-es>Tu cita ha sido reprogramada</span>
+    </h1>
+    <div class="detail-box" id="reschedDetails"></div>
+    <p class="muted-note">
+      <span data-en>We've sent you a confirmation with your new details. See you soon! ✨</span>
+      <span data-es>Te enviamos una confirmación con tus nuevos detalles. ¡Nos vemos pronto! ✨</span>
+    </p>
+  </div>
+
+  <!-- CANCEL SUCCESS -->
   <div id="view-success" class="hidden">
     <div class="status-icon">✅</div>
     <h1>
@@ -168,7 +279,7 @@
       <span data-es>No pudimos procesar esto en este momento. Intenta de nuevo en un momento, o escríbenos directamente para ayudarte.</span>
     </p>
     <div style="margin-top:16px">
-      <button class="btn-cancel" style="background:var(--gold);color:var(--bg)" onclick="window.location.reload()">
+      <button class="btn-primary" onclick="window.location.reload()">
         <span data-en>Try Again</span>
         <span data-es>Intentar de Nuevo</span>
       </button>
@@ -178,6 +289,30 @@
 </div>
 
 <p class="muted-note" style="margin-top:22px">lizwendybeautystudiollc.com</p>
+
+<!-- ── CANCEL CONFIRMATION MODAL ── -->
+<div id="cancelModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="status-icon">⚠️</div>
+    <h1 style="font-size:18px;margin-bottom:12px">
+      <span data-en>Release this spot?</span>
+      <span data-es>¿Liberar este lugar?</span>
+    </h1>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+      <span data-en>Are you sure you want to release this spot? This action cannot be undone, and another client will be able to book this time.</span>
+      <span data-es>¿Seguro que deseas liberar este lugar? Esta acción no se puede deshacer, y otra clienta podrá reservar este horario.</span>
+    </p>
+    <!-- Primary = KEEP (solid gold). Destructive = ghost. -->
+    <button class="btn-primary" onclick="closeCancelModal()">
+      <span data-en>Keep My Spot</span>
+      <span data-es>Conservar Mi Lugar</span>
+    </button>
+    <button class="btn-ghost" id="confirmCancelBtn" onclick="confirmCancel()">
+      <span data-en>Yes, Cancel</span>
+      <span data-es>Sí, Cancelar</span>
+    </button>
+  </div>
+</div>
 
 <script>
 /* ── LANGUAGE (shares the main site's saved preference) ── */
@@ -192,22 +327,60 @@ function setPageLang(lang) {
   try { lang = localStorage.getItem('lw-lang') || 'en'; } catch(e){}
   setPageLang(lang === 'es' ? 'es' : 'en');
 })();
+function isEs() { return document.body.classList.contains('lang-es'); }
 
-/* ── STATE ── */
+/* ── URL PARAMS ── */
 const params  = new URLSearchParams(window.location.search);
 const token   = params.get('token')  || '';
 const artist  = params.get('artist') || '';
+
+const WHATSAPP_NUMBER = '18483891934'; // studio WhatsApp (matches main site)
+
+/* ── RESCHEDULE STATE ── */
+let selectedDate = null;   // Date object
+let selectedSlot = null;   // "HH:MM"
+let takenSlots   = [];
 let isSubmitting = false;
 
+/* ── SCHEDULES (mirror of main site's schedules.json logic) ── */
+const DEFAULT_SCHEDULE = { 1:[9,19], 3:[9,19], 4:[9,19], 5:[9,19], 6:[7,16] };
+let ARTIST_SCHEDULES = null;
+
+async function loadSchedules() {
+  try {
+    const res = await fetch('schedules.json');
+    if (res.ok) ARTIST_SCHEDULES = await res.json();
+  } catch (e) { ARTIST_SCHEDULES = null; }
+}
+function getSchedule(artistId) {
+  const id = artistId || 'liz';
+  if (ARTIST_SCHEDULES && ARTIST_SCHEDULES[id]) return ARTIST_SCHEDULES[id];
+  return DEFAULT_SCHEDULE;
+}
+function isBlackedOut(schedule, dateStr) {
+  if (!schedule || !Array.isArray(schedule.blackout)) return false;
+  return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
+}
+
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DOW_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DOW_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+function formatDateISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+/* ── VIEW SWITCHER ── */
 function show(viewId) {
-  ['view-loading','view-confirm','view-success','view-notfound','view-error'].forEach(id => {
-    document.getElementById(id).classList.toggle('hidden', id !== viewId);
-  });
+  ['view-loading','view-manage','view-resched-success','view-success','view-notfound','view-error']
+    .forEach(id => document.getElementById(id).classList.toggle('hidden', id !== viewId));
 }
 
 /* ── STEP 1: LOOK UP THE BOOKING (no deletion) ── */
 async function lookupBooking() {
   if (!token || !artist) { show('view-notfound'); return; }
+  await loadSchedules();
   try {
     const res = await fetch('/.netlify/functions/cancel-booking', {
       method: 'POST',
@@ -219,38 +392,257 @@ async function lookupBooking() {
 
     const data = await res.json();
     const b = data.booking || {};
-    const es = document.body.classList.contains('lang-es');
+    const es = isEs();
 
     document.getElementById('bookingDetails').innerHTML =
+      '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
+      (es ? 'Tu cita actual' : 'Your current appointment') + '</div>' +
       '📅 <strong>' + escapeHtml(b.date) + '</strong><br/>' +
       '🕐 <strong>' + escapeHtml(b.time) + '</strong><br/>' +
       '✨ ' + escapeHtml(b.services) + '<br/>' +
       '💅 ' + (es ? 'Con' : 'With') + ': ' + escapeHtml(b.artistName);
 
-    show('view-confirm');
+    // ── 24-HOUR GATE (client-side; backend enforces authoritatively too) ──
+    // appointmentStart is the event's real ISO timestamp from lookup.
+    const startMs = data.appointmentStart ? Date.parse(data.appointmentStart) : NaN;
+    const within24h = !isNaN(startMs) && (startMs - Date.now() < 24 * 60 * 60 * 1000);
+
+    if (within24h) {
+      document.getElementById('rescheduleSection').classList.add('hidden');
+      const note = document.getElementById('tooLateNote');
+      note.classList.remove('hidden');
+      const msg = es
+        ? 'Hola, necesito cambiar mi cita del ' + (b.date || '') + '.'
+        : 'Hi, I need to change my appointment on ' + (b.date || '') + '.';
+      document.getElementById('tooLateWhatsapp').href =
+        'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg);
+    } else {
+      buildDateStrip();
+    }
+
+    show('view-manage');
   } catch (e) {
     show('view-error');
   }
 }
 
-/* ── STEP 2: CONFIRMED CANCELLATION ── */
+/* ── BUILD DATE STRIP (next available work days for this artist) ── */
+function buildDateStrip() {
+  const schedule = getSchedule(artist);
+  const strip = document.getElementById('dateStrip');
+  strip.innerHTML = '';
+  const es = isEs();
+  const months = es ? MONTHS_ES : MONTHS_EN;
+  const dows   = es ? DOW_ES : DOW_EN;
+
+  // Start from tomorrow and collect the next 21 working, non-blacked-out days.
+  const out = [];
+  const cursor = new Date();
+  cursor.setHours(0,0,0,0);
+  cursor.setDate(cursor.getDate() + 1);
+  let guard = 0;
+  while (out.length < 21 && guard < 120) {
+    guard++;
+    const dow = cursor.getDay();
+    const iso = formatDateISO(cursor);
+    if (schedule[dow] && !isBlackedOut(schedule, iso)) {
+      out.push(new Date(cursor));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  if (out.length === 0) {
+    strip.innerHTML = '<div class="slots-placeholder">' +
+      (es ? 'No hay fechas disponibles próximamente.' : 'No upcoming dates available.') + '</div>';
+    return;
+  }
+
+  out.forEach(d => {
+    const chip = document.createElement('button');
+    chip.className = 'date-chip';
+    chip.innerHTML = '<div class="dow">' + dows[d.getDay()] + '</div>' +
+                     '<div class="num">' + d.getDate() + '</div>' +
+                     '<div class="dow">' + months[d.getMonth()] + '</div>';
+    chip.onclick = () => selectDate(d, chip);
+    strip.appendChild(chip);
+  });
+}
+
+/* ── SELECT A DATE → FETCH AVAILABILITY ── */
+async function selectDate(date, chipEl) {
+  selectedDate = date;
+  selectedSlot = null;
+  updateRescheduleBtn();
+  document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('selected'));
+  if (chipEl) chipEl.classList.add('selected');
+
+  const es = isEs();
+  const slotsArea = document.getElementById('slotsArea');
+  slotsArea.innerHTML = '<div class="slots-placeholder"><div class="spinner"></div>' +
+    (es ? 'Cargando horarios…' : 'Loading times…') + '</div>';
+
+  try {
+    const iso = formatDateISO(date);
+    const res = await fetch('/.netlify/functions/get-availability?date=' + iso + '&artistId=' + encodeURIComponent(artist));
+    takenSlots = res.ok ? ((await res.json()).takenSlots || []) : [];
+  } catch (e) {
+    takenSlots = [];
+  }
+  renderSlots(date);
+}
+
+/* ── RENDER TIME SLOTS (per-artist step, matches backend) ── */
+function renderSlots(date) {
+  const es = isEs();
+  const schedule = getSchedule(artist);
+  const hrs = schedule[date.getDay()];
+  const slotsArea = document.getElementById('slotsArea');
+
+  if (!hrs) {
+    slotsArea.innerHTML = '<div class="slots-placeholder">' +
+      (es ? 'Sin disponibilidad este día.' : 'No availability this day.') + '</div>';
+    return;
+  }
+
+  const [start, end] = hrs;
+  // Wendy (liz): hourly. Johanna: 30-min. Mirrors get-availability.js.
+  const step = (artist === 'liz') ? 60 : 30;
+  const slots = [];
+  for (let mins = start * 60; mins < end * 60; mins += step) {
+    slots.push(String(Math.floor(mins/60)).padStart(2,'0') + ':' + String(mins%60).padStart(2,'0'));
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'slots-grid';
+  let anyOpen = false;
+  slots.forEach(slot => {
+    const btn = document.createElement('button');
+    btn.className = 'slot-btn';
+    btn.textContent = to12h(slot);
+    if (takenSlots.includes(slot)) {
+      btn.disabled = true;
+    } else {
+      anyOpen = true;
+      btn.onclick = () => selectSlot(slot, btn);
+    }
+    grid.appendChild(btn);
+  });
+
+  slotsArea.innerHTML = '';
+  if (!anyOpen) {
+    slotsArea.innerHTML = '<div class="slots-placeholder">' +
+      (es ? 'No quedan horarios este día. Prueba otra fecha.' : 'No times left this day. Try another date.') + '</div>';
+    return;
+  }
+  slotsArea.appendChild(grid);
+}
+
+function selectSlot(slot, btnEl) {
+  selectedSlot = slot;
+  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+  if (btnEl) btnEl.classList.add('selected');
+  updateRescheduleBtn();
+}
+
+function updateRescheduleBtn() {
+  document.getElementById('rescheduleBtn').disabled = !(selectedDate && selectedSlot);
+}
+
+function to12h(slot) {
+  const [h, m] = slot.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return hour + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+}
+
+/* ── SUBMIT RESCHEDULE ── */
+async function submitReschedule() {
+  if (isSubmitting || !selectedDate || !selectedSlot) return;
+  isSubmitting = true;
+  const btn = document.getElementById('rescheduleBtn');
+  btn.disabled = true;
+  const lang = isEs() ? 'es' : 'en';
+
+  try {
+    const res = await fetch('/.netlify/functions/reschedule-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'reschedule',
+        token: token,
+        artistId: artist,
+        newDate: formatDateISO(selectedDate),
+        newTime: selectedSlot,
+        lang: lang,
+      }),
+    });
+
+    if (res.status === 404) { show('view-notfound'); return; }
+
+    if (res.status === 409) {
+      // Either the slot was just taken, or the 24h window was hit (rare edge
+      // if the page sat open a long time).
+      const data = await res.json().catch(() => ({}));
+      const es = isEs();
+      if (data.error === 'slot_taken') {
+        alert(es ? 'Ese horario se acaba de reservar. Por favor elige otro.'
+                 : 'That time was just booked. Please choose another.');
+        isSubmitting = false;
+        if (selectedDate) {
+          const chip = document.querySelector('.date-chip.selected');
+          await selectDate(selectedDate, chip);
+        }
+        return;
+      }
+      // too_late or other conflict
+      show('view-error');
+      return;
+    }
+
+    if (!res.ok) { show('view-error'); btn.disabled = false; isSubmitting = false; return; }
+
+    const data = await res.json();
+    const b = data.booking || {};
+    const es = isEs();
+    document.getElementById('reschedDetails').innerHTML =
+      '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
+      (es ? 'Tu nueva cita' : 'Your new appointment') + '</div>' +
+      '📅 <strong>' + escapeHtml(b.date) + '</strong><br/>' +
+      '🕐 <strong>' + escapeHtml(b.time) + '</strong><br/>' +
+      '✨ ' + escapeHtml(b.services) + '<br/>' +
+      '💅 ' + (es ? 'Con' : 'With') + ': ' + escapeHtml(b.artistName);
+    show('view-resched-success');
+  } catch (e) {
+    show('view-error');
+    btn.disabled = false;
+    isSubmitting = false;
+  }
+}
+
+/* ── CANCEL MODAL ── */
+function openCancelModal()  { document.getElementById('cancelModal').classList.remove('hidden'); }
+function closeCancelModal() { document.getElementById('cancelModal').classList.add('hidden'); }
+
+/* ── CONFIRMED CANCELLATION (only reachable via modal's ghost button) ── */
 async function confirmCancel() {
   if (isSubmitting) return;
   isSubmitting = true;
-  const btn = document.getElementById('confirmBtn');
+  const btn = document.getElementById('confirmCancelBtn');
   btn.disabled = true;
+  const lang = isEs() ? 'es' : 'en';
 
-  const lang = document.body.classList.contains('lang-es') ? 'es' : 'en';
   try {
     const res = await fetch('/.netlify/functions/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cancel', token: token, artistId: artist, lang: lang }),
     });
-    if (res.status === 404) { show('view-notfound'); return; }
-    if (!res.ok) { show('view-error'); btn.disabled = false; isSubmitting = false; return; }
+    if (res.status === 404) { closeCancelModal(); show('view-notfound'); return; }
+    if (!res.ok) { closeCancelModal(); show('view-error'); btn.disabled = false; isSubmitting = false; return; }
+    closeCancelModal();
     show('view-success');
   } catch (e) {
+    closeCancelModal();
     show('view-error');
     btn.disabled = false;
     isSubmitting = false;
