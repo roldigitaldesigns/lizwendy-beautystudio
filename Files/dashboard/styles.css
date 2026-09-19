@@ -463,3 +463,22 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
+
+/* ───────── Upcoming-pipeline KPI cards (blue) ───────── */
+:root[data-theme="studio"]   { --pipeline: #1F5FA8; }
+:root[data-theme="terminal"] { --pipeline: #5BA8FF; }
+
+.kpi.is-pipeline .kpi-val { color: var(--pipeline); }
+.kpi.is-pipeline .delta.none { color: var(--pipeline); font-weight: 600; }
+:root[data-theme="terminal"] .kpi.is-pipeline .odo { text-shadow: 0 0 24px color-mix(in srgb, var(--pipeline) 45%, transparent); }
+
+/* Keep the card heading on one line so hero numbers stay aligned */
+.kpi.is-pipeline .kpi-head { flex-wrap: nowrap; overflow: hidden; }
+.kpi.is-pipeline .kpi-label { white-space: nowrap; }
+.kpi.is-pipeline .kpi-period { 
+    font-size: 12px; 
+    min-width: 0; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
