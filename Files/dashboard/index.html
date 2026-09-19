@@ -1,1 +1,248 @@
+<!doctype html>
+<html lang="en" data-theme="studio">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Command Center</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <!-- Warm up the connection to Google Fonts (the fonts themselves are imported at the top of styles.css). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Apply the saved theme before first paint so there's no flash. -->
+  <script>
+    try { var t = localStorage.getItem('cc-theme'); if (t === 'terminal' || t === 'studio') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
 
+  <!-- ───────────── SIGN IN ───────────── -->
+  <main id="login" class="login" hidden>
+    <form id="login-form" class="login-card" novalidate>
+      <span class="brand-mark brand-mark-lg" aria-hidden="true">R</span>
+      <h1>Command Center</h1>
+      <p class="login-sub">Enter the dashboard passcode to see how the booking system is performing.</p>
+      <label for="passcode">Passcode</label>
+      <input id="passcode" name="passcode" type="password" autocomplete="current-password" spellcheck="false" required>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+      <button class="btn btn-primary" type="submit" id="login-submit">Sign in</button>
+    </form>
+  </main>
+
+  <!-- ───────────── DASHBOARD ───────────── -->
+  <div id="app" hidden>
+    <a class="skip-link" href="#main">Skip to dashboard</a>
+
+    <header class="topbar">
+      <!-- The page's one <h1>, inside the banner landmark so no content sits outside a landmark. -->
+      <h1 class="sr-only">Command Center dashboard</h1>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">R</span>
+        <span class="brand-name">Command Center</span>
+      </div>
+
+      <div class="tenant">
+        <label class="sr-only" for="tenant-select">Client</label>
+        <select id="tenant-select" class="select select-tenant"></select>
+      </div>
+
+      <div class="seg" role="group" aria-label="Time range" id="range-seg">
+        <button type="button" class="seg-btn" data-range="7"  aria-pressed="false">7 days</button>
+        <button type="button" class="seg-btn" data-range="30" aria-pressed="true">30 days</button>
+        <button type="button" class="seg-btn" data-range="90" aria-pressed="false">90 days</button>
+      </div>
+
+      <div class="topbar-end">
+        <p id="live-status" class="live" data-state="loading" role="status" aria-live="polite">
+          <span class="live-dot" aria-hidden="true"></span><span class="live-text">Loading</span>
+        </p>
+        <button type="button" id="theme-toggle" class="icon-btn" aria-pressed="false" aria-label="Switch to the dark terminal theme"></button>
+        <button type="button" id="signout" class="text-btn">Sign out</button>
+      </div>
+    </header>
+
+    <main id="main" class="dash" tabindex="-1">
+
+      <!-- KPI ribbon -->
+      <section class="kpis" aria-label="Key numbers">
+
+        <article class="kpi" id="kpi-revenue" data-state="loading">
+          <div class="card-body">
+            <header class="kpi-head"><h2>Scheduled revenue</h2><span class="kpi-period" data-role="period"></span></header>
+            <div class="kpi-value" data-role="value"></div>
+            <p class="kpi-foot"><span class="delta" data-role="delta"></span><span class="kpi-note" data-role="note"></span></p>
+            <p class="kpi-extra" data-role="extra"></p>
+            <svg class="spark" data-role="spark" aria-hidden="true"></svg>
+          </div>
+          <div class="card-skel" data-lines="3" aria-hidden="true"></div>
+          <div class="card-err" data-retry-key="perf"></div>
+        </article>
+
+        <article class="kpi" id="kpi-bookings" data-state="loading">
+          <div class="card-body">
+            <header class="kpi-head"><h2>Active bookings</h2><span class="kpi-period" data-role="period"></span></header>
+            <div class="kpi-value" data-role="value"></div>
+            <p class="kpi-foot"><span class="delta" data-role="delta"></span><span class="kpi-note" data-role="note"></span></p>
+            <p class="kpi-extra" data-role="extra"></p>
+            <svg class="spark" data-role="spark" aria-hidden="true"></svg>
+          </div>
+          <div class="card-skel" data-lines="3" aria-hidden="true"></div>
+          <div class="card-err" data-retry-key="perf"></div>
+        </article>
+
+        <article class="kpi kpi-hero" id="kpi-rescued" data-state="loading">
+          <div class="card-body">
+            <header class="kpi-head"><h2>Rescued revenue</h2><span class="kpi-period" data-role="period"></span></header>
+            <div class="kpi-value" data-role="value"></div>
+            <p class="kpi-foot"><span class="delta" data-role="delta"></span><span class="kpi-note" data-role="note"></span></p>
+            <p class="kpi-extra" data-role="extra"></p>
+            <svg class="spark" data-role="spark" aria-hidden="true"></svg>
+          </div>
+          <div class="card-skel" data-lines="3" aria-hidden="true"></div>
+          <div class="card-err" data-retry-key="churn"></div>
+        </article>
+
+        <article class="kpi" id="kpi-rate" data-state="loading">
+          <div class="card-body">
+            <header class="kpi-head"><h2>Deflection rate</h2><span class="kpi-period" data-role="period"></span></header>
+            <div class="kpi-value" data-role="value"></div>
+            <p class="kpi-foot"><span class="delta" data-role="delta"></span><span class="kpi-note" data-role="note"></span></p>
+            <p class="kpi-extra" data-role="extra"></p>
+            <svg class="spark" data-role="spark" aria-hidden="true"></svg>
+          </div>
+          <div class="card-skel" data-lines="3" aria-hidden="true"></div>
+          <div class="card-err" data-retry-key="churn"></div>
+        </article>
+
+      </section>
+
+      <!-- Churn Deflector -->
+      <section class="panel churn" id="card-churn" data-state="loading" aria-labelledby="churn-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="churn-title">Churn Deflector</h2>
+            <p class="panel-sub" data-role="sub">Appointments kept when a customer opened the cancel page</p>
+          </div>
+          <div class="ctl">
+            <label class="sr-only" for="churn-month">Month</label>
+            <select id="churn-month" class="select"></select>
+          </div>
+        </header>
+        <div class="card-body">
+          <div class="churn-grid">
+            <div class="churn-main">
+              <div class="stat-pair">
+                <div class="stat stat-gain">
+                  <span class="stat-label">Rescued</span>
+                  <span class="stat-value" data-role="rescued"></span>
+                  <span class="stat-note" data-role="rescued-note"></span>
+                </div>
+                <div class="stat stat-loss">
+                  <span class="stat-label">Lost</span>
+                  <span class="stat-value" data-role="lost"></span>
+                  <span class="stat-note" data-role="lost-note"></span>
+                </div>
+              </div>
+              <div class="flow" data-role="flow" role="img" aria-label="Manage links opened, split by outcome"></div>
+              <ul class="legend" data-role="legend"></ul>
+            </div>
+            <div class="churn-trend">
+              <h3>Month by month</h3>
+              <svg class="bars-chart" data-role="bars" role="img" aria-label="Rescued and lost revenue by month"></svg>
+              <p class="legend-inline">
+                <span class="swatch swatch-gain" aria-hidden="true"></span>Rescued
+                <span class="swatch swatch-loss" aria-hidden="true"></span>Lost
+              </p>
+            </div>
+          </div>
+          <details class="howto">
+            <summary>How this is counted</summary>
+            <p>Every time a customer opens their manage link, the ledger records it. If they then move the appointment instead of cancelling, the appointment's price counts as rescued. If they cancel, the price counts as lost. Some rescued customers may only ever have wanted to reschedule, so treat rescued revenue as an upper bound.</p>
+          </details>
+        </div>
+        <div class="card-skel" data-lines="6" aria-hidden="true"></div>
+        <div class="card-err" data-retry-key="churn"></div>
+      </section>
+
+      <!-- Artist capacity -->
+      <section class="panel capacity" id="card-capacity" data-state="loading" aria-labelledby="cap-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="cap-title">Artist capacity</h2>
+            <p class="panel-sub" data-role="sub"></p>
+          </div>
+          <div class="seg seg-sm" role="group" aria-label="Week" id="week-seg">
+            <button type="button" class="seg-btn" data-week="-1" aria-pressed="false">Last week</button>
+            <button type="button" class="seg-btn" data-week="0"  aria-pressed="true">This week</button>
+            <button type="button" class="seg-btn" data-week="1"  aria-pressed="false">Next week</button>
+          </div>
+        </header>
+        <div class="card-body">
+          <ul class="artists" data-role="artists"></ul>
+          <p class="panel-foot" data-role="foot">Utilization is booked hours divided by each artist's weekly capacity. The small bars show two weeks back to two weeks ahead.</p>
+        </div>
+        <div class="card-skel" data-lines="5" aria-hidden="true"></div>
+        <div class="card-err" data-retry-key="capacity"></div>
+      </section>
+
+      <!-- Clients -->
+      <section class="panel clients" id="card-clients" data-state="loading" aria-labelledby="clients-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="clients-title">Clients</h2>
+            <p class="panel-sub" data-role="sub"></p>
+          </div>
+          <div class="search">
+            <label class="sr-only" for="client-search">Search clients</label>
+            <span class="search-icon" data-icon="search"></span>
+            <input id="client-search" type="search" placeholder="Search name, phone or email" autocomplete="off" spellcheck="false">
+          </div>
+        </header>
+        <div class="card-body">
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Clients table, scrolls sideways on small screens">
+            <table class="table" id="clients-table">
+              <thead>
+                <tr>
+                  <th scope="col" aria-sort="none"><button type="button" class="th-btn" data-sort="display_name">Client</button></th>
+                  <th scope="col">Contact</th>
+                  <th scope="col" class="num" aria-sort="none"><button type="button" class="th-btn" data-sort="visits">Visits</button></th>
+                  <th scope="col" class="num" aria-sort="descending"><button type="button" class="th-btn" data-sort="ltv_cents">Lifetime value</button></th>
+                  <th scope="col" aria-sort="none"><button type="button" class="th-btn" data-sort="last_appointment_at">Latest appointment</button></th>
+                </tr>
+              </thead>
+              <tbody data-role="rows"></tbody>
+            </table>
+          </div>
+          <div class="table-foot">
+            <p class="table-count" data-role="count" aria-live="polite"></p>
+            <button type="button" class="btn btn-ghost" data-role="more" hidden>Show more</button>
+          </div>
+        </div>
+        <div class="card-skel" data-lines="7" aria-hidden="true"></div>
+        <div class="card-err" data-retry-key="ltv"></div>
+      </section>
+
+      <!-- Activity feed -->
+      <section class="panel feed-panel" id="card-feed" data-state="loading" aria-labelledby="feed-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="feed-title">Recent activity</h2>
+            <p class="panel-sub" data-role="sub">Every booking, reschedule and cancellation</p>
+          </div>
+        </header>
+        <!-- The scroll region gets its own name ("Recent activity list") so it doesn't duplicate the section's. -->
+        <div class="card-body" tabindex="0" role="region" aria-label="Recent activity list">
+          <ol class="feed" data-role="feed"></ol>
+        </div>
+        <div class="card-skel" data-lines="6" aria-hidden="true"></div>
+        <div class="card-err" data-retry-key="activity"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+  <noscript><p style="padding:2rem;font-family:sans-serif">The Command Center needs JavaScript to load its data.</p></noscript>
+</body>
+</html>
