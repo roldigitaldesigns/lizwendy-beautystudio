@@ -117,12 +117,12 @@
 
       </section>
 
-      <!-- Churn Deflector -->
+   <!-- Revenue & Risk Outlook (formerly Churn Deflector) -->
       <section class="panel churn" id="card-churn" data-state="loading" aria-labelledby="churn-title">
         <header class="panel-head">
           <div>
-            <h2 id="churn-title">Churn Deflector</h2>
-            <p class="panel-sub" data-role="sub">Appointments kept when a customer opened the cancel page</p>
+            <h2 id="churn-title">Revenue &amp; Risk Outlook</h2>
+            <p class="panel-sub" data-role="sub">What's booked ahead, what was rescued, and what was lost</p>
           </div>
           <div class="ctl">
             <label class="sr-only" for="churn-month">Month</label>
@@ -133,6 +133,11 @@
           <div class="churn-grid">
             <div class="churn-main">
               <div class="stat-pair">
+                <div class="stat stat-pipeline">
+                  <span class="stat-label">Upcoming</span>
+                  <span class="stat-value text-pipeline-blue" data-role="upcoming"></span>
+                  <span class="stat-note" data-role="upcoming-note"></span>
+                </div>
                 <div class="stat stat-gain">
                   <span class="stat-label">Rescued</span>
                   <span class="stat-value" data-role="rescued"></span>
@@ -149,8 +154,9 @@
             </div>
             <div class="churn-trend">
               <h3>Month by month</h3>
-              <svg class="bars-chart" data-role="bars" role="img" aria-label="Rescued and lost revenue by month"></svg>
+              <svg class="bars-chart" data-role="bars" role="img" aria-label="Upcoming, rescued and lost revenue by month"></svg>
               <p class="legend-inline">
+                <span class="swatch swatch-upcoming" aria-hidden="true"></span>Upcoming
                 <span class="swatch swatch-gain" aria-hidden="true"></span>Rescued
                 <span class="swatch swatch-loss" aria-hidden="true"></span>Lost
               </p>
@@ -158,7 +164,7 @@
           </div>
           <details class="howto">
             <summary>How this is counted</summary>
-            <p>Every time a customer opens their manage link, the ledger records it. If they then move the appointment instead of cancelling, the appointment's price counts as rescued. If they cancel, the price counts as lost. Some rescued customers may only ever have wanted to reschedule, so treat rescued revenue as an upper bound.</p>
+            <p>Upcoming is the price of appointments still to come in the month. Every time a customer opens their manage link, the ledger records it. If they then move the appointment instead of cancelling, the appointment's price counts as rescued. If they cancel, the price counts as lost. Some rescued customers may only ever have wanted to reschedule, so treat rescued revenue as an upper bound.</p>
           </details>
         </div>
         <div class="card-skel" data-lines="6" aria-hidden="true"></div>
