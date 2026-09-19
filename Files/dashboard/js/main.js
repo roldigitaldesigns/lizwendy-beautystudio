@@ -129,22 +129,25 @@ function renderPerf({ fresh }) {
   const series = (f) => Array.from({ length: N }, (_, i) => num((byDay.get(addDays(from0, i)) || {})[f]));
 
   const rev = sum(from0, today, 'booked_revenue_cents'), prevRev = sum(prevFrom, prevTo, 'booked_revenue_cents');
-  const bk = sum(from0, today, 'bookings_active'), prevBk = sum(prevFrom, prevTo, 'bookings_active');
+  const bk = sum(from0, today, 'bookings_active');
   const upRev = sum(after, far, 'booked_revenue_cents'), upBk = sum(after, far, 'bookings_active');
   const cancelled = sum(from0, today, 'bookings_cancelled');
+  const revChange = pctDelta(changePct(rev, prevRev));
 
+  // Hero = the forward pipeline (tomorrow onward). The lookback window moves to the footnote and sparkline.
   setKpi('kpi-revenue', {
-    value: moneyParts(rev, cur()), period: `Last ${N} days`, fresh,
-    delta: pctDelta(changePct(rev, prevRev)), vs: `vs prior ${N} days`,
-    extra: `${money(upRev, cur())} upcoming across ${int(upBk)} booking${upBk === 1 ? '' : 's'}`,
+    value: moneyParts(upRev, cur()), period: 'Upcoming pipeline', fresh,
+    delta: { dir: 'none', text: `${int(upBk)} booked` }, vs: '',
+    extra: `${money(rev, cur())} booked in the last ${N} days${revChange.dir === 'none' ? '' : ` (${revChange.text} vs prior)`}`,
     spark: series('booked_revenue_cents'),
   });
   setKpi('kpi-bookings', {
-    value: countParts(bk), period: `Last ${N} days`, fresh,
-    delta: pctDelta(changePct(bk, prevBk)), vs: `vs prior ${N} days`,
-    extra: `${int(upBk)} upcoming, ${int(cancelled)} cancelled`,
+    value: countParts(upBk), period: 'Upcoming pipeline', fresh,
+    delta: { dir: 'none', text: '' }, vs: '',
+    extra: `${int(bk)} booked in the last ${N} days · ${int(cancelled)} cancelled`,
     spark: series('bookings_active'),
   });
+  ['kpi-revenue', 'kpi-bookings'].forEach((id) => document.getElementById(id).classList.add('is-pipeline'));
 }
 
 function churnRows() {
