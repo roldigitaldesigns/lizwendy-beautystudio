@@ -43,6 +43,7 @@
 
 const { google } = require('googleapis');
 const crypto = require('crypto');
+const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -220,6 +221,14 @@ exports.handler = async (event) => {
     const artistName    = props.artistName    || ARTIST_NAMES[artistId] || 'Liz Wendy Cedeño';
     const serviceList   = props.serviceList   || '';
 
+    // ── Command Center ledger identity ──
+    // ledgerRef is stable across reschedules (each reschedule mints a new
+    // cancel token, but the ledger must keep ONE booking). Bookings made
+    // before the ledger existed have no ledgerRef, so their current token
+    // becomes it — and is carried forward from here on.
+    const ledgerRef  = props.ledgerRef || token;
+    const priceCents = parseCents(props.priceCents); // null for pre-ledger bookings
+
     // Human-readable strings for the NEW date/time.
     const dateObj      = new Date(newDate + 'T12:00:00');
     const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
@@ -260,6 +269,11 @@ exports.handler = async (event) => {
           dateReadable:  dateReadable,
           timeReadable:  timeReadable,
           serviceList:   serviceList,
+          // Carried forward so the NEXT cancel/reschedule still knows the
+          // booking's ledger identity and value.
+          ledgerRef:       ledgerRef,
+          priceCents:      props.priceCents || '',
+          durationMinutes: String(roundedDuration),
         },
       },
     };
@@ -278,6 +292,28 @@ exports.handler = async (event) => {
     } catch (delErr) {
       console.error('reschedule-booking: OLD event delete failed (new event already created):', delErr);
     }
+
+    // ── LEDGER (Command Center) ──
+    // The reschedule is real from here on, so record it. from_cancel_flow is
+    // true because this endpoint is only reachable from the cancel.html
+    // manage page (the Churn Deflector). Runs in parallel with the emails.
+    const ledgerPromise = recordLedgerEvent({
+      event_type:              'rescheduled',
+      idempotency_key:         `resched:${token}:${newToken}`,
+      booking_ref:             ledgerRef,
+      customer_phone:          toE164(customerPhone),
+      customer_name:           firstName,
+      customer_email:          customerEmail || null,
+      locale:                  lang === 'es' ? 'es' : 'en',
+      artist_ref:              artistId,
+      service_summary:         serviceList,
+      price_cents:             priceCents,
+      duration_minutes:        roundedDuration,
+      appointment_at:          newStart.toISOString(),
+      previous_appointment_at: oldStart.toISOString(),
+      from_cancel_flow:        true,
+      actor:                   'customer',
+    });
 
     // ── 3. NOTIFICATIONS (isolated — never fail an already-completed reschedule) ──
     try {
@@ -328,6 +364,9 @@ exports.handler = async (event) => {
     } catch (emailErr) {
       console.error('reschedule-booking: notifications failed (reschedule already completed):', emailErr);
     }
+
+    // Must be awaited (serverless freezes after return). Resolves, never rejects.
+    await ledgerPromise;
 
     return {
       statusCode: 200,

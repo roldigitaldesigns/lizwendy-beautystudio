@@ -149,6 +149,7 @@ function computeDurationFromServices(services) {
 }
 
 const crypto = require('crypto');
+const { recordLedgerEvent, toE164, toCents } = require('./_lib/ledger');
 
 // schedules.json must sit in this same folder (next to this function file)
 // so it gets bundled and deployed automatically with the function.
@@ -400,11 +401,39 @@ exports.handler = async (event) => {
           dateReadable:  dateReadable,
           timeReadable:  timeReadable,
           serviceList:   serviceList,
+          // ── Command Center ledger ──
+          // Carried on the event so cancel-booking / reschedule-booking (which
+          // only see the calendar event) know the booking's value and its
+          // stable ledger identity. ledgerRef survives reschedules.
+          ledgerRef:       cancelToken,
+          priceCents:      String(total > 0 ? (toCents(total) || 0) : 0),
+          durationMinutes: String(roundedDuration),
         },
       },
     };
 
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: calEvent });
+
+    // ── LEDGER (Command Center) ──
+    // Started now, awaited just before the response so it runs in parallel with
+    // the emails. Never throws; a ledger failure must not affect the booking.
+    const ledgerPromise = recordLedgerEvent({
+      event_type:       'created',
+      idempotency_key:  `created:${cancelToken}`,
+      booking_ref:      cancelToken,
+      customer_phone:   toE164(phone),
+      customer_name:    fullName,
+      customer_email:   email || null,
+      locale:           lang === 'es' ? 'es' : 'en',
+      artist_ref:       artistId,
+      service_summary:  serviceList,
+      // Voice (Vapi) sends services as plain strings; the website sends {name, price}.
+      channel:          (typeof services[0] === 'string') ? 'phone' : 'web',
+      price_cents:      total > 0 ? toCents(total) : 0,
+      duration_minutes: roundedDuration,
+      appointment_at:   eventStart.toISOString(),
+      actor:            'customer',
+    });
 
     // ── 4. SEND EMAILS (isolated — must never break booking confirmation) ──
     console.log('Starting email sends. EMAILJS_SERVICE_ID present:', !!EMAILJS_SERVICE_ID, '| STUDIO_EMAIL:', STUDIO_EMAIL);
@@ -425,6 +454,10 @@ exports.handler = async (event) => {
     } catch (notifyErr) {
       console.error('Customer/studio notification failed (booking still confirmed):', notifyErr);
     }
+
+    // Serverless functions freeze after returning, so the ledger write must be
+    // awaited here. It resolves (never rejects) and is already in flight.
+    await ledgerPromise;
 
     return {
       statusCode: 200,

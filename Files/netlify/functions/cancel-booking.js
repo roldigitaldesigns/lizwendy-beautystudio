@@ -26,6 +26,7 @@
  */
 
 const { google } = require('googleapis');
+const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -133,16 +134,42 @@ exports.handler = async (event) => {
     const customerEmail = props.customerEmail || '';
     const customerPhone = props.customerPhone || '';
 
+    // appointmentStart is the event's real ISO start timestamp (from the
+    // calendar event itself, not the human-readable string). cancel.html
+    // uses it to enforce the "no reschedule within 24 hours" rule on the
+    // client side. The backend (reschedule-booking.js) enforces the same
+    // rule independently — this is only so the UI can hide the reschedule
+    // calendar early rather than letting the customer pick a time and then
+    // get rejected. All-day events (no dateTime) return null.
+    // (Hoisted above the action branches so the ledger can use it too.)
+    const appointmentStart = (booking.start && booking.start.dateTime) || null;
+
+    // ── Command Center ledger identity (see reschedule-booking.js) ──
+    // Stable across reschedules; pre-ledger bookings fall back to their token.
+    const ledgerRef  = props.ledgerRef || token;
+    const priceCents = parseCents(props.priceCents); // null for pre-ledger bookings
+    const ledgerBase = {
+      booking_ref:     ledgerRef,
+      customer_phone:  toE164(customerPhone),
+      customer_name:   details.firstName,
+      customer_email:  customerEmail || null,
+      artist_ref:      artistId,
+      service_summary: details.services,
+      price_cents:     priceCents,
+      appointment_at:  appointmentStart,
+      actor:           'customer',
+    };
+
     // ── STEP 1: LOOKUP ONLY ──
     if (action === 'lookup') {
-      // appointmentStart is the event's real ISO start timestamp (from the
-      // calendar event itself, not the human-readable string). cancel.html
-      // uses it to enforce the "no reschedule within 24 hours" rule on the
-      // client side. The backend (reschedule-booking.js) enforces the same
-      // rule independently — this is only so the UI can hide the reschedule
-      // calendar early rather than letting the customer pick a time and then
-      // get rejected. All-day events (no dateTime) return null.
-      const appointmentStart = (booking.start && booking.start.dateTime) || null;
+      // Manage-page opened. Recorded once per booking version (idempotent on the
+      // token) so page reloads don't inflate it. Short timeout, no retry: this
+      // sits on the page-load path and is the least important event.
+      await recordLedgerEvent(
+        { ...ledgerBase, event_type: 'cancel_intent', idempotency_key: `intent:${token}` },
+        { timeoutMs: 1500, retries: 0 }
+      );
+
       return {
         statusCode: 200,
         headers,
@@ -154,6 +181,16 @@ exports.handler = async (event) => {
     if (action === 'cancel') {
       await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: booking.id });
       console.log(`cancel-booking: deleted event ${booking.id} (${details.services} / ${details.date})`);
+
+      // ── LEDGER (Command Center) ──
+      // The cancellation is real (event deleted), so record it. Runs in
+      // parallel with the notifications below; awaited before responding.
+      const ledgerPromise = recordLedgerEvent({
+        ...ledgerBase,
+        event_type:      'cancelled',
+        idempotency_key: `cancel:${token}`,
+        locale:          lang === 'es' ? 'es' : 'en',
+      });
 
       // Notifications are isolated — a send failure must never make the
       // customer think the cancellation didn't happen (the event is already gone).
@@ -197,6 +234,9 @@ exports.handler = async (event) => {
       } catch (emailErr) {
         console.error('cancel-booking: emails failed (event already deleted):', emailErr);
       }
+
+      // Must be awaited (serverless freezes after return). Resolves, never rejects.
+      await ledgerPromise;
 
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
