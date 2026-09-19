@@ -30,7 +30,7 @@ const state = {
 // One entry per ledger view. `cards` are the elements that show its data.
 const SOURCES = {
   perf:     { view: 'v_daily_performance', cards: ['kpi-revenue', 'kpi-bookings'],            opts: () => ({ from: addDays(state.today, -(2 * state.range - 1)), limit: 400 }) },
-  churn:    { view: 'v_churn_deflection',  cards: ['kpi-rescued', 'kpi-rate', 'card-churn'],  opts: () => ({ limit: 8 }) },
+  churn:    { view: 'v_churn_deflection',  cards: ['kpi-rescued', 'kpi-rate', 'card-churn'],  opts: () => ({ limit: 12 }) },
   capacity: { view: 'v_artist_capacity',   cards: ['card-capacity'],                          opts: () => ({ from: addDays(mondayOf(state.today), -14), limit: 60 }) },
   ltv:      { view: 'v_customer_ltv',      cards: ['card-clients'],                           opts: () => ({ limit: 1000 }) },
   activity: { view: 'v_recent_activity',   cards: ['card-feed'],                              opts: () => ({ limit: 50 }) },
@@ -156,11 +156,16 @@ function churnRows() {
   return { map, thisMonth };
 }
 
+// Panel chart range: 3 months back through 2 months ahead. (The two KPI sparklines stay on the
+// trailing 6 months so they don't drop to $0 for months that haven't happened yet.)
+const churnRange = (thisMonth) => Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 3));
+
 function renderChurn({ fresh }) {
   const { map, thisMonth } = churnRows();
   const last = addMonths(thisMonth, -1);
   const row = (m) => map.get(m) || {};
-  const months6 = Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 5));
+  const months6 = Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 5)); // trailing: KPI sparklines only
+  const monthsRange = churnRange(thisMonth);                                        // panel chart: past + future
 
   // KPI: rescued revenue (this calendar month)
   const saved = num(row(thisMonth).revenue_saved_cents), savedPrev = num(row(last).revenue_saved_cents);
@@ -185,28 +190,34 @@ function renderChurn({ fresh }) {
     spark: months6.map((m) => num(row(m).deflection_rate_pct)),
   });
 
-  // Panel: month selector
-  const avail = [...new Set([thisMonth, ...map.keys()])].sort().reverse();
+  // Panel: month selector (history, this month, and at most two months ahead)
+  const latest = addMonths(thisMonth, 2);
+  const avail = [...new Set([thisMonth, ...map.keys()])].filter((m) => m <= latest).sort().reverse();
   if (!state.ui.churnMonth || !avail.includes(state.ui.churnMonth)) state.ui.churnMonth = thisMonth;
   const sel = $('#churn-month');
   clear(sel);
   avail.forEach((m) => sel.append(h('option', { value: m, selected: m === state.ui.churnMonth ? true : null }, monthLabel(m))));
-  paintChurnPanel(months6);
+  paintChurnPanel(monthsRange);
 }
 
-function paintChurnPanel(months6) {
-  const { map } = churnRows();
+function paintChurnPanel(monthsRange) {
+  const { map, thisMonth } = churnRows();
   const m = state.ui.churnMonth;
   const r = map.get(m) || {};
+  const upcoming = num(r.upcoming_revenue_cents), upcomingCount = num(r.upcoming_count);
   const rescued = num(r.revenue_saved_cents), lost = num(r.revenue_lost_cents);
   const kept = num(r.deflected_count), cancelled = num(r.cancelled_count), intents = num(r.cancel_intents);
   const idle = Math.max(0, intents - kept - cancelled);
   const card = document.getElementById('card-churn');
   const q = (role) => $(`[data-role="${role}"]`, card);
 
-  q('sub').textContent = r.deflection_rate_pct != null
-    ? `${pct(r.deflection_rate_pct)} of people who moved or cancelled an appointment in ${monthLabel(m)} chose to reschedule.`
-    : `No reschedules or cancellations recorded in ${monthLabel(m)}.`;
+  q('sub').textContent = m > thisMonth
+    ? `${monthLabel(m)} hasn't started yet. This shows what's already booked.`
+    : r.deflection_rate_pct != null
+      ? `${pct(r.deflection_rate_pct)} of people who moved or cancelled an appointment in ${monthLabel(m)} chose to reschedule.`
+      : `No reschedules or cancellations recorded in ${monthLabel(m)}.`;
+  q('upcoming').textContent = money(upcoming, cur());
+  q('upcoming-note').textContent = `${int(upcomingCount)} appointment${upcomingCount === 1 ? '' : 's'} still to come`;
   q('rescued').textContent = money(rescued, cur());
   q('lost').textContent = money(lost, cur());
   q('rescued-note').textContent = `${int(kept)} appointment${kept === 1 ? '' : 's'} moved instead of cancelled`;
@@ -230,19 +241,19 @@ function paintChurnPanel(months6) {
     h('li', {}, h('span', { class: 'swatch swatch-idle' }), 'Left without changing', h('span', { class: 'count' }, int(idle))),
   );
 
-  // Trend
-  const bars = months6.map((mm) => {
+  // Trend: upcoming (blue), rescued (green) and lost (red) per month
+  const bars = monthsRange.map((mm) => {
     const x = map.get(mm) || {};
+    const up = num(x.upcoming_revenue_cents), gain = num(x.revenue_saved_cents), loss = num(x.revenue_lost_cents);
     return {
-      label: monthShort(mm), gain: num(x.revenue_saved_cents), loss: num(x.revenue_lost_cents), current: mm === m,
-      title: `${monthLabel(mm)}: rescued ${money(num(x.revenue_saved_cents), cur())}, lost ${money(num(x.revenue_lost_cents), cur())}`,
+      label: monthShort(mm), upcoming: up, gain, loss, current: mm === m,
+      title: `${monthLabel(mm)}: upcoming ${money(up, cur())}, rescued ${money(gain, cur())}, lost ${money(loss, cur())}`,
     };
   });
   const svg = q('bars');
   pairedBars(svg, bars);
-  svg.setAttribute('aria-label', `Rescued and lost revenue by month. ${bars.map((b) => b.title).join('. ')}`);
+  svg.setAttribute('aria-label', `Upcoming, rescued and lost revenue by month. ${bars.map((b) => b.title).join('. ')}`);
 }
-
 function renderCapacity() {
   const rows = state.data.capacity || [];
   const monday = addDays(mondayOf(state.today), state.ui.weekOffset * 7);
@@ -621,10 +632,9 @@ function wire() {
     if (state.data.capacity) renderCapacity();
   });
 
-  $('#churn-month').addEventListener('change', (ev) => {
+ $('#churn-month').addEventListener('change', (ev) => {
     state.ui.churnMonth = ev.target.value;
-    const { thisMonth } = churnRows();
-    paintChurnPanel(Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 5)));
+    paintChurnPanel(churnRange(churnRows().thisMonth));
   });
 
   let t;
