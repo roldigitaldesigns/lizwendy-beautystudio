@@ -482,3 +482,11 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
     text-overflow: ellipsis; 
     white-space: nowrap; 
 }
+
+/* ───────── Revenue & Risk Outlook: upcoming (blue) ───────── */
+.text-pipeline-blue { color: var(--pipeline, #1F5FA8); }
+.stat-pipeline { grid-column: 1 / -1; }
+.stat-pipeline .stat-label { color: var(--pipeline, #1F5FA8); }
+.bar-upcoming { fill: var(--pipeline, #1F5FA8); opacity: .5; }
+.is-current .bar-upcoming { opacity: 1; }
+.swatch-upcoming { background: var(--pipeline, #1F5FA8); }
