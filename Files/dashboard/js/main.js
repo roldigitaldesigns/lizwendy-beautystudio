@@ -717,7 +717,7 @@ $('#client-filter')?.addEventListener('click', (ev) => {
     }
   });
 
-  $('#card-clients [data-role="more"]').addEventListener('click', () => { state.ui.shown += CLIENT_PAGE; paintClients(); });
+$('#card-clients [data-role="more"]')?.addEventListener('click', () => { state.ui.shown += CLIENT_PAGE; paintClients(); });
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && state.tenant && Date.now() - state.lastOk > POLL_MS) poll();
