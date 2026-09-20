@@ -67,7 +67,10 @@ exports.handler = async (event) => {
     });
 
     const items = calRes.data.items || [];
-    const insertedBookings = [];
+    
+    // Arrays for Bulk Insert
+    const customersToUpsert = [];
+    const bookingsToUpsert = [];
     const skipped = [];
 
     for (const ev of items) {
@@ -92,21 +95,14 @@ exports.handler = async (event) => {
         continue;
       }
 
-      // 1. External ref
       const externalRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
 
-      // 2. Client Name
       let name = extProps.customerFirst || '';
       if (!name) {
         const nameMatch = description.match(/Client:\s*([^\n\r]+)/i);
-        if (nameMatch) {
-          name = nameMatch[1].trim();
-        } else {
-          name = summary.replace(/^💅\s*/, '').split('—')[0].split('-')[0].trim();
-        }
+        name = nameMatch ? nameMatch[1].trim() : summary.replace(/^💅\s*/, '').split('—')[0].split('-')[0].trim();
       }
 
-      // 3. Client Phone
       let phone = extProps.customerPhone || '';
       if (!phone) {
         const phoneMatch = description.match(/Phone:\s*([^\n\r]+)/i);
@@ -114,93 +110,82 @@ exports.handler = async (event) => {
       }
       const normalizedPhone = phone ? toE164(phone) : `+1000${ev.id.slice(-7)}`;
 
-      // 4. Client Email
       let email = extProps.customerEmail || '';
       if (!email) {
         const emailMatch = description.match(/Email:\s*([^\n\r\s]+@[^\n\r\s]+)/i);
         email = emailMatch ? emailMatch[1].trim() : null;
       }
 
-      // 5. Price
       let priceCents = 0;
       if (extProps.priceCents) {
         priceCents = parseInt(extProps.priceCents, 10) || 0;
       } else {
         const totalMatch = description.match(/Estimated Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i) ||
                            description.match(/Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i);
-        if (totalMatch) {
-          priceCents = toCents(parseFloat(totalMatch[1]));
-        }
+        if (totalMatch) priceCents = toCents(parseFloat(totalMatch[1]));
       }
 
-      // 6. Timing
       const startTime = new Date(ev.start.dateTime);
       const endTime = new Date(ev.end.dateTime);
       const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
 
-      // If live run, upsert via REST API
-      if (!isDryRun) {
-        if (normalizedPhone) {
-          await supabaseFetch('customers?on_conflict=tenant_id,phone', {
-            method: 'POST',
-            body: JSON.stringify({
-              tenant_id: TENANT_ID,
-              phone: normalizedPhone,
-              first_name: name || 'Client',
-              email: email,
-            }),
-          }).catch(e => console.warn('Customer upsert note:', e.message));
-        }
-
-        await supabaseFetch('bookings?on_conflict=tenant_id,external_ref', {
-          method: 'POST',
-          body: JSON.stringify({
-            tenant_id: TENANT_ID,
-            external_ref: externalRef,
-            customer_phone: normalizedPhone,
-            artist_id: ARTIST_ID,
-            channel: 'web',
-            locale: 'es',
-            price_cents: priceCents,
-            status: 'booked',
-            appointment_at: startTime.toISOString(),
-            duration_minutes: durationMinutes,
-            reschedule_count: 0,
-            was_deflected: false,
-          }),
-        }).catch(e => console.error('Booking insert error:', e.message));
+      // Queue for bulk insert instead of executing one by one
+      if (normalizedPhone) {
+        customersToUpsert.push({
+          tenant_id: TENANT_ID,
+          phone: normalizedPhone,
+          first_name: name || 'Client',
+          email: email,
+        });
       }
 
-      insertedBookings.push({
+      bookingsToUpsert.push({
+        tenant_id: TENANT_ID,
         external_ref: externalRef,
-        client: name,
-        phone: normalizedPhone,
-        appointment_at: startTime.toISOString(),
+        customer_phone: normalizedPhone,
+        artist_id: ARTIST_ID,
+        channel: 'web',
+        locale: 'es',
         price_cents: priceCents,
+        status: 'booked',
+        appointment_at: startTime.toISOString(),
+        duration_minutes: durationMinutes,
+        reschedule_count: 0,
+        was_deflected: false,
       });
+    }
+
+    if (!isDryRun) {
+      // Remove duplicate customer entries from the array so Supabase doesn't complain
+      const uniqueCustomers = Array.from(new Map(customersToUpsert.map(c => [c.phone, c])).values());
+
+      if (uniqueCustomers.length > 0) {
+        await supabaseFetch('customers?on_conflict=tenant_id,phone', {
+          method: 'POST',
+          body: JSON.stringify(uniqueCustomers),
+        }).catch(e => console.warn('Bulk customer upsert failed:', e.message));
+      }
+
+      if (bookingsToUpsert.length > 0) {
+        await supabaseFetch('bookings?on_conflict=tenant_id,external_ref', {
+          method: 'POST',
+          body: JSON.stringify(bookingsToUpsert),
+        }).catch(e => console.error('Bulk booking insert failed:', e.message));
+      }
     }
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(
-        {
-          mode: isDryRun ? 'DRY_RUN' : 'DIRECT_SUPABASE_INSERT_COMPLETE',
-          total_scanned: items.length,
-          total_inserted: insertedBookings.length,
-          skipped_blocks: skipped.length,
-          sample: insertedBookings.slice(0, 5),
-        },
-        null,
-        2
-      ),
+      body: JSON.stringify({
+        mode: isDryRun ? 'DRY_RUN' : 'BULK_SUPABASE_INSERT_COMPLETE',
+        total_scanned: items.length,
+        total_inserted: bookingsToUpsert.length,
+        skipped_blocks: skipped.length,
+      }, null, 2),
     };
   } catch (err) {
     console.error('sync-calendar fatal error:', err);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message, stack: err.stack }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message, stack: err.stack }) };
   }
 };
