@@ -490,3 +490,6 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
 .bar-upcoming { fill: var(--pipeline, #1F5FA8); opacity: .5; }
 .is-current .bar-upcoming { opacity: 1; }
 .swatch-upcoming { background: var(--pipeline, #1F5FA8); }
+
+/* ───────── Artist capacity: list container ───────── */
+.artist-list { display: grid; gap: 18px; }
