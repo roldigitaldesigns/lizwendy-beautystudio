@@ -22,7 +22,7 @@ const state = {
   tenants: [], tenant: null, gen: 0,
   range: 30, today: '',
   data: { perf: null, churn: null, capacity: null, ltv: null, activity: null },
-  ui: { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() },
+  ui: { churnMonth: null, capWeeks: 1, filter: 'all', search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() },
   seen: new Set(), primed: false,
   pollTimer: null, tickTimer: null, lastOk: 0,
 };
@@ -30,7 +30,7 @@ const state = {
 // One entry per ledger view. `cards` are the elements that show its data.
 const SOURCES = {
   perf:     { view: 'v_daily_performance', cards: ['kpi-revenue', 'kpi-bookings'],            opts: () => ({ from: addDays(state.today, -(2 * state.range - 1)), limit: 400 }) },
-  churn:    { view: 'v_churn_deflection',  cards: ['kpi-rescued', 'kpi-rate', 'card-churn'],  opts: () => ({ limit: 12 }) },
+  churn: { view: 'v_churn_deflection', cards: ['kpi-rescued', 'kpi-rate', 'card-churn'], opts: () => ({ to: addMonths(monthStartOf(state.today), 3), limit: 12 }) },
   capacity: { view: 'v_artist_capacity', cards: ['card-capacity'], opts: () => ({ from: addDays(mondayOf(state.today), -7), to: addDays(mondayOf(state.today), 35), limit: 60 }) },
   ltv:      { view: 'v_customer_ltv',      cards: ['card-clients'],                           opts: () => ({ limit: 1000 }) },
   activity: { view: 'v_recent_activity',   cards: ['card-feed'],                              opts: () => ({ limit: 50 }) },
@@ -335,11 +335,30 @@ function renderCapacity() {
 
 // ── Clients ──
 
+// Lifecycle filters. "Upcoming" uses next_appointment_at (active future bookings only, added by
+// migration 005). Until 005 has been run that column is absent, so we fall back to
+// last_appointment_at, which can include cancelled bookings (the old behaviour).
+const nextAppt = (c) => ('next_appointment_at' in c ? c.next_appointment_at : c.last_appointment_at);
+const isUpcoming = (c) => { const t = Date.parse(nextAppt(c)); return Number.isFinite(t) && t > Date.now(); };
+const CLIENT_FILTERS = {
+  all: () => true,
+  upcoming: isUpcoming,
+  returning: (c) => num(c.visits) > 1,
+  new: (c) => num(c.visits) <= 1,
+};
+const FILTER_NOUN = { all: 'clients', upcoming: 'upcoming clients', returning: 'returning clients', new: 'new clients' };
+const EMPTY_TEXT = {
+  upcoming:  ['No upcoming clients', 'Clients with an active future booking appear here.'],
+  returning: ['No returning clients yet', 'Clients appear here after their second visit.'],
+  new:       ['No new clients', 'Clients with no visit yet, or just one, appear here.'],
+};
+
 function clientList() {
   const q = normalize(state.ui.search).split(/\s+/).filter(Boolean);
   const { key, dir } = state.ui.sort;
   const all = state.data.ltv || [];
-  const filtered = q.length ? all.filter((c) => q.every((t) => c._hay.includes(t))) : all.slice();
+  const matched = q.length ? all.filter((c) => q.every((t) => c._hay.includes(t))) : all; // search only: what the pill counts show
+  const filtered = matched.filter(CLIENT_FILTERS[state.ui.filter] || CLIENT_FILTERS.all);
   const mult = dir === 'asc' ? 1 : -1;
   const byName = (a, b) => (a.display_name || '~').localeCompare(b.display_name || '~', 'en', { sensitivity: 'base' });
   filtered.sort((a, b) => {
@@ -349,7 +368,7 @@ function clientList() {
     else d = num(a[key]) - num(b[key]);
     return d * mult || byName(a, b);
   });
-  return { all, filtered };
+  return { all, matched, filtered };
 }
 
 function renderClients() {
@@ -359,13 +378,19 @@ function renderClients() {
 
 function paintClients() {
   const card = document.getElementById('card-clients');
-  const { all, filtered } = clientList();
-  const returning = all.filter((c) => c.segment === 'returning').length;
+  const { all, matched, filtered } = clientList();
+  const f = CLIENT_FILTERS[state.ui.filter] ? state.ui.filter : 'all';
+  const term = state.ui.search.trim();
+  const returning = all.filter(CLIENT_FILTERS.returning).length;
   $('[data-role="sub"]', card).textContent = all.length
     ? `${int(all.length)} clients, ${int(returning)} have visited more than once`
     : 'Clients appear here after their first booking';
 
-  $$('.th-btn', card).forEach((b) => {
+  // Filter pills: pressed state + a count that follows the search box
+  $$('#client-filter [data-filter]').forEach((b) => {
+    const k = b.dataset.filter;
+    b.setAttribute('aria-pressed', String(k === f));
+    const n = $('.seg-count', b);     if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] || CLIENT_FILTERS.all).length);
     const th = b.closest('th');
     const on = b.dataset.sort === state.ui.sort.key;
     th.setAttribute('aria-sort', on ? (state.ui.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
@@ -376,20 +401,19 @@ function paintClients() {
   const rows = $('[data-role="rows"]', card);
   clear(rows);
   const visible = filtered.slice(0, state.ui.shown);
-  const now = Date.now();
 
   if (!filtered.length) {
-    const msg = all.length
-      ? h('td', { colspan: 5, class: 'empty' }, h('strong', {}, `No clients match “${state.ui.search.trim()}”`), 'Try a name, the last digits of a phone number, or part of an email.')
-      : h('td', { colspan: 5, class: 'empty' }, h('strong', {}, 'No clients yet'), 'They show up here after their first booking.');
-    rows.append(h('tr', {}, msg));
+    let title, hint;
+    if (!all.length) [title, hint] = ['No clients yet', 'They show up here after their first booking.'];
+    else if (term) [title, hint] = [`No ${FILTER_NOUN[f]} match “${term}”`, f === 'all' ? 'Try a name, the last digits of a phone number, or part of an email.' : 'Try a different search, or choose All.'];
+    else [title, hint] = EMPTY_TEXT[f];
+    rows.append(h('tr', {}, h('td', { colspan: 5, class: 'empty' }, h('strong', {}, title), hint)));
   }
 
   visible.forEach((c) => {
     const shown = state.ui.revealed.has(c.phone);
     const name = c.display_name || 'Unnamed client';
     const latest = c.last_appointment_at;
-    const upcoming = latest && Date.parse(latest) > now;
     const reveal = h('button', {
       type: 'button', class: 'reveal', 'data-phone': c.phone, 'aria-pressed': String(shown),
       'aria-label': `${shown ? 'Hide' : 'Show'} contact details for ${name}`, title: shown ? 'Hide contact details' : 'Show contact details',
@@ -407,12 +431,12 @@ function paintClients() {
           c.email ? h('span', { class: 'email' }, shown ? c.email : maskEmail(c.email)) : h('span', { class: 'email muted' }, 'No email')))),
       h('td', { class: 'num' }, int(c.visits)),
       h('td', { class: 'num' }, h('span', { class: 'ltv' }, money(c.ltv_cents, cur()))),
-      h('td', {}, latest ? h('span', {}, dayLabel(dateInTz(latest, tz())), ' ', upcoming ? h('span', { class: 'tag tag-upcoming' }, 'Upcoming') : null) : h('span', { class: 'muted' }, 'None yet')),
+      h('td', {}, latest ? h('span', {}, dayLabel(dateInTz(latest, tz())), ' ', isUpcoming(c) ? h('span', { class: 'tag tag-upcoming' }, 'Upcoming') : null) : h('span', { class: 'muted' }, 'None yet')),
     ));
   });
 
   $('[data-role="count"]', card).textContent = filtered.length
-    ? `Showing ${int(visible.length)} of ${int(filtered.length)}${state.ui.search.trim() ? ' matching clients' : ' clients, sorted by ' + sortLabel()}`
+    ? `Showing ${int(visible.length)} of ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
     : '';
   const more = $('[data-role="more"]', card);
   const remaining = filtered.length - visible.length;
@@ -525,7 +549,7 @@ async function loadTenant() {
   state.gen += 1;
   state.today = todayIn(tz());
   state.data = { perf: null, churn: null, capacity: null, ltv: null, activity: null };
-  state.ui = { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
+  state.ui = { churnMonth: null, capWeeks: 1, filter: 'all', search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
   state.seen = new Set(); state.primed = false;
   $('#client-search').value = '';
   $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
@@ -666,7 +690,13 @@ function wire() {
     clearTimeout(t);
     t = setTimeout(() => { state.ui.search = ev.target.value; state.ui.shown = CLIENT_PAGE; if (state.data.ltv) paintClients(); }, 120);
   });
-
+$('#client-filter')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-filter]');
+    if (!b || b.dataset.filter === state.ui.filter) return;
+    state.ui.filter = b.dataset.filter;
+    state.ui.shown = CLIENT_PAGE;               // back to the first page, like search does
+    if (state.data.ltv) paintClients();
+  });
   $('#clients-table').addEventListener('click', (ev) => {
     const th = ev.target.closest('.th-btn');
     if (th) {
