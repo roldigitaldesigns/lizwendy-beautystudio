@@ -22,7 +22,7 @@ const state = {
   tenants: [], tenant: null, gen: 0,
   range: 30, today: '',
   data: { perf: null, churn: null, capacity: null, ltv: null, activity: null },
-  ui: { churnMonth: null, weekOffset: 0, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() },
+  const state = { ... ui: { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() } };
   seen: new Set(), primed: false,
   pollTimer: null, tickTimer: null, lastOk: 0,
 };
@@ -31,7 +31,7 @@ const state = {
 const SOURCES = {
   perf:     { view: 'v_daily_performance', cards: ['kpi-revenue', 'kpi-bookings'],            opts: () => ({ from: addDays(state.today, -(2 * state.range - 1)), limit: 400 }) },
   churn:    { view: 'v_churn_deflection',  cards: ['kpi-rescued', 'kpi-rate', 'card-churn'],  opts: () => ({ limit: 12 }) },
-  capacity: { view: 'v_artist_capacity',   cards: ['card-capacity'],                          opts: () => ({ from: addDays(mondayOf(state.today), -14), limit: 60 }) },
+  capacity: { view: 'v_artist_capacity', cards: ['card-capacity'], opts: () => ({ from: addDays(mondayOf(state.today), -7), to: addDays(mondayOf(state.today), 35), limit: 60 }) },
   ltv:      { view: 'v_customer_ltv',      cards: ['card-clients'],                           opts: () => ({ limit: 1000 }) },
   activity: { view: 'v_recent_activity',   cards: ['card-feed'],                              opts: () => ({ limit: 50 }) },
 };
@@ -254,55 +254,79 @@ function paintChurnPanel(monthsRange) {
   pairedBars(svg, bars);
   svg.setAttribute('aria-label', `Upcoming, rescued and lost revenue by month. ${bars.map((b) => b.title).join('. ')}`);
 }
+
+// ── Artist capacity ──
+// v_artist_capacity has one row per artist per week (Monday start, studio timezone), so every
+// window is a whole number of weeks starting at this week's Monday: 1, 2 or 4 weeks.
+const capGroup = () => $('#cap-window') || $('#week-seg');
+const CAP_LABEL = { 1: 'This week', 2: '2 weeks', 4: '4 weeks' };
+
+/** One artist's totals over `weeks` weeks from `startMonday`. A week with no row counts as 0 booked
+ *  but still adds a full week of capacity, so the percentage isn't inflated. */
+function capacityTotals(rows, startMonday, weeks) {
+  const perWeek = num(rows[0].weekly_capacity_minutes);
+  let minutes = 0, bookings = 0, cents = 0;
+  for (let i = 0; i < weeks; i++) {
+    const wk = rows.find((r) => dateOnly(r.week_start) === addDays(startMonday, i * 7));
+    if (wk) { minutes += num(wk.booked_minutes); bookings += num(wk.bookings); cents += num(wk.revenue_cents); }
+  }
+  const capacity = perWeek * weeks;
+  return { minutes, bookings, cents, capacity, pct: capacity ? (100 * minutes) / capacity : 0 };
+}
+
 function renderCapacity() {
   const rows = state.data.capacity || [];
-  const monday = addDays(mondayOf(state.today), state.ui.weekOffset * 7);
+  const weeks = state.ui.capWeeks;
+  const monday = mondayOf(state.today);
   const card = document.getElementById('card-capacity');
-  $('[data-role="sub"]', card).textContent = `${dayLabel(monday)} to ${dayLabel(addDays(monday, 6))}`;
+  $('[data-role="sub"]', card).textContent = `${dayLabel(monday)} to ${dayLabel(addDays(monday, weeks * 7 - 1))}`;
 
   const artists = new Map();
   rows.forEach((r) => { if (!artists.has(r.artist_id)) artists.set(r.artist_id, r.display_name); });
   const list = $('[data-role="artists"]', card);
+  const item = list.tagName === 'UL' || list.tagName === 'OL' ? 'li' : 'div'; // valid HTML for either container
   clear(list);
-  $('[data-role="foot"]', card).hidden = artists.size === 0;
+  const foot = $('[data-role="foot"]', card) || $('.footnote, .panel-foot', card);
+  if (foot) {
+    foot.hidden = artists.size === 0;
+    foot.textContent = "Utilization is booked hours divided by each artist's capacity for the selected weeks. The small bars show last week through four weeks ahead; the darker bars are the weeks counted above.";
+  }
   if (artists.size === 0) {
-    list.append(h('li', { class: 'empty' }, h('strong', {}, 'No appointments scheduled yet'), 'Utilization appears here once bookings come in.'));
+    list.append(h(item, { class: 'empty' }, h('strong', {}, 'No appointments scheduled yet'), 'Utilization appears here once bookings come in.'));
     return;
   }
 
   [...artists].sort((a, b) => a[1].localeCompare(b[1])).forEach(([id, name]) => {
     const mine = rows.filter((r) => r.artist_id === id);
-    const at = (weekStart) => mine.find((r) => dateOnly(r.week_start) === weekStart);
-    const wk = at(monday);
-    const capMin = num(mine[0].weekly_capacity_minutes);
-    const booked = wk ? num(wk.booked_minutes) : 0;
-    const p = wk ? num(wk.utilization_pct) : 0;
+    const t = capacityTotals(mine, monday, weeks);
+    const p = t.pct;
     const full = p >= 85;
     const hrs = (mins) => `${+(mins / 60).toFixed(1)}`;
 
     const fill = h('span', {});
-    const meter = h('div', { class: `meter${full ? ' is-full' : ''}`, role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round(p), 'aria-label': `${name} utilization` }, fill);
+    const meter = h('div', { class: `meter${full ? ' is-full' : ''}`, role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round(p), 'aria-label': `${name} utilization, ${CAP_LABEL[weeks].toLowerCase()}` }, fill);
     requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = `${Math.min(p, 100)}%`; }));
 
+    // Small bars: last week through four weeks ahead. The weeks inside the selected window are dark.
     const stripEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     stripEl.setAttribute('class', 'artist-strip');
     stripEl.setAttribute('role', 'img');
-    const cols = [-2, -1, 0, 1, 2].map((o) => {
-      const ws = addDays(mondayOf(state.today), o * 7);
-      const x = at(ws);
-      return { pct: x ? num(x.utilization_pct) : 0, current: o === state.ui.weekOffset, title: `Week of ${shortDay(ws)}: ${pct(x ? x.utilization_pct : 0)}` };
+    const cols = [-1, 0, 1, 2, 3, 4].map((o) => {
+      const ws = addDays(monday, o * 7);
+      const x = mine.find((r) => dateOnly(r.week_start) === ws);
+      return { pct: x ? num(x.utilization_pct) : 0, current: o >= 0 && o < weeks, title: `Week of ${shortDay(ws)}: ${pct(x ? x.utilization_pct : 0)}` };
     });
     utilStrip(stripEl, cols);
-    stripEl.setAttribute('aria-label', `Utilization, two weeks back to two weeks ahead: ${cols.map((c) => c.title).join('; ')}`);
+    stripEl.setAttribute('aria-label', `Weekly utilization, last week through four weeks ahead: ${cols.map((c) => c.title).join('; ')}`);
 
-    list.append(h('li', { class: 'artist' },
+    list.append(h(item, { class: 'artist' },
       h('span', { class: 'artist-name' }, name),
       h('span', { class: `artist-pct${full ? ' is-full' : ''}` }, pct(p)),
       meter,
       h('div', { class: 'artist-meta' },
-        h('span', {}, h('b', {}, `${hrs(booked)} h`), ` of ${hrs(capMin)} h booked`),
-        h('span', {}, h('b', {}, int(wk ? num(wk.bookings) : 0)), ' bookings'),
-        h('span', {}, h('b', {}, money(wk ? num(wk.revenue_cents) : 0, cur()))),
+        h('span', {}, h('b', {}, `${hrs(t.minutes)} h`), ` of ${hrs(t.capacity)} h booked`),
+        h('span', {}, h('b', {}, int(t.bookings)), t.bookings === 1 ? ' booking' : ' bookings'),
+        h('span', {}, h('b', {}, money(t.cents, cur()))),
         full ? h('span', { class: 'artist-flag' }, 'Nearly full') : null),
       stripEl,
     ));
@@ -501,10 +525,10 @@ async function loadTenant() {
   state.gen += 1;
   state.today = todayIn(tz());
   state.data = { perf: null, churn: null, capacity: null, ltv: null, activity: null };
-  state.ui = { churnMonth: null, weekOffset: 0, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
+  state.ui = { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
   state.seen = new Set(); state.primed = false;
   $('#client-search').value = '';
-  $$('#week-seg .seg-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.week === '0')));
+  $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
   document.title = `${state.tenant.display_name} | Command Center`;
   setLive('loading', 'Loading');
 
@@ -624,11 +648,11 @@ function wire() {
     loadSource('perf');
   });
 
-  $('#week-seg').addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-week]');
+ capGroup()?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-window]');
     if (!b) return;
-    state.ui.weekOffset = Number(b.dataset.week);
-    $$('#week-seg .seg-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    state.ui.capWeeks = Number(b.dataset.window);
+    $$('.seg-btn', capGroup()).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     if (state.data.capacity) renderCapacity();
   });
 
