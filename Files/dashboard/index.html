@@ -206,6 +206,14 @@
           </div>
         </header>
         <div class="card-body">
+          <div class="table-filters">
+            <div class="seg seg-sm" role="group" aria-label="Filter clients by status" id="client-filter">
+              <button type="button" class="seg-btn" data-filter="all" aria-pressed="true">All <span class="seg-count"></span></button>
+              <button type="button" class="seg-btn" data-filter="upcoming" aria-pressed="false">Upcoming <span class="seg-count"></span></button>
+              <button type="button" class="seg-btn" data-filter="returning" aria-pressed="false">Returning <span class="seg-count"></span></button>
+              <button type="button" class="seg-btn" data-filter="new" aria-pressed="false">New <span class="seg-count"></span></button>
+            </div>
+          </div>
           <div class="table-wrap" tabindex="0" role="region" aria-label="Clients table, scrolls sideways on small screens">
             <table class="table" id="clients-table">
               <thead>
