@@ -439,13 +439,12 @@ function paintClients() {
     ));
   });
 
-  $('[data-role="count"]', card).textContent = filtered.length
-  ? `Showing ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
-  : '';
-const more = $('[data-role="more"]', card);
-if (more) more.hidden = true;
-
 const sortLabel = () => ({ display_name: 'name', visits: 'visits', ltv_cents: 'lifetime value', last_appointment_at: 'latest appointment' }[state.ui.sort.key]);
+  $('[data-role="count"]', card).textContent = filtered.length
+    ? `Showing ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
+    : '';
+  const more = $('[data-role="more"]', card);
+  if (more) more.hidden = true;
 }
 
 // ── Activity feed ──
