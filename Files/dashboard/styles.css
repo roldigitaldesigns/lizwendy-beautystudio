@@ -506,3 +506,35 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
   .table-filters .seg-btn { padding: 0 8px; }
   .table-filters .seg-count { margin-left: 3px; }
 }
+
+/* Scrollable Client Directory */
+.client-directory-wrapper {
+  max-height: 600px;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+/* Premium Dark Scrollbar for the table */
+.client-directory-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.client-directory-wrapper::-webkit-scrollbar-track {
+  background: var(--card2); 
+}
+.client-directory-wrapper::-webkit-scrollbar-thumb {
+  background: var(--gold-dim); 
+  border-radius: 4px;
+}
+.client-directory-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--gold); 
+}
+
+/* Ensure the table header stays fixed at the top while scrolling */
+.client-directory-wrapper thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card2); 
+}
