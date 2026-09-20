@@ -68,7 +68,6 @@ exports.handler = async (event) => {
 
     const items = calRes.data.items || [];
     
-    // Arrays for Bulk Insert
     const customersToUpsert = [];
     const bookingsToUpsert = [];
     const skipped = [];
@@ -129,7 +128,6 @@ exports.handler = async (event) => {
       const endTime = new Date(ev.end.dateTime);
       const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
 
-      // Queue for bulk insert instead of executing one by one
       if (normalizedPhone) {
         customersToUpsert.push({
           tenant_id: TENANT_ID,
@@ -156,14 +154,13 @@ exports.handler = async (event) => {
     }
 
     if (!isDryRun) {
-      // Remove duplicate customer entries from the array so Supabase doesn't complain
       const uniqueCustomers = Array.from(new Map(customersToUpsert.map(c => [c.phone, c])).values());
 
       if (uniqueCustomers.length > 0) {
         await supabaseFetch('customers?on_conflict=tenant_id,phone', {
           method: 'POST',
           body: JSON.stringify(uniqueCustomers),
-        }); 
+        });
       }
 
       if (bookingsToUpsert.length > 0) {
@@ -172,6 +169,7 @@ exports.handler = async (event) => {
           body: JSON.stringify(bookingsToUpsert),
         });
       }
+    }
 
     return {
       statusCode: 200,
