@@ -689,13 +689,13 @@ function wire() {
   let t;
   $('#client-search').addEventListener('input', (ev) => {
     clearTimeout(t);
-    t = setTimeout(() => { state.ui.search = ev.target.value; state.ui.shown = CLIENT_PAGE; if (state.data.ltv) paintClients(); }, 120);
+    t = setTimeout(() => { state.ui.search = ev.target.value; state.ui.shown = Infinity; if (state.data.ltv) paintClients(); }, 120);
   });
 $('#client-filter')?.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-filter]');
     if (!b || b.dataset.filter === state.ui.filter) return;
     state.ui.filter = b.dataset.filter;
-    state.ui.shown = CLIENT_PAGE;               // back to the first page, like search does
+    state.ui.shown = Infinity;               // back to the first page, like search does
     if (state.data.ltv) paintClients();
   });
   $('#clients-table').addEventListener('click', (ev) => {
