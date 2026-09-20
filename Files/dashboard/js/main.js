@@ -22,7 +22,7 @@ const state = {
   tenants: [], tenant: null, gen: 0,
   range: 30, today: '',
   data: { perf: null, churn: null, capacity: null, ltv: null, activity: null },
-  const state = { ... ui: { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() } };
+  ui: { churnMonth: null, capWeeks: 1, search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() },
   seen: new Set(), primed: false,
   pollTimer: null, tickTimer: null, lastOk: 0,
 };
