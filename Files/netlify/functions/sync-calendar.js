@@ -1,9 +1,26 @@
 const { google } = require('googleapis');
-const { recordLedgerEvent, toE164, toCents } = require('./_lib/ledger');
+const { createClient } = require('@supabase/supabase-js');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+
+const TENANT_ID = '36f1a3fc-726b-4a30-b1c2-16e32be129b1';
+const ARTIST_ID = 'ff5d2df5-b405-4b93-998d-60ae5b8b7926';
+
+function toE164(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return digits ? `+${digits}` : '';
+}
+
+function toCents(dollars) {
+  const num = parseFloat(dollars);
+  return Number.isFinite(num) ? Math.round(num * 100) : 0;
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -15,6 +32,8 @@ exports.handler = async (event) => {
   const fromDate = event.queryStringParameters?.from || '2026-08-01T00:00:00Z';
 
   try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const auth = new google.auth.JWT({
       email: CLIENT_EMAIL,
       key: PRIVATE_KEY,
@@ -32,7 +51,7 @@ exports.handler = async (event) => {
     });
 
     const items = calRes.data.items || [];
-    const matched = [];
+    const insertedBookings = [];
     const skipped = [];
 
     for (const ev of items) {
@@ -46,7 +65,6 @@ exports.handler = async (event) => {
       const creatorEmail = ev.creator?.email || '';
       const extProps = ev.extendedProperties?.private || {};
 
-      // STRICT FILTER: Only accept bookings created by the booking system
       const isSystemBooking =
         summary.startsWith('💅') ||
         description.includes('Booked via lizwendybeautystudiollc.com') ||
@@ -58,8 +76,8 @@ exports.handler = async (event) => {
         continue;
       }
 
-      // 1. Stable booking ref
-      const bookingRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
+      // 1. Stable external ref / ID
+      const externalRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
 
       // 2. Client Name
       let name = extProps.customerFirst || '';
@@ -87,20 +105,7 @@ exports.handler = async (event) => {
         email = emailMatch ? emailMatch[1].trim() : null;
       }
 
-      // 5. Service Summary
-      let serviceSummary = extProps.serviceList || '';
-      if (!serviceSummary) {
-        const servMatch = description.match(/Services:\s*([^\n\r]+)/i);
-        if (servMatch) {
-          serviceSummary = servMatch[1].trim();
-        } else if (summary.includes('—')) {
-          serviceSummary = summary.split('—')[1].trim();
-        } else {
-          serviceSummary = summary.replace(/^💅\s*/, '').trim();
-        }
-      }
-
-      // 6. Price
+      // 5. Price
       let priceCents = 0;
       if (extProps.priceCents) {
         priceCents = parseInt(extProps.priceCents, 10) || 0;
@@ -112,62 +117,80 @@ exports.handler = async (event) => {
         }
       }
 
-      // 7. Duration
+      // 6. Duration & Appointment Time
       const startTime = new Date(ev.start.dateTime);
       const endTime = new Date(ev.end.dateTime);
       const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
 
-      const record = {
-        booking_ref: bookingRef,
-        customer_phone: normalizedPhone,
-        customer_name: name || 'Client',
-        customer_email: email,
-        service_summary: serviceSummary || 'Beauty Service',
-        price_cents: priceCents,
-        duration_minutes: durationMinutes,
-        appointment_at: startTime.toISOString(),
-      };
-
+      // If live run, write directly to customers and bookings tables
       if (!isDryRun) {
-        await recordLedgerEvent({
-          event_type: 'created',
-          idempotency_key: `import:${bookingRef}`,
-          booking_ref: bookingRef,
-          customer_phone: normalizedPhone,
-          customer_name: name || 'Client',
-          customer_email: email,
-          locale: 'es',
-          artist_ref: 'liz',
-          service_summary: serviceSummary || 'Beauty Service',
-          channel: 'calendar_import',
-          price_cents: priceCents,
-          duration_minutes: durationMinutes,
-          appointment_at: startTime.toISOString(),
-          actor: 'staff',
-        });
+        // Upsert Customer
+        if (normalizedPhone) {
+          await supabase.from('customers').upsert(
+            {
+              tenant_id: TENANT_ID,
+              phone: normalizedPhone,
+              first_name: name || 'Client',
+              email: email,
+            },
+            { onConflict: 'tenant_id,phone' }
+          );
+        }
+
+        // Insert / Upsert Booking
+        const { error: bookingErr } = await supabase.from('bookings').upsert(
+          {
+            tenant_id: TENANT_ID,
+            external_ref: externalRef,
+            customer_phone: normalizedPhone,
+            artist_id: ARTIST_ID,
+            channel: 'web',
+            locale: 'es',
+            price_cents: priceCents,
+            status: 'booked',
+            appointment_at: startTime.toISOString(),
+            duration_minutes: durationMinutes,
+            reschedule_count: 0,
+            was_deflected: false,
+          },
+          { onConflict: 'tenant_id,external_ref' }
+        );
+
+        if (bookingErr) {
+          console.error('Booking insert error for ref', externalRef, bookingErr);
+        }
       }
 
-      matched.push(record);
+      insertedBookings.push({
+        external_ref: externalRef,
+        client: name,
+        phone: normalizedPhone,
+        appointment_at: startTime.toISOString(),
+        price_cents: priceCents,
+      });
     }
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        mode: isDryRun ? 'DRY_RUN (safe preview, no DB writes)' : 'LIVE_SYNC (written to database)',
-        total_scanned: items.length,
-        system_bookings_matched: matched.length,
-        personal_blocks_skipped: skipped.length,
-        matched_sample: matched,
-        skipped_list: skipped.map(s => s.summary),
-      }, null, 2),
+      body: JSON.stringify(
+        {
+          mode: isDryRun ? 'DRY_RUN' : 'DIRECT_SUPABASE_INSERT_COMPLETE',
+          total_scanned: items.length,
+          total_inserted: insertedBookings.length,
+          skipped_blocks: skipped.length,
+          sample: insertedBookings.slice(0, 5),
+        },
+        null,
+        2
+      ),
     };
   } catch (err) {
-    console.error('sync-calendar error:', err);
+    console.error('sync-calendar fatal error:', err);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ error: err.message, stack: err.stack }),
     };
   }
 };
