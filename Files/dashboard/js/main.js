@@ -404,7 +404,7 @@ function paintClients() {
 
   const rows = $('[data-role="rows"]', card);
   clear(rows);
-  const visible = filtered.slice(0, state.ui.shown);
+  const visible = filtered;
 
   if (!filtered.length) {
     let title, hint;
@@ -440,13 +440,10 @@ function paintClients() {
   });
 
   $('[data-role="count"]', card).textContent = filtered.length
-    ? `Showing ${int(visible.length)} of ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
-    : '';
-  const more = $('[data-role="more"]', card);
-  const remaining = filtered.length - visible.length;
-  more.hidden = remaining <= 0;
-  more.textContent = `Show ${Math.min(CLIENT_PAGE, remaining)} more`;
-}
+  ? `Showing ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
+  : '';
+const more = $('[data-role="more"]', card);
+if (more) more.hidden = true;
 
 const sortLabel = () => ({ display_name: 'name', visits: 'visits', ltv_cents: 'lifetime value', last_appointment_at: 'latest appointment' }[state.ui.sort.key]);
 
