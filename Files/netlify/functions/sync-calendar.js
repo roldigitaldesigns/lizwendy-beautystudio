@@ -163,16 +163,15 @@ exports.handler = async (event) => {
         await supabaseFetch('customers?on_conflict=tenant_id,phone', {
           method: 'POST',
           body: JSON.stringify(uniqueCustomers),
-        }).catch(e => console.warn('Bulk customer upsert failed:', e.message));
+        }); 
       }
 
       if (bookingsToUpsert.length > 0) {
         await supabaseFetch('bookings?on_conflict=tenant_id,external_ref', {
           method: 'POST',
           body: JSON.stringify(bookingsToUpsert),
-        }).catch(e => console.error('Bulk booking insert failed:', e.message));
+        });
       }
-    }
 
     return {
       statusCode: 200,
