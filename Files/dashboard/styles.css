@@ -493,3 +493,16 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
 
 /* ───────── Artist capacity: list container ───────── */
 .artist-list { display: grid; gap: 18px; }
+
+/* ───────── Clients: lifecycle filter pills ───────── */
+/* The strip scrolls sideways on very narrow phones instead of squeezing; the small padding keeps focus rings from being clipped. */
+.table-filters { margin: -3px -3px 11px; padding: 3px; overflow-x: auto; }
+.table-filters .seg { max-width: none; }
+.table-filters .seg-btn { white-space: nowrap; }
+.seg-count { margin-left: 4px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.seg-count:empty { display: none; }
+.seg-btn[aria-pressed="true"] .seg-count { color: inherit; }
+@media (max-width: 480px) {
+  .table-filters .seg-btn { padding: 0 8px; }
+  .table-filters .seg-count { margin-left: 3px; }
+}
