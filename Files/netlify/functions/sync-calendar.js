@@ -128,11 +128,11 @@ exports.handler = async (event) => {
       const endTime = new Date(ev.end.dateTime);
       const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
 
-      if (normalizedPhone) {
+     if (normalizedPhone) {
         customersToUpsert.push({
           tenant_id: TENANT_ID,
           phone: normalizedPhone,
-          first_name: name || 'Client',
+          display_name: name || 'Client', // <-- Changed this line
           email: email,
         });
       }
