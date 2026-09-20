@@ -1,5 +1,4 @@
 const { google } = require('googleapis');
-const { createClient } = require('@supabase/supabase-js');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -22,6 +21,25 @@ function toCents(dollars) {
   return Number.isFinite(num) ? Math.round(num * 100) : 0;
 }
 
+async function supabaseFetch(endpoint, options = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase error [${res.status}]: ${text}`);
+  }
+  return res.json();
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -32,8 +50,6 @@ exports.handler = async (event) => {
   const fromDate = event.queryStringParameters?.from || '2026-08-01T00:00:00Z';
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const auth = new google.auth.JWT({
       email: CLIENT_EMAIL,
       key: PRIVATE_KEY,
@@ -76,7 +92,7 @@ exports.handler = async (event) => {
         continue;
       }
 
-      // 1. Stable external ref / ID
+      // 1. External ref
       const externalRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
 
       // 2. Client Name
@@ -117,29 +133,28 @@ exports.handler = async (event) => {
         }
       }
 
-      // 6. Duration & Appointment Time
+      // 6. Timing
       const startTime = new Date(ev.start.dateTime);
       const endTime = new Date(ev.end.dateTime);
       const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
 
-      // If live run, write directly to customers and bookings tables
+      // If live run, upsert via REST API
       if (!isDryRun) {
-        // Upsert Customer
         if (normalizedPhone) {
-          await supabase.from('customers').upsert(
-            {
+          await supabaseFetch('customers?on_conflict=tenant_id,phone', {
+            method: 'POST',
+            body: JSON.stringify({
               tenant_id: TENANT_ID,
               phone: normalizedPhone,
               first_name: name || 'Client',
               email: email,
-            },
-            { onConflict: 'tenant_id,phone' }
-          );
+            }),
+          }).catch(e => console.warn('Customer upsert note:', e.message));
         }
 
-        // Insert / Upsert Booking
-        const { error: bookingErr } = await supabase.from('bookings').upsert(
-          {
+        await supabaseFetch('bookings?on_conflict=tenant_id,external_ref', {
+          method: 'POST',
+          body: JSON.stringify({
             tenant_id: TENANT_ID,
             external_ref: externalRef,
             customer_phone: normalizedPhone,
@@ -152,13 +167,8 @@ exports.handler = async (event) => {
             duration_minutes: durationMinutes,
             reschedule_count: 0,
             was_deflected: false,
-          },
-          { onConflict: 'tenant_id,external_ref' }
-        );
-
-        if (bookingErr) {
-          console.error('Booking insert error for ref', externalRef, bookingErr);
-        }
+          }),
+        }).catch(e => console.error('Booking insert error:', e.message));
       }
 
       insertedBookings.push({
