@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Studio Admin — Liz Wendy Beauty Studio</title>
+<style>
+  :root {
+    --bg: #0a0908;
+    --card: #151311;
+    --card2: #1f1b18;
+    --gold: #d4af37;
+    --gold-dim: rgba(212,175,55,.35);
+    --border: rgba(212,175,55,.18);
+    --muted: #9a9088;
+    --text: #f5f1ea;
+    --white: #f5f1ea;
+    --maroon: #8b1a1a;
+    --green: #3fa66a;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh; line-height: 1.5;
+  }
+  a { color: var(--gold); }
+  h1,h2,h3 { font-family: var(--serif); font-weight: normal; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 10;
+  }
+  .topbar .brand { font-family: var(--serif); font-size: 20px; color: var(--gold); }
+  .topbar .brand small { display:block; font-family: -apple-system, Arial, sans-serif;
+    font-size: 10px; letter-spacing: .25em; color: var(--muted); text-transform: uppercase; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .tab {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    padding: 12px 18px; font-size: 14px; border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .section-head h2 { font-size: 22px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    background: linear-gradient(135deg, #a8872a, var(--gold)); color: var(--bg);
+    border: none; cursor: pointer; padding: 10px 18px; border-radius: 8px;
+    font-weight: bold; font-size: 13px;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-secondary {
+    background: none; border: 1px solid var(--gold-dim); color: var(--text);
+    cursor: pointer; padding: 10px 18px; border-radius: 8px; font-size: 13px;
+  }
+  .btn-danger {
+    background: none; border: 1px solid var(--maroon); color: #e88;
+    cursor: pointer; padding: 8px 14px; border-radius: 8px; font-size: 12px;
+  }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-ghost {
+    background: none; border: 1px solid var(--gold-dim); color: var(--muted);
+    cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12px;
+  }
+
+  /* ── ARTIST CARDS ── */
+  .artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .artist-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px;
+  }
+  .artist-card.inactive { opacity: .55; }
+  .artist-card h3 { font-size: 17px; color: var(--text); margin-bottom: 4px; }
+  .artist-card .field { font-size: 12px; color: var(--muted); margin: 4px 0; word-break: break-all; }
+  .artist-card .field b { color: var(--text); font-weight: 600; }
+  .badge {
+    display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+  }
+  .badge.active { background: rgba(63,166,106,.15); color: var(--green); border: 1px solid rgba(63,166,106,.4); }
+  .badge.inactive { background: rgba(154,144,136,.12); color: var(--muted); border: 1px solid var(--gold-dim); }
+  .badge.slot { background: rgba(212,175,55,.12); color: var(--gold); border: 1px solid var(--gold-dim); margin-left: 6px; }
+  .card-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* ── TABLE ── */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .pill {
+    background: none; border: 1px solid var(--gold-dim); color: var(--muted);
+    cursor: pointer; padding: 8px 16px; border-radius: 20px; font-size: 13px;
+  }
+  .pill.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); font-weight: 600;
+  }
+  tbody td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  tbody tr:hover { background: var(--card); }
+  .svc-name { font-weight: 600; }
+  .svc-sub { font-size: 11px; color: var(--muted); }
+  .chip {
+    display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 6px;
+    background: var(--card2); border: 1px solid var(--border); color: var(--muted); margin: 1px;
+  }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .empty { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
+
+  /* ── MODAL ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.78);
+    display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px;
+    z-index: 100; overflow-y: auto;
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--gold-dim); border-radius: 14px;
+    padding: 26px; max-width: 540px; width: 100%; margin: auto;
+  }
+  .modal h2 { font-size: 20px; margin-bottom: 20px; }
+  .modal-narrow { max-width: 400px; }
+  label.fl { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 5px; }
+  input[type=text], input[type=email], input[type=number], input[type=time], select {
+    width: 100%; background: var(--bg); border: 1px solid var(--gold-dim); color: var(--text);
+    padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--gold); }
+  input:disabled { opacity: .6; cursor: not-allowed; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .check-row { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+  .check-row input { width: auto; }
+  .check-row label { font-size: 14px; color: var(--text); margin: 0; }
+  .box {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 8px;
+    background: var(--bg);
+  }
+  .box-title { font-size: 12px; color: var(--gold); margin-bottom: 8px; }
+  .check-list-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+  .check-list-item input { width: auto; }
+  .hours-day {
+    display: grid; grid-template-columns: 90px 1fr 1fr; gap: 8px; align-items: center;
+    padding: 6px 0;
+  }
+  .hours-day .dl { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .hours-day .dl input { width: auto; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .modal-actions .btn, .modal-actions .btn-secondary { flex: 1; }
+  .modal-error { color: #e88; font-size: 13px; margin-top: 12px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── PIN GATE ── */
+  #pinGate .modal { text-align: center; }
+  #pinGate .status-icon { font-size: 34px; margin-bottom: 10px; }
+  #pinGate input { text-align: center; letter-spacing: .3em; font-size: 18px; margin-top: 8px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--card2); border: 1px solid var(--gold-dim); color: var(--text);
+    padding: 12px 22px; border-radius: 10px; font-size: 14px; z-index: 200;
+    opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.err { border-color: var(--maroon); color: #e88; }
+
+  .loading-state { text-align: center; padding: 60px; color: var(--muted); }
+  .spinner {
+    width: 26px; height: 26px; border: 3px solid var(--gold-dim); border-top-color: var(--gold);
+    border-radius: 50%; margin: 0 auto 14px; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ── PIN GATE ── -->
+<div id="pinGate" class="overlay">
+  <div class="modal modal-narrow">
+    <div class="status-icon">🔒</div>
+    <h2>Studio Admin</h2>
+    <p style="font-size:13px;color:var(--muted)">Enter your admin PIN to continue.</p>
+    <input type="password" id="pinInput" inputmode="numeric" placeholder="••••" autocomplete="off"
+           onkeydown="if(event.key==='Enter'){submitPin();}"/>
+    <div class="modal-error hidden" id="pinError">Incorrect PIN. Try again.</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="submitPin()">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP (hidden until authed) ── -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand">Liz Wendy<small>Studio Admin</small></div>
+    <div class="topbar-actions">
+      <button class="btn-ghost" onclick="loadData()">Refresh</button>
+      <button class="btn-ghost" onclick="logout()">Lock</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tab active" id="tab-artists" onclick="switchTab('artists')">Artists</button>
+      <button class="tab" id="tab-services" onclick="switchTab('services')">Services &amp; Add-ons</button>
+    </div>
+
+    <!-- ARTIST HUB -->
+    <div id="panel-artists">
+      <div class="section-head">
+        <h2>Artists</h2>
+        <button class="btn" onclick="openArtistModal()">+ Add Artist</button>
+      </div>
+      <div id="artistList"><div class="loading-state"><div class="spinner"></div>Loading…</div></div>
+    </div>
+
+    <!-- SERVICE CATALOG -->
+    <div id="panel-services" class="hidden">
+      <div class="section-head">
+        <h2>Services &amp; Add-ons</h2>
+        <button class="btn" onclick="openServiceModal()">+ Add Service</button>
+      </div>
+      <div class="filter-row">
+        <button class="pill active" id="filter-main" onclick="setServiceFilter('main')">Main Services</button>
+        <button class="pill" id="filter-addon" onclick="setServiceFilter('addon')">Add-ons</button>
+      </div>
+      <div id="serviceTable"><div class="loading-state"><div class="spinner"></div>Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTIST MODAL ── -->
+<div id="artistModal" class="overlay hidden">
+  <div class="modal">
+    <h2 id="artistModalTitle">Add Artist</h2>
+    <input type="hidden" id="a_origId"/>
+    <div class="row2">
+      <div>
+        <label class="fl">Display name</label>
+        <input type="text" id="a_name" placeholder="Liz Wendy Cedeño"/>
+      </div>
+      <div>
+        <label class="fl">Slug / ID</label>
+        <input type="text" id="a_slug" placeholder="liz"/>
+        <div class="hint" id="a_slugHint"></div>
+      </div>
+    </div>
+    <label class="fl">Notification email</label>
+    <input type="email" id="a_email" placeholder="studio@example.com"/>
+    <label class="fl">Google Calendar ID</label>
+    <input type="text" id="a_calendar" placeholder="...@group.calendar.google.com"/>
+
+    <label class="fl">Slot granularity</label>
+    <select id="a_slot">
+      <option value="30">30 minutes</option>
+      <option value="60">60 minutes</option>
+    </select>
+
+    <label class="fl">Working hours</label>
+    <div class="box" id="a_hours"><!-- filled by JS --></div>
+
+    <div class="check-row" style="margin-top:16px">
+      <input type="checkbox" id="a_active"/>
+      <label for="a_active">Active (available for booking)</label>
+    </div>
+
+    <div class="modal-error hidden" id="artistError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('artistModal')">Cancel</button>
+      <button class="btn" id="artistSaveBtn" onclick="saveArtist()">Save artist</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SERVICE MODAL ── -->
+<div id="serviceModal" class="overlay hidden">
+  <div class="modal">
+    <h2 id="serviceModalTitle">Add Service</h2>
+    <input type="hidden" id="s_id"/>
+    <label class="fl">Service name</label>
+    <input type="text" id="s_name" placeholder="Gel Manicure"/>
+    <div class="row2">
+      <div>
+        <label class="fl">Category</label>
+        <select id="s_category">
+          <option value="nails">Nails</option>
+          <option value="facial">Facial</option>
+          <option value="makeup">Makeup</option>
+          <option value="waxing">Waxing</option>
+          <option value="pmu">PMU</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Duration (minutes)</label>
+        <input type="number" id="s_duration" min="0" step="5" placeholder="60"/>
+      </div>
+    </div>
+    <label class="fl">Price ($)</label>
+    <input type="number" id="s_price" min="0" step="1" placeholder="45"/>
+
+    <div class="check-row" style="margin-top:16px">
+      <input type="checkbox" id="s_isaddon" onchange="onAddonToggle()"/>
+      <label for="s_isaddon">This is an add-on</label>
+    </div>
+
+    <!-- Shown only when NOT an add-on -->
+    <div id="triggerBox" class="box">
+      <div class="box-title">Pop-up add-on triggers</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        When this service is selected, prompt the customer to add these:
+      </div>
+      <div id="triggerList"><!-- filled by JS --></div>
+    </div>
+
+    <label class="fl">Assigned artists</label>
+    <div class="box" id="s_artists"><!-- filled by JS --></div>
+
+    <div class="modal-error hidden" id="serviceError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('serviceModal')">Cancel</button>
+      <button class="btn" id="serviceSaveBtn" onclick="saveService()">Save service</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DELETE CONFIRM MODAL ── -->
+<div id="confirmModal" class="overlay hidden">
+  <div class="modal modal-narrow">
+    <h2 id="confirmTitle">Delete?</h2>
+    <p style="font-size:14px;color:var(--muted)" id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn-danger" style="flex:1;padding:10px" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONFIG + STATE
+   ─────────────────────────────────────────────
+   Field names below match the Supabase schema exactly:
+
+   studio_artists row:
+     id (text, PK — the slug, e.g. "liz")
+     display_name, notification_email, google_calendar_id,
+     slot_interval_minutes, is_active,
+     working_hours: { mon: {start:"09:00",end:"19:00"}, tue: {...}, ... }
+                     (day present = working that day; absent = day off)
+
+   studio_services row:
+     id (uuid, PK — null when creating new)
+     name, category, duration_minutes, price_dollars,
+     is_addon, assigned_artist_ids (array of artist ids),
+     trigger_addon_ids (array of service ids, only meaningful when !is_addon)
+═══════════════════════════════════════════════ */
+const ENDPOINT = '/.netlify/functions/admin-data';
+const DAYS = [
+  { key: 'mon', label: 'Monday' },
+  { key: 'tue', label: 'Tuesday' },
+  { key: 'wed', label: 'Wednesday' },
+  { key: 'thu', label: 'Thursday' },
+  { key: 'fri', label: 'Friday' },
+  { key: 'sat', label: 'Saturday' },
+  { key: 'sun', label: 'Sunday' },
+];
+
+let ADMIN_PIN   = '';
+let ARTISTS     = [];
+let SERVICES    = [];
+let serviceFilter = 'main';
+
+/* ═══════════════════════════════════════════════
+   PIN AUTH
+═══════════════════════════════════════════════ */
+(function initAuth() {
+  const saved = sessionStorage.getItem('lwbs_admin_pin');
+  if (saved) {
+    ADMIN_PIN = saved;
+    unlock();
+  }
+})();
+
+function submitPin() {
+  const val = document.getElementById('pinInput').value.trim();
+  if (!val) return;
+  ADMIN_PIN = val;
+  sessionStorage.setItem('lwbs_admin_pin', val);
+  unlock();
+}
+
+async function unlock() {
+  document.getElementById('pinError').classList.add('hidden');
+  const ok = await loadData(true);
+  if (!ok) {
+    sessionStorage.removeItem('lwbs_admin_pin');
+    ADMIN_PIN = '';
+    document.getElementById('pinError').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('pinGate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+function logout() {
+  sessionStorage.removeItem('lwbs_admin_pin');
+  location.reload();
+}
+
+/* ═══════════════════════════════════════════════
+   API
+═══════════════════════════════════════════════ */
+async function apiGet() {
+  const res = await fetch(ENDPOINT, { headers: { 'x-admin-pin': ADMIN_PIN } });
+  if (res.status === 401 || res.status === 403) throw { auth: true };
+  if (!res.ok) throw new Error('Failed to load data');
+  return res.json();
+}
+
+async function apiPost(table, action, record, id) {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-pin': ADMIN_PIN },
+    body: JSON.stringify({ table, action, record, id }),
+  });
+  if (res.status === 401 || res.status === 403) throw { auth: true };
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error || 'Save failed');
+  }
+  return res.json();
+}
+
+async function loadData(silent) {
+  try {
+    const data = await apiGet();
+    ARTISTS  = Array.isArray(data.artists)  ? data.artists  : [];
+    SERVICES = Array.isArray(data.services) ? data.services : [];
+    renderArtists();
+    renderServices();
+    if (!silent) toast('Refreshed');
+    return true;
+  } catch (err) {
+    if (err.auth) return false;
+    toast(err.message || 'Could not load data', true);
+    return true;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   TABS + FILTER
+═══════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.getElementById('tab-artists').classList.toggle('active', tab === 'artists');
+  document.getElementById('tab-services').classList.toggle('active', tab === 'services');
+  document.getElementById('panel-artists').classList.toggle('hidden', tab !== 'artists');
+  document.getElementById('panel-services').classList.toggle('hidden', tab !== 'services');
+}
+
+function setServiceFilter(f) {
+  serviceFilter = f;
+  document.getElementById('filter-main').classList.toggle('active', f === 'main');
+  document.getElementById('filter-addon').classList.toggle('active', f === 'addon');
+  renderServices();
+}
+
+/* ═══════════════════════════════════════════════
+   ARTIST RENDERING
+═══════════════════════════════════════════════ */
+function renderArtists() {
+  const el = document.getElementById('artistList');
+  if (!ARTISTS.length) {
+    el.innerHTML = '<div class="empty">No artists yet. Add your first artist to start taking bookings.</div>';
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'artist-grid';
+  ARTISTS.forEach(a => {
+    const active = a.is_active !== false;
+    const slot = Number(a.slot_interval_minutes) === 60 ? '60-min slots' : '30-min slots';
+    const card = document.createElement('div');
+    card.className = 'artist-card' + (active ? '' : ' inactive');
+    card.innerHTML =
+      '<span class="badge ' + (active ? 'active">Active' : 'inactive">Inactive') + '</span>' +
+      '<span class="badge slot">' + slot + '</span>' +
+      '<h3>' + esc(a.display_name || '(unnamed)') + '</h3>' +
+      '<div class="field"><b>Slug:</b> ' + esc(a.id || '—') + '</div>' +
+      '<div class="field"><b>Email:</b> ' + esc(a.notification_email || '—') + '</div>' +
+      '<div class="field"><b>Calendar:</b> ' + esc(a.google_calendar_id || '—') + '</div>' +
+      '<div class="card-actions">' +
+        '<button class="btn-secondary btn-sm" data-edit="' + esc(a.id) + '">Edit</button>' +
+        (active
+          ? '<button class="btn-danger btn-sm" data-deact="' + esc(a.id) + '">Deactivate</button>'
+          : '<button class="btn-ghost btn-sm" data-react="' + esc(a.id) + '">Reactivate</button>') +
+      '</div>';
+    grid.appendChild(card);
+  });
+  el.innerHTML = '';
+  el.appendChild(grid);
+  grid.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openArtistModal(b.getAttribute('data-edit')));
+  grid.querySelectorAll('[data-deact]').forEach(b => b.onclick = () => setArtistActive(b.getAttribute('data-deact'), false));
+  grid.querySelectorAll('[data-react]').forEach(b => b.onclick = () => setArtistActive(b.getAttribute('data-react'), true));
+}
+
+/* ═══════════════════════════════════════════════
+   ARTIST MODAL
+═══════════════════════════════════════════════ */
+function buildHoursEditor(workingHours) {
+  // workingHours shape: { mon: {start:"09:00", end:"19:00"}, ... }
+  const container = document.getElementById('a_hours');
+  container.innerHTML = '';
+  const wh = workingHours || {};
+  DAYS.forEach(d => {
+    const existing = wh[d.key];
+    const on = !!(existing && existing.start && existing.end);
+    const start = on ? existing.start : '09:00';
+    const end   = on ? existing.end   : '18:00';
+    const row = document.createElement('div');
+    row.className = 'hours-day';
+    row.innerHTML =
+      '<div class="dl"><input type="checkbox" id="d_on_' + d.key + '" ' + (on ? 'checked' : '') + '/>' +
+        '<label for="d_on_' + d.key + '">' + d.label + '</label></div>' +
+      '<input type="time" id="d_start_' + d.key + '" value="' + start + '"/>' +
+      '<input type="time" id="d_end_' + d.key + '" value="' + end + '"/>';
+    container.appendChild(row);
+  });
+}
+
+function collectHours() {
+  // Output shape: { mon: {start:"HH:MM", end:"HH:MM"}, ... } — day absent = day off
+  const out = {};
+  DAYS.forEach(d => {
+    if (document.getElementById('d_on_' + d.key).checked) {
+      const start = document.getElementById('d_start_' + d.key).value;
+      const end   = document.getElementById('d_end_' + d.key).value;
+      if (start && end && timeToMinutes(end) > timeToMinutes(start)) {
+        out[d.key] = { start, end };
+      }
+    }
+  });
+  return out;
+}
+
+function openArtistModal(id) {
+  const a = id ? ARTISTS.find(x => String(x.id) === String(id)) : null;
+  document.getElementById('artistModalTitle').textContent = a ? 'Edit Artist' : 'Add Artist';
+  document.getElementById('a_origId').value = a ? a.id : '';
+  document.getElementById('a_name').value    = a ? (a.display_name || '') : '';
+  document.getElementById('a_slug').value    = a ? (a.id || '') : '';
+  document.getElementById('a_slug').disabled = !!a; // slug is the primary key — lock it once created
+  document.getElementById('a_slugHint').textContent = a ? 'Slug cannot be changed after creation.' : 'Lowercase, no spaces — used as the artist\u2019s permanent ID.';
+  document.getElementById('a_email').value   = a ? (a.notification_email || '') : '';
+  document.getElementById('a_calendar').value= a ? (a.google_calendar_id || '') : '';
+  document.getElementById('a_slot').value    = a && Number(a.slot_interval_minutes) === 60 ? '60' : '30';
+  document.getElementById('a_active').checked = a ? (a.is_active !== false) : true;
+  buildHoursEditor(a ? a.working_hours : null);
+  document.getElementById('artistError').classList.add('hidden');
+  document.getElementById('artistModal').classList.remove('hidden');
+}
+
+async function saveArtist() {
+  const err = document.getElementById('artistError');
+  err.classList.add('hidden');
+
+  const origId = document.getElementById('a_origId').value;
+  const slug   = document.getElementById('a_slug').value.trim().toLowerCase();
+  const idToUse = origId || slug; // editing keeps its original id; new artist's id IS the slug
+
+  const record = {
+    id: idToUse,
+    display_name: document.getElementById('a_name').value.trim(),
+    notification_email: document.getElementById('a_email').value.trim(),
+    google_calendar_id: document.getElementById('a_calendar').value.trim(),
+    slot_interval_minutes: Number(document.getElementById('a_slot').value),
+    working_hours: collectHours(),
+    is_active: document.getElementById('a_active').checked,
+  };
+
+  if (!record.display_name || !slug) {
+    return showModalError(err, 'Name and slug are required.');
+  }
+
+  const btn = document.getElementById('artistSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await apiPost('artists', 'save', record, idToUse);
+    ARTISTS = res.data || ARTISTS;
+    renderArtists();
+    renderServices(); // artist names may appear in service assignments
+    closeModal('artistModal');
+    toast(origId ? 'Artist updated' : 'Artist added');
+  } catch (e) {
+    if (e.auth) return forceRelock();
+    showModalError(err, e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save artist';
+  }
+}
+
+async function setArtistActive(id, isActive) {
+  const a = ARTISTS.find(x => String(x.id) === String(id));
+  if (!a) return;
+  const record = Object.assign({}, a, { is_active: isActive });
+  try {
+    const res = await apiPost('artists', 'save', record, id);
+    ARTISTS = res.data || ARTISTS;
+    renderArtists();
+    toast(isActive ? 'Artist reactivated' : 'Artist deactivated');
+  } catch (e) {
+    if (e.auth) return forceRelock();
+    toast(e.message, true);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   SERVICE RENDERING
+═══════════════════════════════════════════════ */
+function renderServices() {
+  const el = document.getElementById('serviceTable');
+  const wantAddon = serviceFilter === 'addon';
+  const rows = SERVICES.filter(s => !!s.is_addon === wantAddon);
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">' +
+      (wantAddon ? 'No add-ons yet.' : 'No main services yet.') +
+      ' Use “Add Service” to create one.</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr>' +
+    '<th>Name</th><th>Category</th><th>Duration</th><th>Price</th>' +
+    '<th>Artists</th>' + (wantAddon ? '' : '<th>Triggers</th>') +
+    '<th style="text-align:right">Actions</th>' +
+    '</tr></thead><tbody>';
+
+  rows.forEach(s => {
+    const artistNames = (s.assigned_artist_ids || []).map(aid => {
+      const a = ARTISTS.find(x => String(x.id) === String(aid));
+      return '<span class="chip">' + esc(a ? a.display_name : aid) + '</span>';
+    }).join('') || '<span class="svc-sub">—</span>';
+
+    const triggers = (s.trigger_addon_ids || []).map(tid => {
+      const t = SERVICES.find(x => String(x.id) === String(tid));
+      return '<span class="chip">' + esc(t ? t.name : tid) + '</span>';
+    }).join('') || '<span class="svc-sub">—</span>';
+
+    html += '<tr>' +
+      '<td><div class="svc-name">' + esc(s.name) + '</div></td>' +
+      '<td style="text-transform:capitalize">' + esc(s.category || '—') + '</td>' +
+      '<td>' + (s.duration_minutes != null ? esc(s.duration_minutes) + ' min' : '—') + '</td>' +
+      '<td>' + (s.price_dollars != null && s.price_dollars !== '' ? '$' + esc(s.price_dollars) : '—') + '</td>' +
+      '<td>' + artistNames + '</td>' +
+      (wantAddon ? '' : '<td>' + triggers + '</td>') +
+      '<td><div class="row-actions">' +
+        '<button class="btn-secondary btn-sm" data-edit="' + esc(s.id) + '">Edit</button>' +
+        '<button class="btn-danger btn-sm" data-del="' + esc(s.id) + '">Delete</button>' +
+      '</div></td>' +
+      '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openServiceModal(b.getAttribute('data-edit')));
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => confirmDeleteService(b.getAttribute('data-del')));
+}
+
+/* ═══════════════════════════════════════════════
+   SERVICE MODAL
+═══════════════════════════════════════════════ */
+function openServiceModal(id) {
+  const s = id ? SERVICES.find(x => String(x.id) === String(id)) : null;
+  document.getElementById('serviceModalTitle').textContent = s ? 'Edit Service' : 'Add Service';
+  document.getElementById('s_id').value        = s ? s.id : '';
+  document.getElementById('s_name').value       = s ? (s.name || '') : '';
+  document.getElementById('s_category').value   = s ? (s.category || 'nails') : 'nails';
+  document.getElementById('s_duration').value   = s && s.duration_minutes != null ? s.duration_minutes : '';
+  document.getElementById('s_price').value      = s && s.price_dollars != null ? s.price_dollars : '';
+  document.getElementById('s_isaddon').checked  = s ? !!s.is_addon : false;
+
+  buildTriggerList(s ? (s.trigger_addon_ids || []) : []);
+  buildArtistAssign(s ? (s.assigned_artist_ids || []) : []);
+  onAddonToggle();
+
+  document.getElementById('serviceError').classList.add('hidden');
+  document.getElementById('serviceModal').classList.remove('hidden');
+}
+
+function onAddonToggle() {
+  const isAddon = document.getElementById('s_isaddon').checked;
+  document.getElementById('triggerBox').classList.toggle('hidden', isAddon);
+}
+
+function buildTriggerList(selectedIds) {
+  const box = document.getElementById('triggerList');
+  const addons = SERVICES.filter(s => !!s.is_addon);
+  if (!addons.length) {
+    box.innerHTML = '<div class="svc-sub">No add-ons created yet. Create an add-on first to use it as a trigger.</div>';
+    return;
+  }
+  box.innerHTML = addons.map(a =>
+    '<div class="check-list-item">' +
+      '<input type="checkbox" id="trig_' + esc(a.id) + '" value="' + esc(a.id) + '" ' +
+      (selectedIds.map(String).includes(String(a.id)) ? 'checked' : '') + '/>' +
+      '<label for="trig_' + esc(a.id) + '">' + esc(a.name) + '</label>' +
+    '</div>'
+  ).join('');
+}
+
+function buildArtistAssign(selectedIds) {
+  const box = document.getElementById('s_artists');
+  if (!ARTISTS.length) {
+    box.innerHTML = '<div class="svc-sub">No artists yet.</div>';
+    return;
+  }
+  box.innerHTML = ARTISTS.map(a =>
+    '<div class="check-list-item">' +
+      '<input type="checkbox" id="asn_' + esc(a.id) + '" value="' + esc(a.id) + '" ' +
+      (selectedIds.map(String).includes(String(a.id)) ? 'checked' : '') + '/>' +
+      '<label for="asn_' + esc(a.id) + '">' + esc(a.display_name) + '</label>' +
+    '</div>'
+  ).join('');
+}
+
+async function saveService() {
+  const err = document.getElementById('serviceError');
+  err.classList.add('hidden');
+
+  const isAddon = document.getElementById('s_isaddon').checked;
+  const record = {
+    name: document.getElementById('s_name').value.trim(),
+    category: document.getElementById('s_category').value,
+    duration_minutes: numOrNull(document.getElementById('s_duration').value),
+    price_dollars: numOrNull(document.getElementById('s_price').value),
+    is_addon: isAddon,
+    assigned_artist_ids: [...document.querySelectorAll('#s_artists input:checked')].map(c => c.value),
+    trigger_addon_ids: isAddon ? [] : [...document.querySelectorAll('#triggerList input:checked')].map(c => c.value),
+  };
+  const id = document.getElementById('s_id').value || null; // null when creating new (uuid assigned server-side)
+
+  if (!record.name) return showModalError(err, 'Service name is required.');
+  if (record.duration_minutes == null) return showModalError(err, 'Duration is required.');
+
+  const btn = document.getElementById('serviceSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await apiPost('services', 'save', record, id);
+    SERVICES = res.data || SERVICES;
+    renderServices();
+    closeModal('serviceModal');
+    toast(id ? 'Service updated' : 'Service added');
+  } catch (e) {
+    if (e.auth) return forceRelock();
+    showModalError(err, e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save service';
+  }
+}
+
+function confirmDeleteService(id) {
+  const s = SERVICES.find(x => String(x.id) === String(id));
+  if (!s) return;
+  document.getElementById('confirmTitle').textContent = 'Delete service?';
+  document.getElementById('confirmMsg').textContent =
+    '“' + s.name + '” will be permanently removed. This cannot be undone.';
+  const btn = document.getElementById('confirmBtn');
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Deleting…';
+    try {
+      const res = await apiPost('services', 'delete', null, id);
+      SERVICES = res.data || SERVICES.filter(x => String(x.id) !== String(id));
+      renderServices();
+      closeModal('confirmModal');
+      toast('Service deleted');
+    } catch (e) {
+      if (e.auth) return forceRelock();
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Delete';
+    }
+  };
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function showModalError(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
+function forceRelock() { toast('Session expired — please log in again', true); setTimeout(logout, 1200); }
+
+function numOrNull(v) {
+  if (v === '' || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function timeToMinutes(t) {
+  if (!t) return -1;
+  const [h, m] = t.split(':').map(Number);
+  if (!Number.isFinite(h)) return -1;
+  return h * 60 + (Number.isFinite(m) ? m : 0);
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+let toastTimer;
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 2600);
+}
+</script>
+</body>
+</html>
