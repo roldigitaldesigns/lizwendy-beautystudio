@@ -61,7 +61,7 @@ function getArtistHours(artistId) {
 // Unknown artist falls back to 30 (the tighter, safer granularity).
 const SLOT_STEP_BY_ARTIST = { liz: 60, johanna: 30 };
 const DEFAULT_SLOT_STEP_MIN = 30;
-const BUFFER_MIN = 60;         // turnaround blocked after each appointment ends
+const BUFFER_MIN = 0;         // turnaround blocked after each appointment ends
 
 function getSlotStep(artistId) {
   return SLOT_STEP_BY_ARTIST[artistId] || DEFAULT_SLOT_STEP_MIN;
