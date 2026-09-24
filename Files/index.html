@@ -2471,8 +2471,27 @@ function closeCatConflictModal() {
    "No" leaves the refill on its own. The flag is consumed in goToStep3()
    and reflected in the sticky CTA total. */
 
-function toggleService(svcId, cat) {
-  // If already selected, deselect it
+function toggleService(target, cat) {
+  let svcId;
+  let rowEl;
+
+  // Handles being passed an element: onclick="toggleService(this)"
+  if (target instanceof HTMLElement || (target && target.nodeType === 1)) {
+    rowEl = target.closest('.service-row') || target;
+    svcId = rowEl.dataset.id;
+    if (!cat) {
+      const acc = rowEl.closest('.accordion');
+      if (acc) cat = acc.dataset.cat;
+    }
+  } else {
+    // Handles being passed an ID string: toggleService('nails-4')
+    svcId = String(target);
+    rowEl = document.querySelector(`.service-row[data-id="${svcId}"]`);
+  }
+
+  if (!svcId) return;
+
+  // Toggle selection
   if (selectedSvcIds.has(svcId)) {
     selectedSvcIds.delete(svcId);
     
@@ -2483,23 +2502,25 @@ function toggleService(svcId, cat) {
       pmuAreaChosen = null;
     }
   } else {
-    // Select the service
     selectedSvcIds.add(svcId);
 
     if (svcId === 'nails-4' || svcId === 'nail-4') {
       openNailArtPopup();
-    } else if (svcId === 'pmu-5' || svcId === 'pmu-6') {
+    } else if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) {
       openPmuAreaPopup();
     }
   }
 
-  // Update row visual selection
-  const row = document.querySelector(`.service-row[data-id="${svcId}"]`);
-  if (row) {
-    row.classList.toggle('selected', selectedSvcIds.has(svcId));
+  // Update row visual state & checkmark
+  if (rowEl) {
+    rowEl.classList.toggle('selected', selectedSvcIds.has(svcId));
+    const checkEl = rowEl.querySelector('.svc-row-check');
+    if (checkEl) {
+      checkEl.textContent = selectedSvcIds.has(svcId) ? '✓' : '';
+    }
   }
 
-  // Refresh badge and sticky CTA total
+  // Refresh badges & bottom sticky cart
   if (cat) {
     updateAccordionBadge(cat);
   } else {
