@@ -265,32 +265,40 @@
 </div> <!-- This closes tab-overview -->
 
       <!-- 3. ADD THE NEW TRENDING TAB -->
-      <div id="tab-trending" class="cc-tab-view" hidden>
-        <div class="cc-card" id="trending-module">
-          <div class="cc-card-header">
-            <div class="cc-title-group">
-              <span class="cc-badge">LIVE METRICS</span>
-              <h3>🔥 Trending Services & Velocity</h3>
-            </div>
-            <div class="cc-filter-pills">
-              <button class="pill active" onclick="filterTrending('7d')">7D</button>
-              <button class="pill" onclick="filterTrending('30d')">30D</button>
-            </div>
+    <div id="tab-trending" class="cc-tab-view" hidden>
+      <div class="cc-card" id="trending-module">
+        <div class="cc-card-header">
+          <div class="cc-title-group">
+            <span class="cc-badge">LIVE METRICS</span>
+            <h3>🔥 Trending Services & Velocity</h3>
           </div>
-          <div class="trending-table-wrapper">
-            <table class="cc-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Service Name</th>
-                  <th>Category</th>
-                  <th>Bookings</th>
-                  <th>Velocity</th>
-                  <th>Est. Volume</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="trending-table-body">
+          <div class="seg" id="trending-range-seg">
+            <button type="button" class="seg-btn" data-trange="7" onclick="setTrendingRange(7)">7D</button>
+            <button type="button" class="seg-btn" data-trange="14" onclick="setTrendingRange(14)">14D</button>
+            <button type="button" class="seg-btn is-selected" aria-pressed="true" data-trange="30" onclick="setTrendingRange(30)">30D</button>
+            <button type="button" class="seg-btn" data-trange="60" onclick="setTrendingRange(60)">60D</button>
+          </div>
+        </div>
+        <div class="trending-table-container">
+          <table class="cc-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Rank</th>
+                <th>Service Name</th>
+                <th>Category</th>
+                <th>Bookings</th>
+                <th>Velocity</th>
+                <th>Revenue</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="trending-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
                 <!-- Rendered via JS -->
               </tbody>
             </table>
