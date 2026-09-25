@@ -822,3 +822,111 @@ window.renderTrendingTable = function(data) {
     </tr>
   `).join('');
 };
+// ==========================================================================
+// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
+// ==========================================================================
+
+let currentTrendingRange = 30;
+
+window.setTrendingRange = function(days) {
+  currentTrendingRange = days;
+
+  // Update button active state
+  document.querySelectorAll('#trending-range-seg .seg-btn').forEach(btn => {
+    const isTarget = Number(btn.dataset.trange) === days;
+    btn.classList.toggle('is-selected', isTarget);
+    btn.setAttribute('aria-pressed', String(isTarget));
+  });
+
+  fetchAndRenderTrending();
+};
+
+window.switchTab = function(tabId) {
+  document.querySelectorAll('.cc-tab-view').forEach(view => {
+    view.hidden = true;
+  });
+
+  document.querySelectorAll('.cc-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const selectedTab = document.getElementById(`tab-${tabId}`);
+  if (selectedTab) selectedTab.hidden = false;
+
+  const clickedBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+  if (clickedBtn) clickedBtn.classList.add('active');
+
+  if (tabId === 'trending') {
+    fetchAndRenderTrending();
+  }
+};
+
+async function fetchAndRenderTrending() {
+  const tbody = document.getElementById('trending-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
+        Fetching live calendar analytics for ${currentTrendingRange}D window...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch(`/.netlify/functions/get-trending?range=${currentTrendingRange}`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
+            No service bookings found in the last ${currentTrendingRange} days.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    renderTrendingTable(data);
+  } catch (err) {
+    console.error('Failed to load trending data:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--loss-ink); padding: 2rem;">
+          Failed to load live metrics. Please check function logs.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+window.renderTrendingTable = function(data) {
+  const tbody = document.getElementById('trending-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = data.map(item => {
+    // Determine velocity color class (green for positive, red for negative)
+    const isPos = item.velocity.startsWith('+') && item.velocity !== '+0%';
+    const isNeg = item.velocity.startsWith('-') || item.velocity.startsWith('−');
+    const velClass = isPos ? 'velocity-up' : isNeg && item.velocity !== '-0%' ? 'velocity-down' : 'velocity-flat';
+
+    // Determine status badge class
+    let statusClass = 'tag-steady';
+    if (item.status === 'Surge') statusClass = 'tag-surge';
+    if (item.status === 'Cooling') statusClass = 'tag-loss';
+
+    return `
+      <tr>
+        <td><strong>#${item.rank}</strong></td>
+        <td><strong>${item.name}</strong></td>
+        <td><span class="badge-cat">${item.cat}</span></td>
+        <td>${item.count}</td>
+        <td class="${velClass}">${item.velocity}</td>
+        <td>${item.revenue}</td>
+        <td><span class="${statusClass}">${item.status}</span></td>
+      </tr>
+    `;
+  }).join('');
+};
