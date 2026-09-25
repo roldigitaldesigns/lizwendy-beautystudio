@@ -267,6 +267,7 @@
       <!-- 3. ADD THE NEW TRENDING TAB -->
     <div id="tab-trending" class="cc-tab-view" hidden>
       <div class="cc-card" id="trending-module">
+        <!-- Header with 7D/14D/30D/60D Segments -->
         <div class="cc-card-header">
           <div class="cc-title-group">
             <span class="cc-badge">LIVE METRICS</span>
@@ -279,55 +280,105 @@
             <button type="button" class="seg-btn" data-trange="60" onclick="setTrendingRange(60)">60D</button>
           </div>
         </div>
+
+        <!-- PHASE 1: TOP 3 HERO SUMMARY CARDS -->
+        <div class="trending-hero-grid">
+          <!-- Volume Leader -->
+          <div class="trending-hero-card">
+            <div class="th-label">Volume Leader</div>
+            <div class="th-title" id="th-vol-name">—</div>
+            <div class="th-metrics">
+              <span class="th-val" id="th-vol-count">—</span>
+              <span class="th-sub" id="th-vol-share">—</span>
+            </div>
+          </div>
+
+          <!-- Revenue Contributor -->
+          <div class="trending-hero-card">
+            <div class="th-label">Top Revenue Driver</div>
+            <div class="th-title" id="th-rev-name">—</div>
+            <div class="th-metrics">
+              <span class="th-val text-gain" id="th-rev-amount">—</span>
+              <span class="th-sub" id="th-rev-share">—</span>
+            </div>
+          </div>
+
+          <!-- Velocity Leader -->
+          <div class="trending-hero-card">
+            <div class="th-label">Fastest Mover</div>
+            <div class="th-title" id="th-vel-name">—</div>
+            <div class="th-metrics">
+              <span class="th-val" id="th-vel-rate">—</span>
+              <span class="th-sub" id="th-vel-count">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHASE 1: CATEGORY PROPORTIONAL REVENUE STRIP -->
+        <div class="category-strip-card">
+          <div class="category-strip-head">
+            <span class="cs-label">Revenue Share by Business Unit</span>
+            <span class="cs-total" id="cs-total-rev">Total: $0</span>
+          </div>
+          <!-- Segmented Bar -->
+          <div class="category-bar" id="category-proportional-bar">
+            <!-- Rendered via JS -->
+          </div>
+          <!-- Legend Grid -->
+          <div class="category-legend" id="category-legend-list">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Data Table Container -->
         <div class="trending-table-container">
           <table class="cc-table">
             <thead>
-  <tr>
-    <th>
-      <button type="button" class="th-btn" onclick="sortTrending('rank')">
-        Rank <span class="sort-icon" data-col="rank"></span>
-      </button>
-    </th>
-    <th>
-      <button type="button" class="th-btn" onclick="sortTrending('name')">
-        Service Name <span class="sort-icon" data-col="name"></span>
-      </button>
-    </th>
-    <th>
-      <button type="button" class="th-btn" onclick="sortTrending('cat')">
-        Category <span class="sort-icon" data-col="cat"></span>
-      </button>
-    </th>
-    <th class="num">
-      <button type="button" class="th-btn" onclick="sortTrending('count')">
-        Bookings <span class="sort-icon" data-col="count"></span>
-      </button>
-    </th>
-    <th class="num">
-      <button type="button" class="th-btn" onclick="sortTrending('velocityNum')">
-        Velocity <span class="sort-icon" data-col="velocityNum"></span>
-      </button>
-    </th>
-    <th class="num">
-      <button type="button" class="th-btn" onclick="sortTrending('revenueNum')">
-        Revenue <span class="sort-icon" data-col="revenueNum"></span>
-      </button>
-    </th>
-    <th>
-      <button type="button" class="th-btn" onclick="sortTrending('status')">
-        Status <span class="sort-icon" data-col="status"></span>
-      </button>
-    </th>
-  </tr>
-</thead>
+              <tr>
+                <th>
+                  <button type="button" class="th-btn" onclick="sortTrending('rank')">
+                    Rank <span class="sort-icon" data-col="rank"></span>
+                  </button>
+                </th>
+                <th>
+                  <button type="button" class="th-btn" onclick="sortTrending('name')">
+                    Service Name <span class="sort-icon" data-col="name"></span>
+                  </button>
+                </th>
+                <th>
+                  <button type="button" class="th-btn" onclick="sortTrending('cat')">
+                    Category <span class="sort-icon" data-col="cat"></span>
+                  </button>
+                </th>
+                <th class="num">
+                  <button type="button" class="th-btn" onclick="sortTrending('count')">
+                    Bookings <span class="sort-icon" data-col="count"></span>
+                  </button>
+                </th>
+                <th class="num">
+                  <button type="button" class="th-btn" onclick="sortTrending('velocityNum')">
+                    Velocity <span class="sort-icon" data-col="velocityNum"></span>
+                  </button>
+                </th>
+                <th class="num">
+                  <button type="button" class="th-btn" onclick="sortTrending('revenueNum')">
+                    Revenue <span class="sort-icon" data-col="revenueNum"></span>
+                  </button>
+                </th>
+                <th>
+                  <button type="button" class="th-btn" onclick="sortTrending('status')">
+                    Status <span class="sort-icon" data-col="status"></span>
+                  </button>
+                </th>
+              </tr>
+            </thead>
             <tbody id="trending-table-body">
               <!-- Rendered via JS -->
             </tbody>
           </table>
         </div>
       </div>
-    </div>
-                <!-- Rendered via JS -->
+    </div>                <!-- Rendered via JS -->
               </tbody>
             </table>
           </div>
