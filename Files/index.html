@@ -2591,7 +2591,7 @@ function buildAccordions() {
     const rowsHtml = data.items.map(svc => {
       const name     = isEs() ? svc.nameEs : svc.name;
       const sub      = isEs() ? svc.subEs  : svc.sub;
-      const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || ('$' + svc.price) : ('$' + svc.price));
+      const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || (typeof svc.price === 'string' ? svc.price : '$' + svc.price) : (typeof svc.price === 'string' ? svc.price : '$' + svc.price));
       const selected = selectedSvcIds.has(svc.id);
       const imgSrc = svc.img || '';
       const imgHtml = imgSrc
@@ -2616,7 +2616,7 @@ function buildAccordions() {
       <div class="accordion-head" onclick="toggleAccordion(this.parentElement)">
         <span class="accordion-title">${label}</span>
         <span class="accordion-badge" id="badge-${cat}"></span>
-        <span class="accordion-chevron">â–¼</span>
+        <span class="accordion-chevron">▼</span>
       </div>
       <div class="accordion-body">
         <div class="service-rows">${rowsHtml}</div>
@@ -2647,7 +2647,7 @@ function buildFacialAccordion() {
   const row = svc => {
     const name     = es ? svc.nameEs : svc.name;
     const sub      = es ? svc.subEs  : svc.sub;
-    const priceStr = svc.priceLabel || ('$' + svc.price);
+    const priceStr = svc.priceLabel || (typeof svc.price === 'string' ? svc.price : '$' + svc.price);
     const selected = selectedSvcIds.has(svc.id);
     const tierCls  = svc.isAddon ? 'facial-tier1' : 'facial-tier' + svc.tier;
     const badge    = svc.tier === 3
@@ -2725,7 +2725,7 @@ function buildFacialAccordion() {
     <div class="accordion-head" onclick="toggleAccordion(this.parentElement)">
       <span class="accordion-title">${label}</span>
       <span class="accordion-badge" id="badge-facial"></span>
-      <span class="accordion-chevron">â–¼</span>
+      <span class="accordion-chevron">▼</span>
     </div>
     <div class="accordion-body">
       <div class="facial-jumpnav">${nav}</div>
