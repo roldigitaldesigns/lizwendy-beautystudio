@@ -67,7 +67,7 @@
   <!-- 1. NEW TAB NAVIGATION -->
   <nav class="cc-tab-nav" aria-label="Dashboard views">
     <button class="cc-tab-btn active" onclick="switchTab('overview')">Overview</button>
-    <button class="cc-tab-btn" onclick="switchTab('trending')">🔥 Trending</button>
+    <button class="cc-tab-btn" onclick="switchTab('trending')">Trending</button>
   </nav>
 
   <!-- 2. WRAP EXISTING CONTENT IN THE OVERVIEW TAB -->
@@ -270,7 +270,7 @@
         <div class="cc-card-header">
           <div class="cc-title-group">
             <span class="cc-badge">LIVE METRICS</span>
-            <h3>🔥 Trending Services & Velocity</h3>
+            <h3>Trending Services & Velocity</h3>
           </div>
           <div class="seg" id="trending-range-seg">
             <button type="button" class="seg-btn" data-trange="7" onclick="setTrendingRange(7)">7D</button>
@@ -282,16 +282,44 @@
         <div class="trending-table-container">
           <table class="cc-table">
             <thead>
-              <tr>
-                <th style="width: 60px;">Rank</th>
-                <th>Service Name</th>
-                <th>Category</th>
-                <th>Bookings</th>
-                <th>Velocity</th>
-                <th>Revenue</th>
-                <th>Status</th>
-              </tr>
-            </thead>
+  <tr>
+    <th>
+      <button type="button" class="th-btn" onclick="sortTrending('rank')">
+        Rank <span class="sort-icon" data-col="rank"></span>
+      </button>
+    </th>
+    <th>
+      <button type="button" class="th-btn" onclick="sortTrending('name')">
+        Service Name <span class="sort-icon" data-col="name"></span>
+      </button>
+    </th>
+    <th>
+      <button type="button" class="th-btn" onclick="sortTrending('cat')">
+        Category <span class="sort-icon" data-col="cat"></span>
+      </button>
+    </th>
+    <th class="num">
+      <button type="button" class="th-btn" onclick="sortTrending('count')">
+        Bookings <span class="sort-icon" data-col="count"></span>
+      </button>
+    </th>
+    <th class="num">
+      <button type="button" class="th-btn" onclick="sortTrending('velocityNum')">
+        Velocity <span class="sort-icon" data-col="velocityNum"></span>
+      </button>
+    </th>
+    <th class="num">
+      <button type="button" class="th-btn" onclick="sortTrending('revenueNum')">
+        Revenue <span class="sort-icon" data-col="revenueNum"></span>
+      </button>
+    </th>
+    <th>
+      <button type="button" class="th-btn" onclick="sortTrending('status')">
+        Status <span class="sort-icon" data-col="status"></span>
+      </button>
+    </th>
+  </tr>
+</thead>
             <tbody id="trending-table-body">
               <!-- Rendered via JS -->
             </tbody>
