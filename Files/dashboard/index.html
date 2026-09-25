@@ -62,7 +62,17 @@
       </div>
     </header>
 
-    <main id="main" class="dash" tabindex="-1">
+  <main id="main" class="dash" tabindex="-1">
+
+  <!-- 1. NEW TAB NAVIGATION -->
+  <nav class="cc-tab-nav" aria-label="Dashboard views">
+    <button class="cc-tab-btn active" onclick="switchTab('overview')">Overview</button>
+    <button class="cc-tab-btn" onclick="switchTab('trending')">🔥 Trending</button>
+  </nav>
+
+  <!-- 2. WRAP EXISTING CONTENT IN THE OVERVIEW TAB -->
+  <div id="tab-overview" class="cc-tab-view">
+    
 
       <!-- KPI ribbon -->
       <section class="kpis" aria-label="Key numbers">
@@ -252,6 +262,44 @@
         <div class="card-err" data-retry-key="activity"></div>
       </section>
 
+</div> <!-- This closes tab-overview -->
+
+      <!-- 3. ADD THE NEW TRENDING TAB -->
+      <div id="tab-trending" class="cc-tab-view" hidden>
+        <div class="cc-card" id="trending-module">
+          <div class="cc-card-header">
+            <div class="cc-title-group">
+              <span class="cc-badge">LIVE METRICS</span>
+              <h3>🔥 Trending Services & Velocity</h3>
+            </div>
+            <div class="cc-filter-pills">
+              <button class="pill active" onclick="filterTrending('7d')">7D</button>
+              <button class="pill" onclick="filterTrending('30d')">30D</button>
+            </div>
+          </div>
+          <div class="trending-table-wrapper">
+            <table class="cc-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Service Name</th>
+                  <th>Category</th>
+                  <th>Bookings</th>
+                  <th>Velocity</th>
+                  <th>Est. Volume</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="trending-table-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    <!-- The existing </main> should be right here below -->
+    
     </main>
   </div>
 
