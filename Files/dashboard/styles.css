@@ -541,11 +541,13 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
 
 /* --- TABS & TRENDING MODULE --- */
 .cc-tab-nav {
+  grid-column: 1 / -1; /* Spans all 12 columns of the main dash */
   display: flex;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--line, #2d3748);
   padding-bottom: 0.5rem;
+  width: 100%;
 }
 
 .cc-tab-btn {
@@ -573,12 +575,21 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
   background: var(--accent, #3182ce);
 }
 
+.cc-tab-view {
+  grid-column: 1 / -1; /* Spans all 12 columns */
+  display: grid; /* Restores the 12-column layout for the cards inside */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
 .cc-tab-view[hidden] {
   display: none !important;
 }
 
 /* Trending Module Styles */
 #trending-module {
+  grid-column: 1 / -1; /* Makes the trending card span full width */
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r-panel);
