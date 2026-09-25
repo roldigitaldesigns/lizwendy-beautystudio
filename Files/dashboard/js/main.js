@@ -731,6 +731,8 @@ function boot() {
   if (api.session.token()) enterApp(); else showLogin();
 }
 
+boot();
+
 // ==========================================================================
 // TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
 // ==========================================================================
