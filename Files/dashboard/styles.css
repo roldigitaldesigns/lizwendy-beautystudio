@@ -660,7 +660,41 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
   border-bottom: 1px solid var(--line);
 }
 
+/* Velocity Colors */
 .velocity-up { color: var(--gain-ink); font-weight: 600; }
+.velocity-down { color: var(--loss-ink); font-weight: 600; }
 .velocity-flat { color: var(--ink-3); }
-.tag-surge { background: var(--gain-soft); color: var(--gain-ink); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;}
-.tag-steady { background: var(--panel-inset); color: var(--ink-2); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;}
+
+/* Status Badges */
+.tag-surge { background: var(--gain-soft); color: var(--gain-ink); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600; }
+.tag-steady { background: var(--panel-inset); color: var(--ink-2); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600; }
+.tag-loss { background: var(--loss-soft); color: var(--loss-ink); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600; }
+
+/* Category Tag */
+.badge-cat {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: var(--panel-inset);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+
+/* 10-Row Scrollable Container */
+.trending-table-container {
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+/* Sticky Header on Scroll */
+.trending-table-container thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--sticky-bg);
+}
