@@ -107,13 +107,14 @@ exports.handler = async (event) => {
     const currentWindowStart = new Date(now.getTime() - (validRange * 24 * 60 * 60 * 1000));
     const priorWindowStart = new Date(now.getTime() - (2 * validRange * 24 * 60 * 60 * 1000));
 
-    // Fetch double the window so we have the identical prior window for velocity calculation
+    // Fetch double the window with maxResults 2500 to prevent pagination clipping
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
       timeMin: priorWindowStart.toISOString(),
       timeMax: now.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
+      maxResults: 2500
     });
 
     const events = response.data.items || [];
@@ -160,20 +161,27 @@ exports.handler = async (event) => {
 
     // Format table items
     const trendingArray = Object.values(stats)
-      .filter(s => s.count > 0) // Only show services booked in the selected window
+      .filter(s => s.count > 0)
       .map((stat, index) => {
         let velocityStr = '0%';
         let status = 'Steady';
 
         if (stat.priorCount === 0) {
-          velocityStr = stat.count > 0 ? `+${stat.count * 100}%` : '0%';
-          status = stat.count >= 3 ? 'Surge' : 'Steady';
+          // If no prior bookings exist, designate cleanly as "New"
+          velocityStr = 'New';
+          status = 'Surge';
         } else {
           const diff = stat.count - stat.priorCount;
           const pct = Math.round((diff / stat.priorCount) * 100);
           velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
-          if (pct >= 25) status = 'Surge';
-          else if (pct <= -20) status = 'Cooling';
+
+          if (pct >= 25) {
+            status = 'Surge';
+          } else if (pct <= -20) {
+            status = 'Cooling';
+          } else {
+            status = 'Steady';
+          }
         }
 
         return {
