@@ -698,3 +698,132 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
   z-index: 2;
   background: var(--sticky-bg);
 }
+
+/* ───────── Trending Visual Analytics (Phase 1) ───────── */
+.trending-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.trending-hero-card {
+  padding: 14px 16px;
+  border-radius: var(--r-inner);
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.th-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+
+.th-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.th-metrics {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.th-val {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.th-val.text-gain { color: var(--gain-ink); }
+.th-sub { font-size: 12.5px; color: var(--ink-2); }
+
+/* Category Proportional Strip */
+.category-strip-card {
+  padding: 16px 18px;
+  border-radius: var(--r-inner);
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.category-strip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.cs-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+.cs-total { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+.category-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--skel-a);
+  gap: 2px;
+}
+
+.cat-seg {
+  height: 100%;
+  transition: width 0.6s var(--ease-out);
+}
+
+/* Category Legend */
+.category-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 12px;
+  font-size: 12.5px;
+}
+
+.cat-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+}
+
+.cat-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cat-legend-item b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Palette assignment for the 6 core Business Units */
+.cat-bg-nails { background-color: var(--accent); }
+.cat-bg-pmu { background-color: var(--gold); }
+.cat-bg-facials { background-color: var(--gain); }
+.cat-bg-waxing { background-color: #e07a5f; }
+.cat-bg-makeup { background-color: #9d4edd; }
+.cat-bg-lashext { background-color: var(--pipeline, #1f5fa8); }
+.cat-bg-other { background-color: var(--ink-3); }
+
+@media (max-width: 860px) {
+  .trending-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
