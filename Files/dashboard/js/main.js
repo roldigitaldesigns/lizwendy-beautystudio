@@ -731,97 +731,6 @@ function boot() {
   if (api.session.token()) enterApp(); else showLogin();
 }
 
-boot();
-
-// ==========================================================================
-// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
-// ==========================================================================
-
-// --- TAB SWITCHING LOGIC ---
-window.switchTab = function(tabId) {
-  // Hide all tab views
-  document.querySelectorAll('.cc-tab-view').forEach(view => {
-    view.hidden = true;
-  });
-
-  // Remove active state from nav buttons
-  document.querySelectorAll('.cc-tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-
-  // Show selected tab
-  const selectedTab = document.getElementById(`tab-${tabId}`);
-  if (selectedTab) selectedTab.hidden = false;
-
-  // Set the clicked button to active
-  const clickedBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
-  if (clickedBtn) clickedBtn.classList.add('active');
-
-  // Trigger live calendar fetch when trending tab opens
-  if (tabId === 'trending') {
-    fetchAndRenderTrending();
-  }
-};
-
-// --- LIVE FETCH & RENDER ---
-async function fetchAndRenderTrending() {
-  const tbody = document.getElementById('trending-table-body');
-  if (!tbody) return;
-
-  // Loading skeleton state
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
-        Fetching live calendar analytics...
-      </td>
-    </tr>
-  `;
-
-  try {
-    const res = await fetch('/.netlify/functions/get-trending');
-    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
-    const data = await res.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
-            No service booking data recorded in the last 30 days.
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    renderTrendingTable(data);
-  } catch (err) {
-    console.error('Failed to load trending data:', err);
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; color: var(--loss-ink); padding: 2rem;">
-          Failed to load live metrics. Please check function logs.
-        </td>
-      </tr>
-    `;
-  }
-}
-
-window.renderTrendingTable = function(data) {
-  const tbody = document.getElementById('trending-table-body');
-  if (!tbody) return;
-
-  tbody.innerHTML = data.map(item => `
-    <tr>
-      <td><strong>#${item.rank}</strong></td>
-      <td><strong>${item.name}</strong></td>
-      <td><span style="color: var(--ink-2);">${item.cat}</span></td>
-      <td>${item.count}</td>
-      <td class="${item.velocity.startsWith('+') ? 'velocity-up' : item.velocity.startsWith('-') ? 'velocity-down' : 'velocity-flat'}">${item.velocity}</td>
-      <td>${item.revenue}</td>
-      <td><span class="${item.status === 'Surge' ? 'tag-surge' : 'tag-steady'}">${item.status}</span></td>
-    </tr>
-  `).join('');
-};
 // ==========================================================================
 // TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
 // ==========================================================================
@@ -842,14 +751,17 @@ window.setTrendingRange = function(days) {
 };
 
 window.switchTab = function(tabId) {
+  // Hide all tab views
   document.querySelectorAll('.cc-tab-view').forEach(view => {
     view.hidden = true;
   });
 
+  // Remove active state from nav buttons
   document.querySelectorAll('.cc-tab-btn').forEach(btn => {
     btn.classList.remove('active');
   });
 
+  // Show selected tab
   const selectedTab = document.getElementById(`tab-${tabId}`);
   if (selectedTab) selectedTab.hidden = false;
 
@@ -907,10 +819,10 @@ window.renderTrendingTable = function(data) {
   if (!tbody) return;
 
   tbody.innerHTML = data.map(item => {
-    // Determine velocity color class (green for positive, red for negative)
+    // Determine velocity color class
     const isPos = item.velocity.startsWith('+') && item.velocity !== '+0%';
-    const isNeg = item.velocity.startsWith('-') || item.velocity.startsWith('−');
-    const velClass = isPos ? 'velocity-up' : isNeg && item.velocity !== '-0%' ? 'velocity-down' : 'velocity-flat';
+    const isNeg = item.velocity.startsWith('-') || (item.velocity.startsWith('−') && item.velocity !== '-0%');
+    const velClass = isPos ? 'velocity-up' : isNeg ? 'velocity-down' : 'velocity-flat';
 
     // Determine status badge class
     let statusClass = 'tag-steady';
