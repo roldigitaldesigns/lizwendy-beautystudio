@@ -159,41 +159,48 @@ exports.handler = async (event) => {
       }
     });
 
-    // Format table items
-    const trendingArray = Object.values(stats)
-      .filter(s => s.count > 0)
-      .map((stat, index) => {
-        let velocityStr = '0%';
-        let status = 'Steady';
+   // Format table items
+      const trendingArray = Object.values(stats)
+        .filter(s => s.count > 0)
+        .map((stat, index) => {
+          let velocityStr = '0%';
+          let status = 'Steady';
 
-        if (stat.priorCount === 0) {
-          // If no prior bookings exist, designate cleanly as "New"
-          velocityStr = 'New';
-          status = 'Surge';
-        } else {
-          const diff = stat.count - stat.priorCount;
-          const pct = Math.round((diff / stat.priorCount) * 100);
-          velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
-
-          if (pct >= 25) {
-            status = 'Surge';
-          } else if (pct <= -20) {
-            status = 'Cooling';
+          if (stat.priorCount === 0) {
+            // If there are zero prior events:
+            // For established services with significant volume, show baseline pending (—)
+            // For lower volume services, tag as New
+            if (stat.count >= 5) {
+              velocityStr = '—';
+              status = stat.count >= 15 ? 'Surge' : 'Steady';
+            } else {
+              velocityStr = 'New';
+              status = 'Surge';
+            }
           } else {
-            status = 'Steady';
-          }
-        }
+            const diff = stat.count - stat.priorCount;
+            const pct = Math.round((diff / stat.priorCount) * 100);
+            velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
 
-        return {
-          id: `svc-${index}`,
-          name: stat.name,
-          cat: stat.cat,
-          count: stat.count,
-          revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
-          velocity: velocityStr,
-          status: status
-        };
-      });
+            if (pct >= 25) {
+              status = 'Surge';
+            } else if (pct <= -20) {
+              status = 'Cooling';
+            } else {
+              status = 'Steady';
+            }
+          }
+
+          return {
+            id: `svc-${index}`,
+            name: stat.name,
+            cat: stat.cat,
+            count: stat.count,
+            revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
+            velocity: velocityStr,
+            status: status
+          };
+        });
 
     trendingArray.sort((a, b) => b.count - a.count);
     trendingArray.forEach((item, idx) => { item.rank = idx + 1; });
