@@ -2594,9 +2594,9 @@ function buildAccordions() {
       const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || ('$' + svc.price) : ('$' + svc.price));
       const selected = selectedSvcIds.has(svc.id);
       const imgSrc = svc.img || '';
-      const imgHtml = imgSrc 
-        ? `<img src="${imgSrc}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">` 
-        : '';
+      const imgHtml = imgSrc
+  ? `<img src="${imgSrc}" alt="${name}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`
+  : '';
 
       return `<div class="service-row${selected ? ' selected' : ''}" data-id="${svc.id}" data-price="${svc.price}" data-pricestr="${priceStr}" data-time="${svc.time || svc.dur || ''}" onclick="toggleService(this)">
         <div class="svc-row-img">${imgHtml}</div>
