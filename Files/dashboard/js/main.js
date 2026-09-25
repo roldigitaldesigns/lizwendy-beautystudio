@@ -852,11 +852,20 @@ async function fetchAndRenderTrending() {
       return;
     }
 
-    trendingRawData = data.map(item => ({
-      ...item,
-      revenueNum: Number(String(item.revenue).replace(/[^0-9.-]+/g, '')) || 0,
-      velocityNum: parseFloat(String(item.velocity).replace(/[+%]/g, '')) || 0
-    }));
+   trendingRawData = data.map(item => {
+      let velNum = 0;
+      if (item.velocity === 'New' || item.velocity === '—') {
+        velNum = parseFloat((item.count / currentTrendingRange).toFixed(2));
+      } else {
+        velNum = parseFloat(String(item.velocity).replace(/[+%]/g, '')) || 0;
+      }
+
+      return {
+        ...item,
+        revenueNum: Number(String(item.revenue).replace(/[^0-9.-]+/g, '')) || 0,
+        velocityNum: velNum
+      };
+    });
 
     renderVisualAnalytics(trendingRawData);
     applyTrendingSortAndRender();
@@ -897,9 +906,16 @@ function renderVisualAnalytics(items) {
 
   if (velLeader) {
     document.getElementById('th-vel-name').textContent = velLeader.name;
-    const sign = velLeader.velocityNum > 0 ? '+' : '';
-    document.getElementById('th-vel-rate').textContent = `${sign}${velLeader.velocityNum}%`;
-    document.getElementById('th-vel-count').textContent = `${velLeader.count} bookings (${currentTrendingRange}D)`;
+    
+if (velLeader.velocity === '—' || velLeader.velocity === '-' || velLeader.velocity === 'New') {
+      const perDay = (velLeader.count / currentTrendingRange).toFixed(1);
+      document.getElementById('th-vel-rate').textContent = `${perDay}/day`;
+      document.getElementById('th-vel-count').textContent = `${velLeader.count} bks (${currentTrendingRange}D pace)`;
+    } else {
+      const sign = velLeader.velocityNum > 0 ? '+' : '';
+      document.getElementById('th-vel-rate').textContent = `${sign}${velLeader.velocityNum}%`;
+      document.getElementById('th-vel-count').textContent = `${velLeader.count} bookings (${currentTrendingRange}D)`;
+    }
   }
 
   document.getElementById('cs-total-rev').textContent = `Total: $${Math.round(totalRevenue).toLocaleString()}`;
