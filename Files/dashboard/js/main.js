@@ -732,3 +732,58 @@ function boot() {
 }
 
 boot();
+
+// ==========================================================================
+// TABS & TRENDING MODULE LOGIC
+// ==========================================================================
+
+// --- TAB SWITCHING LOGIC ---
+window.switchTab = function(tabId) {
+  // Hide all tab views
+  document.querySelectorAll('.cc-tab-view').forEach(view => {
+    view.hidden = true;
+  });
+
+  // Remove active state from nav buttons
+  document.querySelectorAll('.cc-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Show selected tab
+  const selectedTab = document.getElementById(`tab-${tabId}`);
+  if (selectedTab) selectedTab.hidden = false;
+  
+  // Set the clicked button to active
+  const clickedBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+  if (clickedBtn) clickedBtn.classList.add('active');
+
+  // Trigger data render if trending is opened
+  if (tabId === 'trending') {
+    renderTrendingTable(trendingMockData);
+  }
+};
+
+// --- TRENDING MOCK DATA & RENDER ---
+const trendingMockData = [
+  { rank: 1, id: 'nails-4', name: 'Acrylic Refill', cat: 'Nails', count: 42, velocity: '+28%', revenue: '$2,520', status: 'Surge' },
+  { rank: 2, id: 'nails-2', name: 'Gel Manicure', cat: 'Nails', count: 35, velocity: '+14%', revenue: '$1,925', status: 'Surge' },
+  { rank: 3, id: 'lashext-1', name: 'Classic Lash Set', cat: 'Lashes', count: 19, velocity: '+5%', revenue: '$1,710', status: 'Steady' },
+  { rank: 4, id: 'facial-2', name: 'Deep Cleansing Facial', cat: 'Facial', count: 14, velocity: '0%', revenue: '$1,260', status: 'Steady' }
+];
+
+window.renderTrendingTable = function(data) {
+  const tbody = document.getElementById('trending-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = data.map(item => `
+    <tr>
+      <td><strong>#${item.rank}</strong></td>
+      <td><strong>${item.name}</strong></td>
+      <td><span style="color: var(--ink-2);">${item.cat}</span></td>
+      <td>${item.count}</td>
+      <td class="${item.velocity.startsWith('+') ? 'velocity-up' : 'velocity-flat'}">${item.velocity}</td>
+      <td>${item.revenue}</td>
+      <td><span class="${item.status === 'Surge' ? 'tag-surge' : 'tag-steady'}">${item.status}</span></td>
+    </tr>
+  `).join('');
+};
