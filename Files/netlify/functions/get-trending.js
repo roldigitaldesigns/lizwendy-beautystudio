@@ -4,49 +4,78 @@ const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 
-// Canonical mapping: Merges bilingual variations into standard English display names
-const SERVICE_CANONICAL_MAP = {
-  // Pedicures
-  'pedicura regular': 'Regular Pedicure',
-  'regular pedicure': 'Regular Pedicure',
-  'pedicura spa / deluxe': 'Spa / Deluxe Pedicure',
-  'spa / deluxe pedicure': 'Spa / Deluxe Pedicure',
+// Canonical mapping: Merges bilingual variants and tags proper business categories
+const SERVICE_META = {
+  // Nails
+  'pedicura regular': { name: 'Regular Pedicure', cat: 'Nails' },
+  'regular pedicure': { name: 'Regular Pedicure', cat: 'Nails' },
+  'pedicura spa / deluxe': { name: 'Spa / Deluxe Pedicure', cat: 'Nails' },
+  'spa / deluxe pedicure': { name: 'Spa / Deluxe Pedicure', cat: 'Nails' },
+  'gel manicure': { name: 'Gel Manicure', cat: 'Nails' },
+  'manicura gel': { name: 'Gel Manicure', cat: 'Nails' },
+  'regular manicure': { name: 'Regular Manicure', cat: 'Nails' },
+  'manicura regular': { name: 'Regular Manicure', cat: 'Nails' },
+  'dip powder / sns': { name: 'Dip Powder / SNS', cat: 'Nails' },
+  'gel x / soft gel tips': { name: 'Gel X / Soft Gel Tips', cat: 'Nails' },
+  'gel x / tips de gel suave': { name: 'Gel X / Soft Gel Tips', cat: 'Nails' },
+  'acrylic refill': { name: 'Acrylic Refill', cat: 'Nails' },
+  'relleno acrílico': { name: 'Acrylic Refill', cat: 'Nails' },
+  'acrylic full set': { name: 'Acrylic Full Set', cat: 'Nails' },
+  'juego completo acrílico': { name: 'Acrylic Full Set', cat: 'Nails' },
+  'nail art / design': { name: 'Nail Art / Design', cat: 'Nails' },
+  'nail art / designs': { name: 'Nail Art / Design', cat: 'Nails' },
+  'arte de uñas / diseños': { name: 'Nail Art / Design', cat: 'Nails' },
 
-  // Manicures
-  'gel manicure': 'Gel Manicure',
-  'manicura gel': 'Gel Manicure',
-  'regular manicure': 'Regular Manicure',
-  'manicura regular': 'Regular Manicure',
-  'dip powder / sns': 'Dip Powder / SNS',
-  'gel x / soft gel tips': 'Gel X / Soft Gel Tips',
-  'gel x / tips de gel suave': 'Gel X / Soft Gel Tips',
+  // Makeup
+  'maquillaje de ocasión': { name: 'Occasion Makeup', cat: 'Makeup' },
+  'occasion makeup': { name: 'Occasion Makeup', cat: 'Makeup' },
+  'bridal makeup': { name: 'Bridal Makeup', cat: 'Makeup' },
+  'maquillaje de novia': { name: 'Bridal Makeup', cat: 'Makeup' },
 
-  // Acrylics
-  'acrylic refill': 'Acrylic Refill',
-  'relleno acrílico': 'Acrylic Refill',
-  'acrylic full set': 'Acrylic Full Set',
-  'juego completo acrílico': 'Acrylic Full Set',
-  'nail art / design': 'Nail Art / Design',
-  'nail art / designs': 'Nail Art / Design',
-  'arte de uñas / diseños': 'Nail Art / Design',
+  // Waxing
+  'brazilian wax': { name: 'Brazilian Wax', cat: 'Waxing' },
+  'depilación brasileña': { name: 'Brazilian Wax', cat: 'Waxing' },
+  'línea de bikini': { name: 'Bikini Line Wax', cat: 'Waxing' },
+  'bikini line': { name: 'Bikini Line Wax', cat: 'Waxing' },
+  'eyebrow wax': { name: 'Eyebrow Wax', cat: 'Waxing' },
+  'depilación de cejas': { name: 'Eyebrow Wax', cat: 'Waxing' },
 
-  // Beauty / Makeup / PMU / Waxing
-  'maquillaje de ocasión': 'Occasion Makeup',
-  'occasion makeup': 'Occasion Makeup',
-  'bridal makeup': 'Bridal Makeup',
-  'deep cleansing facial': 'Deep Cleansing Facial',
-  'brazilian wax': 'Brazilian Wax',
-  'depilación brasileña': 'Brazilian Wax',
-  'línea de bikini': 'Bikini Line Wax',
-  'combo brows': 'Combo Brows',
-  'cejas polvo / ombré': 'Powder / Ombré Brows',
-  'retoque pmu 6–8 semanas': 'PMU Touch-up (6-8 Wks)',
-  'delineado de ojos permanente': 'Permanent Eyeliner'
+  // Facials
+  'deep cleansing facial': { name: 'Deep Cleansing Facial', cat: 'Facials' },
+  'limpieza facial profunda': { name: 'Deep Cleansing Facial', cat: 'Facials' },
+  'hydrafacial': { name: 'HydraFacial', cat: 'Facials' },
+
+  // PMU (Permanent Makeup)
+  'combo brows': { name: 'Combo Brows', cat: 'PMU' },
+  'cejas polvo / ombré': { name: 'Powder / Ombré Brows', cat: 'PMU' },
+  'powder / ombré brows': { name: 'Powder / Ombré Brows', cat: 'PMU' },
+  'retoque pmu 6–8 semanas': { name: 'PMU Touch-up (6–8 Wks)', cat: 'PMU' },
+  'pmu touch-up': { name: 'PMU Touch-up (6–8 Wks)', cat: 'PMU' },
+  'delineado de ojos permanente': { name: 'Permanent Eyeliner', cat: 'PMU' },
+  'permanent eyeliner': { name: 'Permanent Eyeliner', cat: 'PMU' },
+  'lip blush': { name: 'Lip Blush', cat: 'PMU' },
+
+  // Lash Ext
+  'classic lash set': { name: 'Classic Lash Set', cat: 'Lash Ext' },
+  'volume lash set': { name: 'Volume Lash Set', cat: 'Lash Ext' },
+  'lash refill': { name: 'Lash Refill', cat: 'Lash Ext' },
+  'extensiones de pestañas': { name: 'Classic Lash Set', cat: 'Lash Ext' }
 };
 
-function normalizeServiceName(rawName) {
-  const cleaned = rawName.trim().toLowerCase();
-  return SERVICE_CANONICAL_MAP[cleaned] || rawName.trim();
+function resolveService(rawName) {
+  const key = rawName.trim().toLowerCase();
+  if (SERVICE_META[key]) return SERVICE_META[key];
+  
+  // Smart fallback categorization if unmapped
+  let guessedCat = 'Other';
+  if (/nail|pedicur|manicur|acryl|gel|dip/i.test(rawName)) guessedCat = 'Nails';
+  else if (/makeup|maquill/i.test(rawName)) guessedCat = 'Makeup';
+  else if (/wax|depila/i.test(rawName)) guessedCat = 'Waxing';
+  else if (/facial|limpieza/i.test(rawName)) guessedCat = 'Facials';
+  else if (/pmu|brow|ceja|delineado|lip blush/i.test(rawName)) guessedCat = 'PMU';
+  else if (/lash|pestañ/i.test(rawName)) guessedCat = 'Lash Ext';
+
+  return { name: rawName.trim(), cat: guessedCat };
 }
 
 exports.handler = async (event) => {
@@ -62,6 +91,9 @@ exports.handler = async (event) => {
   }
 
   try {
+    const rangeDays = parseInt(event.queryStringParameters?.range || '30', 10);
+    const validRange = [7, 14, 30, 60].includes(rangeDays) ? rangeDays : 30;
+
     const auth = new google.auth.JWT(
       CLIENT_EMAIL,
       null,
@@ -72,27 +104,27 @@ exports.handler = async (event) => {
     const calendar = google.calendar({ version: 'v3', auth });
 
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-    const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+    const currentWindowStart = new Date(now.getTime() - (validRange * 24 * 60 * 60 * 1000));
+    const priorWindowStart = new Date(now.getTime() - (2 * validRange * 24 * 60 * 60 * 1000));
 
+    // Fetch double the window so we have the identical prior window for velocity calculation
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
-      timeMin: thirtyDaysAgo.toISOString(),
+      timeMin: priorWindowStart.toISOString(),
       timeMax: now.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
 
     const events = response.data.items || [];
-    const serviceStats = {};
+    const stats = {};
 
     events.forEach(item => {
       const desc = item.description || '';
       const eventDate = new Date(item.start?.dateTime || item.start?.date || 0);
 
-      const isCurrentWeek = eventDate >= sevenDaysAgo && eventDate <= now;
-      const isPriorWeek = eventDate >= fourteenDaysAgo && eventDate < sevenDaysAgo;
+      const isInCurrentWindow = eventDate >= currentWindowStart && eventDate <= now;
+      const isInPriorWindow = eventDate >= priorWindowStart && eventDate < currentWindowStart;
 
       const servicesMatch = desc.match(/Services:\s*(.+)/);
       const totalMatch = desc.match(/Estimated Total:\s*\$(\d+)/);
@@ -103,56 +135,57 @@ exports.handler = async (event) => {
         const revenuePerService = rawServices.length > 0 ? (eventRevenue / rawServices.length) : 0;
 
         rawServices.forEach(rawName => {
-          const canonical = normalizeServiceName(rawName);
+          const resolved = resolveService(rawName);
+          const serviceName = resolved.name;
 
-          if (!serviceStats[canonical]) {
-            serviceStats[canonical] = {
+          if (!stats[serviceName]) {
+            stats[serviceName] = {
+              name: serviceName,
+              cat: resolved.cat,
               count: 0,
               revenue: 0,
-              currWeekCount: 0,
-              priorWeekCount: 0
+              priorCount: 0
             };
           }
 
-          serviceStats[canonical].count += 1;
-          serviceStats[canonical].revenue += revenuePerService;
-
-          if (isCurrentWeek) serviceStats[canonical].currWeekCount += 1;
-          if (isPriorWeek) serviceStats[canonical].priorWeekCount += 1;
+          if (isInCurrentWindow) {
+            stats[serviceName].count += 1;
+            stats[serviceName].revenue += revenuePerService;
+          } else if (isInPriorWindow) {
+            stats[serviceName].priorCount += 1;
+          }
         });
       }
     });
 
-    const trendingArray = Object.keys(serviceStats).map((name, index) => {
-      const stat = serviceStats[name];
-      
-      // Calculate week-over-week velocity
-      let velocityStr = '0%';
-      let status = 'Steady';
+    // Format table items
+    const trendingArray = Object.values(stats)
+      .filter(s => s.count > 0) // Only show services booked in the selected window
+      .map((stat, index) => {
+        let velocityStr = '0%';
+        let status = 'Steady';
 
-      if (stat.priorWeekCount === 0) {
-        if (stat.currWeekCount > 0) {
-          velocityStr = `+${stat.currWeekCount * 100}%`;
-          status = 'Surge';
+        if (stat.priorCount === 0) {
+          velocityStr = stat.count > 0 ? `+${stat.count * 100}%` : '0%';
+          status = stat.count >= 3 ? 'Surge' : 'Steady';
+        } else {
+          const diff = stat.count - stat.priorCount;
+          const pct = Math.round((diff / stat.priorCount) * 100);
+          velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
+          if (pct >= 25) status = 'Surge';
+          else if (pct <= -20) status = 'Cooling';
         }
-      } else {
-        const diff = stat.currWeekCount - stat.priorWeekCount;
-        const pct = Math.round((diff / stat.priorWeekCount) * 100);
-        velocityStr = pct >= 0 ? `+${pct}%` : `${pct}%`;
-        if (pct >= 25) status = 'Surge';
-        else if (pct <= -25) status = 'Cooling';
-      }
 
-      return {
-        id: `svc-${index}`,
-        name: name,
-        cat: 'Service',
-        count: stat.count,
-        revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
-        velocity: velocityStr,
-        status: status
-      };
-    });
+        return {
+          id: `svc-${index}`,
+          name: stat.name,
+          cat: stat.cat,
+          count: stat.count,
+          revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
+          velocity: velocityStr,
+          status: status
+        };
+      });
 
     trendingArray.sort((a, b) => b.count - a.count);
     trendingArray.forEach((item, idx) => { item.rank = idx + 1; });
@@ -164,7 +197,7 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Error in get-trending function:', error);
+    console.error('Error in get-trending:', error);
     return {
       statusCode: 500,
       headers,
