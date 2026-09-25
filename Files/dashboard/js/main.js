@@ -734,12 +734,22 @@ function boot() {
 boot();
 
 // ==========================================================================
-// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA + SORTING)
+// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA + VISUAL ANALYTICS)
 // ==========================================================================
 
 let currentTrendingRange = 30;
 let trendingRawData = [];
-let trendingSort = { key: 'count', dir: 'desc' }; // Default sorted by highest bookings
+let trendingSort = { key: 'count', dir: 'desc' };
+
+const CATEGORY_COLORS = {
+  'Nails': 'cat-bg-nails',
+  'PMU': 'cat-bg-pmu',
+  'Facials': 'cat-bg-facials',
+  'Waxing': 'cat-bg-waxing',
+  'Makeup': 'cat-bg-makeup',
+  'Lash Ext': 'cat-bg-lashext',
+  'Other': 'cat-bg-other'
+};
 
 window.setTrendingRange = function(days) {
   currentTrendingRange = days;
@@ -799,7 +809,6 @@ function applyTrendingSortAndRender() {
     return (valA - valB) * mult;
   });
 
-  // Update header arrow indicators
   document.querySelectorAll('.sort-icon').forEach(el => {
     const col = el.dataset.col;
     if (col === key) {
@@ -839,16 +848,17 @@ async function fetchAndRenderTrending() {
           </td>
         </tr>
       `;
+      clearVisualAnalytics();
       return;
     }
 
-    // Enrich rows with clean numeric fields for effortless sorting
     trendingRawData = data.map(item => ({
       ...item,
       revenueNum: Number(String(item.revenue).replace(/[^0-9.-]+/g, '')) || 0,
       velocityNum: parseFloat(String(item.velocity).replace(/[+%]/g, '')) || 0
     }));
 
+    renderVisualAnalytics(trendingRawData);
     applyTrendingSortAndRender();
   } catch (err) {
     console.error('Failed to load trending data:', err);
@@ -859,7 +869,83 @@ async function fetchAndRenderTrending() {
         </td>
       </tr>
     `;
+    clearVisualAnalytics();
   }
+}
+
+function renderVisualAnalytics(items) {
+  const totalBookings = items.reduce((acc, i) => acc + i.count, 0);
+  const totalRevenue = items.reduce((acc, i) => acc + i.revenueNum, 0);
+
+  const volLeader = [...items].sort((a, b) => b.count - a.count)[0];
+  const revLeader = [...items].sort((a, b) => b.revenueNum - a.revenueNum)[0];
+  const velLeader = [...items].sort((a, b) => b.velocityNum - a.velocityNum)[0];
+
+  if (volLeader) {
+    document.getElementById('th-vol-name').textContent = volLeader.name;
+    document.getElementById('th-vol-count').textContent = `${volLeader.count} bks`;
+    const share = totalBookings > 0 ? Math.round((volLeader.count / totalBookings) * 100) : 0;
+    document.getElementById('th-vol-share').textContent = `${share}% of volume`;
+  }
+
+  if (revLeader) {
+    document.getElementById('th-rev-name').textContent = revLeader.name;
+    document.getElementById('th-rev-amount').textContent = `$${Math.round(revLeader.revenueNum).toLocaleString()}`;
+    const share = totalRevenue > 0 ? Math.round((revLeader.revenueNum / totalRevenue) * 100) : 0;
+    document.getElementById('th-rev-share').textContent = `${share}% of revenue`;
+  }
+
+  if (velLeader) {
+    document.getElementById('th-vel-name').textContent = velLeader.name;
+    const sign = velLeader.velocityNum > 0 ? '+' : '';
+    document.getElementById('th-vel-rate').textContent = `${sign}${velLeader.velocityNum}%`;
+    document.getElementById('th-vel-count').textContent = `${velLeader.count} bookings (${currentTrendingRange}D)`;
+  }
+
+  document.getElementById('cs-total-rev').textContent = `Total: $${Math.round(totalRevenue).toLocaleString()}`;
+
+  const catMap = {};
+  items.forEach(item => {
+    const cat = item.cat || 'Other';
+    if (!catMap[cat]) catMap[cat] = { revenue: 0, count: 0 };
+    catMap[cat].revenue += item.revenueNum;
+    catMap[cat].count += item.count;
+  });
+
+  const catEntries = Object.entries(catMap).sort((a, b) => b[1].revenue - a[1].revenue);
+
+  const barEl = document.getElementById('category-proportional-bar');
+  const legendEl = document.getElementById('category-legend-list');
+
+  if (barEl && legendEl) {
+    barEl.innerHTML = catEntries.map(([cat, val]) => {
+      const pct = totalRevenue > 0 ? ((val.revenue / totalRevenue) * 100).toFixed(1) : 0;
+      const colorClass = CATEGORY_COLORS[cat] || 'cat-bg-other';
+      return `<div class="cat-seg ${colorClass}" style="width: ${pct}%" title="${cat}: $${Math.round(val.revenue)} (${pct}%)"></div>`;
+    }).join('');
+
+    legendEl.innerHTML = catEntries.map(([cat, val]) => {
+      const pct = totalRevenue > 0 ? Math.round((val.revenue / totalRevenue) * 100) : 0;
+      const colorClass = CATEGORY_COLORS[cat] || 'cat-bg-other';
+      return `
+        <div class="cat-legend-item">
+          <span class="cat-dot ${colorClass}"></span>
+          <span>${cat}: <b>$${Math.round(val.revenue).toLocaleString()}</b> (${pct}%)</span>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function clearVisualAnalytics() {
+  ['th-vol-name', 'th-vol-count', 'th-vol-share', 'th-rev-name', 'th-rev-amount', 'th-rev-share', 'th-vel-name', 'th-vel-rate', 'th-vel-count'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  const bar = document.getElementById('category-proportional-bar');
+  if (bar) bar.innerHTML = '';
+  const legend = document.getElementById('category-legend-list');
+  if (legend) legend.innerHTML = '';
 }
 
 window.renderTrendingTable = function(data) {
