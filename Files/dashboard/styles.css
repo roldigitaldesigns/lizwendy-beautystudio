@@ -538,3 +538,118 @@ th[aria-sort="ascending"] .icon, th[aria-sort="descending"] .icon { opacity: 1; 
   z-index: 10;
   background: var(--card2); 
 }
+
+/* --- TABS & TRENDING MODULE --- */
+.cc-tab-nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line, #2d3748);
+  padding-bottom: 0.5rem;
+}
+
+.cc-tab-btn {
+  background: none;
+  border: none;
+  color: var(--ink-2, #a0aec0);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  position: relative;
+}
+
+.cc-tab-btn.active {
+  color: var(--ink, #fff);
+}
+
+.cc-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent, #3182ce);
+}
+
+.cc-tab-view[hidden] {
+  display: none !important;
+}
+
+/* Trending Module Styles */
+#trending-module {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.cc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.cc-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cc-title-group h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.cc-badge {
+  background: var(--gold-soft);
+  color: var(--gold-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cc-filter-pills .pill {
+  background: var(--panel-inset);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.cc-filter-pills .pill.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.cc-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.cc-table th {
+  padding: 8px 12px;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.cc-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.velocity-up { color: var(--gain-ink); font-weight: 600; }
+.velocity-flat { color: var(--ink-3); }
+.tag-surge { background: var(--gain-soft); color: var(--gain-ink); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;}
+.tag-steady { background: var(--panel-inset); color: var(--ink-2); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;}
