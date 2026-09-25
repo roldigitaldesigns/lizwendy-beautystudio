@@ -734,7 +734,7 @@ function boot() {
 boot();
 
 // ==========================================================================
-// TABS & TRENDING MODULE LOGIC
+// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
 // ==========================================================================
 
 // --- TAB SWITCHING LOGIC ---
@@ -752,24 +752,59 @@ window.switchTab = function(tabId) {
   // Show selected tab
   const selectedTab = document.getElementById(`tab-${tabId}`);
   if (selectedTab) selectedTab.hidden = false;
-  
+
   // Set the clicked button to active
   const clickedBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
   if (clickedBtn) clickedBtn.classList.add('active');
 
-  // Trigger data render if trending is opened
+  // Trigger live calendar fetch when trending tab opens
   if (tabId === 'trending') {
-    renderTrendingTable(trendingMockData);
+    fetchAndRenderTrending();
   }
 };
 
-// --- TRENDING MOCK DATA & RENDER ---
-const trendingMockData = [
-  { rank: 1, id: 'nails-4', name: 'Acrylic Refill', cat: 'Nails', count: 42, velocity: '+28%', revenue: '$2,520', status: 'Surge' },
-  { rank: 2, id: 'nails-2', name: 'Gel Manicure', cat: 'Nails', count: 35, velocity: '+14%', revenue: '$1,925', status: 'Surge' },
-  { rank: 3, id: 'lashext-1', name: 'Classic Lash Set', cat: 'Lashes', count: 19, velocity: '+5%', revenue: '$1,710', status: 'Steady' },
-  { rank: 4, id: 'facial-2', name: 'Deep Cleansing Facial', cat: 'Facial', count: 14, velocity: '0%', revenue: '$1,260', status: 'Steady' }
-];
+// --- LIVE FETCH & RENDER ---
+async function fetchAndRenderTrending() {
+  const tbody = document.getElementById('trending-table-body');
+  if (!tbody) return;
+
+  // Loading skeleton state
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
+        Fetching live calendar analytics...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch('/.netlify/functions/get-trending');
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--ink-3); padding: 2rem;">
+            No service booking data recorded in the last 30 days.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    renderTrendingTable(data);
+  } catch (err) {
+    console.error('Failed to load trending data:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--loss-ink); padding: 2rem;">
+          Failed to load live metrics. Please check function logs.
+        </td>
+      </tr>
+    `;
+  }
+}
 
 window.renderTrendingTable = function(data) {
   const tbody = document.getElementById('trending-table-body');
@@ -781,7 +816,7 @@ window.renderTrendingTable = function(data) {
       <td><strong>${item.name}</strong></td>
       <td><span style="color: var(--ink-2);">${item.cat}</span></td>
       <td>${item.count}</td>
-      <td class="${item.velocity.startsWith('+') ? 'velocity-up' : 'velocity-flat'}">${item.velocity}</td>
+      <td class="${item.velocity.startsWith('+') ? 'velocity-up' : item.velocity.startsWith('-') ? 'velocity-down' : 'velocity-flat'}">${item.velocity}</td>
       <td>${item.revenue}</td>
       <td><span class="${item.status === 'Surge' ? 'tag-surge' : 'tag-steady'}">${item.status}</span></td>
     </tr>
