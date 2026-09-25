@@ -734,15 +734,16 @@ function boot() {
 boot();
 
 // ==========================================================================
-// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA)
+// TABS & TRENDING MODULE LOGIC (LIVE CALENDAR DATA + SORTING)
 // ==========================================================================
 
 let currentTrendingRange = 30;
+let trendingRawData = [];
+let trendingSort = { key: 'count', dir: 'desc' }; // Default sorted by highest bookings
 
 window.setTrendingRange = function(days) {
   currentTrendingRange = days;
 
-  // Update button active state
   document.querySelectorAll('#trending-range-seg .seg-btn').forEach(btn => {
     const isTarget = Number(btn.dataset.trange) === days;
     btn.classList.toggle('is-selected', isTarget);
@@ -753,17 +754,14 @@ window.setTrendingRange = function(days) {
 };
 
 window.switchTab = function(tabId) {
-  // Hide all tab views
   document.querySelectorAll('.cc-tab-view').forEach(view => {
     view.hidden = true;
   });
 
-  // Remove active state from nav buttons
   document.querySelectorAll('.cc-tab-btn').forEach(btn => {
     btn.classList.remove('active');
   });
 
-  // Show selected tab
   const selectedTab = document.getElementById(`tab-${tabId}`);
   if (selectedTab) selectedTab.hidden = false;
 
@@ -774,6 +772,47 @@ window.switchTab = function(tabId) {
     fetchAndRenderTrending();
   }
 };
+
+window.sortTrending = function(key) {
+  if (trendingSort.key === key) {
+    trendingSort.dir = trendingSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    trendingSort.key = key;
+    trendingSort.dir = ['name', 'cat', 'status'].includes(key) ? 'asc' : 'desc';
+  }
+  applyTrendingSortAndRender();
+};
+
+function applyTrendingSortAndRender() {
+  if (!trendingRawData.length) return;
+
+  const { key, dir } = trendingSort;
+  const mult = dir === 'asc' ? 1 : -1;
+
+  trendingRawData.sort((a, b) => {
+    let valA = a[key];
+    let valB = b[key];
+
+    if (typeof valA === 'string') {
+      return valA.localeCompare(valB, 'en', { sensitivity: 'base' }) * mult;
+    }
+    return (valA - valB) * mult;
+  });
+
+  // Update header arrow indicators
+  document.querySelectorAll('.sort-icon').forEach(el => {
+    const col = el.dataset.col;
+    if (col === key) {
+      el.textContent = dir === 'asc' ? ' ↑' : ' ↓';
+      el.style.opacity = '1';
+    } else {
+      el.textContent = '';
+      el.style.opacity = '0.3';
+    }
+  });
+
+  renderTrendingTable(trendingRawData);
+}
 
 async function fetchAndRenderTrending() {
   const tbody = document.getElementById('trending-table-body');
@@ -803,7 +842,14 @@ async function fetchAndRenderTrending() {
       return;
     }
 
-    renderTrendingTable(data);
+    // Enrich rows with clean numeric fields for effortless sorting
+    trendingRawData = data.map(item => ({
+      ...item,
+      revenueNum: Number(String(item.revenue).replace(/[^0-9.-]+/g, '')) || 0,
+      velocityNum: parseFloat(String(item.velocity).replace(/[+%]/g, '')) || 0
+    }));
+
+    applyTrendingSortAndRender();
   } catch (err) {
     console.error('Failed to load trending data:', err);
     tbody.innerHTML = `
@@ -821,12 +867,10 @@ window.renderTrendingTable = function(data) {
   if (!tbody) return;
 
   tbody.innerHTML = data.map(item => {
-    // Determine velocity color class
     const isPos = item.velocity.startsWith('+') && item.velocity !== '+0%';
     const isNeg = item.velocity.startsWith('-') || (item.velocity.startsWith('−') && item.velocity !== '-0%');
     const velClass = isPos ? 'velocity-up' : isNeg ? 'velocity-down' : 'velocity-flat';
 
-    // Determine status badge class
     let statusClass = 'tag-steady';
     if (item.status === 'Surge') statusClass = 'tag-surge';
     if (item.status === 'Cooling') statusClass = 'tag-loss';
@@ -836,9 +880,9 @@ window.renderTrendingTable = function(data) {
         <td><strong>#${item.rank}</strong></td>
         <td><strong>${item.name}</strong></td>
         <td><span class="badge-cat">${item.cat}</span></td>
-        <td>${item.count}</td>
-        <td class="${velClass}">${item.velocity}</td>
-        <td>${item.revenue}</td>
+        <td class="num">${item.count}</td>
+        <td class="num ${velClass}">${item.velocity}</td>
+        <td class="num">${item.revenue}</td>
         <td><span class="${statusClass}">${item.status}</span></td>
       </tr>
     `;
