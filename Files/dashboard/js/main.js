@@ -499,10 +499,14 @@ function paintClients() {
     ? `${int(all.length)} clients, ${int(returning)} have visited more than once`
     : 'Clients appear here after their first booking';
 
-  $$('#client-filter [data-filter]').forEach((b) => {
+ $$('#client-filter [data-filter]').forEach((b) => {
     const k = b.dataset.filter;
     b.setAttribute('aria-pressed', String(k === f));
-    const n = $('.seg-count', b);     if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] \vert{}\vert{} CLIENT_FILTERS.all).length);   });    $$('.th-btn', card).forEach((b) => {
+    const n = $('.seg-count', b);
+    if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] || CLIENT_FILTERS.all).length);
+  });
+
+  $$('.th-btn', card).forEach((b) => {
     const th = b.closest('th');
     const on = b.dataset.sort === state.ui.sort.key;
     th.setAttribute('aria-sort', on ? (state.ui.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
