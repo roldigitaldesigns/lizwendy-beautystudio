@@ -30,8 +30,8 @@ const state = {
 // One entry per ledger view. `cards` are the elements that show its data.
 const SOURCES = {
   perf:     { view: 'v_daily_performance', cards: ['kpi-revenue', 'kpi-bookings'],            opts: () => ({ from: addDays(state.today, -(2 * state.range - 1)), limit: 400 }) },
-  churn: { view: 'v_churn_deflection', cards: ['kpi-rescued', 'kpi-rate', 'card-churn'], opts: () => ({ to: addMonths(monthStartOf(state.today), 3), limit: 12 }) },
-  capacity: { view: 'v_artist_capacity', cards: ['card-capacity'], opts: () => ({ from: addDays(mondayOf(state.today), -7), to: addDays(mondayOf(state.today), 35), limit: 60 }) },
+  churn:    { view: 'v_churn_deflection',  cards: ['kpi-rescued', 'kpi-rate', 'card-churn'],  opts: () => ({ to: addMonths(monthStartOf(state.today), 3), limit: 12 }) },
+  capacity: { view: 'v_artist_capacity',   cards: ['card-capacity'],                          opts: () => ({ from: addDays(mondayOf(state.today), -7), to: addDays(mondayOf(state.today), 35), limit: 60 }) },
   ltv:      { view: 'v_customer_ltv',      cards: ['card-clients'],                           opts: () => ({ limit: 1000 }) },
   activity: { view: 'v_recent_activity',   cards: ['card-feed'],                              opts: () => ({ limit: 50 }) },
 };
@@ -258,7 +258,7 @@ function paintChurnPanel(monthsRange) {
 // ── Artist capacity ──
 // v_artist_capacity has one row per artist per week (Monday start, studio timezone), so every
 // window is a whole number of weeks starting at this week's Monday: 1, 2 or 4 weeks.
-const capGroup = () => $('#cap-window') || $('#week-seg');
+const capGroup = () => $('#cap-window') \vert{}\vert{} $('#week-seg');
 const CAP_LABEL = { 1: 'This week', 2: '2 weeks', 4: '4 weeks' };
 
 /** One artist's totals over `weeks` weeks from `startMonday`. A week with no row counts as 0 booked
@@ -286,7 +286,7 @@ function renderCapacity() {
   const list = $('[data-role="artists"]', card);
   const item = list.tagName === 'UL' || list.tagName === 'OL' ? 'li' : 'div'; // valid HTML for either container
   clear(list);
-  const foot = $('[data-role="foot"]', card) || $('.footnote, .panel-foot', card);
+  const foot = $('[data-role="foot"]', card) \vert{}\vert{} $('.footnote, .panel-foot', card);
   if (foot) {
     foot.hidden = artists.size === 0;
     foot.textContent = "Utilization is booked hours divided by each artist's capacity for the selected weeks. The small bars show last week through four weeks ahead; the darker bars are the weeks counted above.";
@@ -354,18 +354,17 @@ const EMPTY_TEXT = {
 };
 
 // ── DSLV (Days Since Last Visit) & Flight Risk ──
-function getDslv(latestStamp, tzStr) {
+function getDslv(latestStamp) {
   if (!latestStamp) return null;
-  const d = dateInTz(latestStamp, tzStr);
-  const now = dateInTz(new Date().toISOString(), tzStr);
-  const diffMs = Date.parse(now) - Date.parse(d);
-  if (isNaN(diffMs) || diffMs < 0) return 0;
+  const lastMs = Date.parse(latestStamp);
+  if (isNaN(lastMs)) return null;
+  const diffMs = Date.now() - lastMs;
+  if (diffMs < 0) return 0;
   return Math.floor(diffMs / 86400000);
 }
 
 function getRiskTier(dslv, visits) {
   if (dslv == null) return null;
-  // If visits <= 1, they are first-timers; > 1 are established returning clients
   if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv };
   if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv };
   return { label: 'At Risk', cls: 'tag-risk', dslv };
@@ -404,15 +403,11 @@ function paintClients() {
     ? `${int(all.length)} clients, ${int(returning)} have visited more than once`
     : 'Clients appear here after their first booking';
 
- // Filter pills: pressed state + a count that follows the search box
+  // Filter pills: pressed state + a count that follows the search box
   $$('#client-filter [data-filter]').forEach((b) => {
     const k = b.dataset.filter;
     b.setAttribute('aria-pressed', String(k === f));
-    const n = $('.seg-count', b);
-    if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] || CLIENT_FILTERS.all).length);
-  });
-
-  $$('.th-btn', card).forEach((b) => {
+    const n = $('.seg-count', b);     if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] \vert{}\vert{} CLIENT_FILTERS.all).length);   });    $$('.th-btn', card).forEach((b) => {
     const th = b.closest('th');
     const on = b.dataset.sort === state.ui.sort.key;
     th.setAttribute('aria-sort', on ? (state.ui.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
@@ -453,11 +448,11 @@ function paintClients() {
           c.email ? h('span', { class: 'email' }, shown ? c.email : maskEmail(c.email)) : h('span', { class: 'email muted' }, 'No email')))),
       h('td', { class: 'num' }, int(c.visits)),
       h('td', { class: 'num' }, h('span', { class: 'ltv' }, money(c.ltv_cents, cur()))),
-(() => {
+      (() => {
         if (!latest) return h('td', {}, h('span', { class: 'muted' }, 'None yet'));
 
         const upcoming = isUpcoming(c);
-        const dslv = getDslv(latest, tz());
+        const dslv = getDslv(latest);
         const risk = !upcoming ? getRiskTier(dslv, num(c.visits)) : null;
 
         return h('td', {},
@@ -472,7 +467,7 @@ function paintClients() {
     ));
   });
 
-const sortLabel = () => ({ display_name: 'name', visits: 'visits', ltv_cents: 'lifetime value', last_appointment_at: 'latest appointment' }[state.ui.sort.key]);
+  const sortLabel = () => ({ display_name: 'name', visits: 'visits', ltv_cents: 'lifetime value', last_appointment_at: 'latest appointment' }[state.ui.sort.key]);
   $('[data-role="count"]', card).textContent = filtered.length
     ? `Showing ${int(filtered.length)} ${FILTER_NOUN[f]}${term ? ` matching “${term}”` : `, sorted by ${sortLabel()}`}`
     : '';
@@ -585,8 +580,7 @@ async function loadTenant() {
   state.data = { perf: null, churn: null, capacity: null, ltv: null, activity: null };
   state.ui = { churnMonth: null, capWeeks: 1, filter: 'all', search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
   state.seen = new Set(); state.primed = false;
-  $('#client-search').value = '';
-  $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
+  $('#client-search').value = '';   $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
   document.title = `${state.tenant.display_name} | Command Center`;
   setLive('loading', 'Loading');
 
@@ -643,30 +637,12 @@ function retry(key) {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem('cc-theme', theme); } catch (_) {}
-  const btn = $('#theme-toggle');
-  clear(btn);
-  btn.append(icon(theme === 'studio' ? 'moon' : 'sun', { size: 18 }));
-  const label = theme === 'studio' ? 'Switch to the dark terminal theme' : 'Switch to the studio theme';
-  btn.setAttribute('aria-label', label);
-  btn.title = label;
-  btn.setAttribute('aria-pressed', String(theme === 'terminal'));
-}
-
-// ───────────────────────── boot ─────────────────────────
-
-function fillStaticParts() {
-  $$('.card-skel').forEach((el) => {
+  const btn = $('#theme-toggle');   clear(btn);   btn.append(icon(theme === 'studio' ? 'moon' : 'sun', { size: 18 }));   const label = theme === 'studio' ? 'Switch to the dark terminal theme' : 'Switch to the studio theme';   btn.setAttribute('aria-label', label);   btn.title = label;   btn.setAttribute('aria-pressed', String(theme === 'terminal')); }  // ───────────────────────── boot ─────────────────────────  function fillStaticParts() {   $$('.card-skel').forEach((el) => {
     const n = Number(el.dataset.lines) || 3;
     for (let i = 0; i < n; i++) el.append(h('div', { class: `skel${i === 0 && el.closest('.kpi') ? ' skel-big' : ''}` }));
   });
-  $$('.card-err').forEach((el) => {
-    el.append(
-      h('p', { class: 'err-title' }, icon('alert', { size: 18 }), 'This section didn’t load'),
-      h('p', { class: 'err-msg' }),
-      h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => retry(el.dataset.retryKey) }, 'Try again'),
-    );
-  });
-  $$('[data-icon]').forEach((el) => el.append(icon(el.dataset.icon, { size: 18 })));
+  $$('.card-err').forEach((el) => {     el.append(       h('p', { class: 'err-title' }, icon('alert', { size: 18 }), 'This section didn’t load'),       h('p', { class: 'err-msg' }),       h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => retry(el.dataset.retryKey) }, 'Try again'),     );   });   $$
+('[data-icon]').forEach((el) => el.append(icon(el.dataset.icon, { size: 18 })));
 }
 
 function wire() {
@@ -702,19 +678,12 @@ function wire() {
     const b = ev.target.closest('[data-range]');
     if (!b || Number(b.dataset.range) === state.range) return;
     state.range = Number(b.dataset.range);
-    $$('#range-seg .seg-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    loadSource('perf');
-  });
-
- capGroup()?.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-window]');
-    if (!b) return;
-    state.ui.capWeeks = Number(b.dataset.window);
-    $$('.seg-btn', capGroup()).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    $$('#range-seg .seg-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));     loadSource('perf');   });    capGroup()?.addEventListener('click', (ev) => {     const b = ev.target.closest('[data-window]');     if (!b) return;     state.ui.capWeeks = Number(b.dataset.window);     $$
+('.seg-btn', capGroup()).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     if (state.data.capacity) renderCapacity();
   });
 
- $('#churn-month').addEventListener('change', (ev) => {
+  $('#churn-month').addEventListener('change', (ev) => {
     state.ui.churnMonth = ev.target.value;
     paintChurnPanel(churnRange(churnRows().thisMonth));
   });
@@ -724,7 +693,7 @@ function wire() {
     clearTimeout(t);
     t = setTimeout(() => { state.ui.search = ev.target.value; state.ui.shown = Infinity; if (state.data.ltv) paintClients(); }, 120);
   });
-$('#client-filter')?.addEventListener('click', (ev) => {
+  $('#client-filter')?.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-filter]');
     if (!b || b.dataset.filter === state.ui.filter) return;
     state.ui.filter = b.dataset.filter;
@@ -750,7 +719,7 @@ $('#client-filter')?.addEventListener('click', (ev) => {
     }
   });
 
-$('#card-clients [data-role="more"]')?.addEventListener('click', () => { state.ui.shown += CLIENT_PAGE; paintClients(); });
+  $('#card-clients [data-role="more"]')?.addEventListener('click', () => { state.ui.shown += CLIENT_PAGE; paintClients(); });
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && state.tenant && Date.now() - state.lastOk > POLL_MS) poll();
@@ -885,7 +854,7 @@ async function fetchAndRenderTrending() {
       return;
     }
 
-   trendingRawData = data.map(item => {
+    trendingRawData = data.map(item => {
       let velNum = 0;
       if (item.velocity === 'New' || item.velocity === '—') {
         velNum = parseFloat((item.count / currentTrendingRange).toFixed(2));
@@ -940,7 +909,7 @@ function renderVisualAnalytics(items) {
   if (velLeader) {
     document.getElementById('th-vel-name').textContent = velLeader.name;
     
-if (velLeader.velocity === '—' || velLeader.velocity === '-' || velLeader.velocity === 'New') {
+    if (velLeader.velocity === '—' || velLeader.velocity === '-' || velLeader.velocity === 'New') {
       const perDay = (velLeader.count / currentTrendingRange).toFixed(1);
       document.getElementById('th-vel-rate').textContent = `${perDay}/day`;
       document.getElementById('th-vel-count').textContent = `${velLeader.count} bks (${currentTrendingRange}D pace)`;
