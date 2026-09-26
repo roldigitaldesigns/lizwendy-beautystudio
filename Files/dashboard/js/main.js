@@ -365,9 +365,9 @@ function getDslv(latestStamp) {
 
 function getRiskTier(dslv, visits) {
   if (dslv == null) return null;
-  if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv };
-  if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv };
-  return { label: 'At Risk', cls: 'tag-risk', dslv };
+  if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv: dslv };
+  if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv: dslv };
+  return { label: 'At Risk', cls: 'tag-risk', dslv: dslv };
 }
 
 function clientList() {
@@ -407,7 +407,11 @@ function paintClients() {
   $$('#client-filter [data-filter]').forEach((b) => {
     const k = b.dataset.filter;
     b.setAttribute('aria-pressed', String(k === f));
-    const n = $('.seg-count', b);     if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] \vert{}\vert{} CLIENT_FILTERS.all).length);   });    $$('.th-btn', card).forEach((b) => {
+    const n = $('.seg-count', b);
+    if (n) n.textContent = int(matched.filter(CLIENT_FILTERS[k] || CLIENT_FILTERS.all).length);
+  });
+
+  $$('.th-btn', card).forEach((b) => {
     const th = b.closest('th');
     const on = b.dataset.sort === state.ui.sort.key;
     th.setAttribute('aria-sort', on ? (state.ui.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
