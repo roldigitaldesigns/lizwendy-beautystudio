@@ -353,6 +353,24 @@ const EMPTY_TEXT = {
   new:       ['No new clients', 'Clients with no visit yet, or just one, appear here.'],
 };
 
+// ── DSLV (Days Since Last Visit) & Flight Risk ──
+function getDslv(latestStamp, tzStr) {
+  if (!latestStamp) return null;
+  const d = dateInTz(latestStamp, tzStr);
+  const now = dateInTz(new Date().toISOString(), tzStr);
+  const diffMs = Date.parse(now) - Date.parse(d);
+  if (isNaN(diffMs) || diffMs < 0) return 0;
+  return Math.floor(diffMs / 86400000);
+}
+
+function getRiskTier(dslv, visits) {
+  if (dslv == null) return null;
+  // If visits <= 1, they are first-timers; > 1 are established returning clients
+  if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv };
+  if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv };
+  return { label: 'At Risk', cls: 'tag-risk', dslv };
+}
+
 function clientList() {
   const q = normalize(state.ui.search).split(/\s+/).filter(Boolean);
   const { key, dir } = state.ui.sort;
@@ -435,7 +453,22 @@ function paintClients() {
           c.email ? h('span', { class: 'email' }, shown ? c.email : maskEmail(c.email)) : h('span', { class: 'email muted' }, 'No email')))),
       h('td', { class: 'num' }, int(c.visits)),
       h('td', { class: 'num' }, h('span', { class: 'ltv' }, money(c.ltv_cents, cur()))),
-      h('td', {}, latest ? h('span', {}, dayLabel(dateInTz(latest, tz())), ' ', isUpcoming(c) ? h('span', { class: 'tag tag-upcoming' }, 'Upcoming') : null) : h('span', { class: 'muted' }, 'None yet')),
+(() => {
+        if (!latest) return h('td', {}, h('span', { class: 'muted' }, 'None yet'));
+
+        const upcoming = isUpcoming(c);
+        const dslv = getDslv(latest, tz());
+        const risk = !upcoming ? getRiskTier(dslv, num(c.visits)) : null;
+
+        return h('td', {},
+          h('div', { class: 'client-latest' },
+            h('span', { class: 'latest-date' }, dayLabel(dateInTz(latest, tz()))),
+            upcoming
+              ? h('span', { class: 'tag tag-upcoming' }, 'Upcoming')
+              : (risk ? h('span', { class: `tag ${risk.cls}`, title: `${risk.dslv} days since last visit` }, `${risk.dslv}d · ${risk.label}`) : null)
+          )
+        );
+      })(),
     ));
   });
 
