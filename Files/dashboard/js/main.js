@@ -134,6 +134,7 @@ function renderPerf({ fresh }) {
   const cancelled = sum(from0, today, 'bookings_cancelled');
   const revChange = pctDelta(changePct(rev, prevRev));
 
+  // Hero = the forward pipeline (tomorrow onward). The lookback window moves to the footnote and sparkline.
   setKpi('kpi-revenue', {
     value: moneyParts(upRev, cur()), period: 'Upcoming pipeline', fresh,
     delta: { dir: 'none', text: `${int(upBk)} booked` }, vs: '',
@@ -155,15 +156,18 @@ function churnRows() {
   return { map, thisMonth };
 }
 
+// Panel chart range: 3 months back through 2 months ahead. (The two KPI sparklines stay on the
+// trailing 6 months so they don't drop to $0 for months that haven't happened yet.)
 const churnRange = (thisMonth) => Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 3));
 
 function renderChurn({ fresh }) {
   const { map, thisMonth } = churnRows();
   const last = addMonths(thisMonth, -1);
   const row = (m) => map.get(m) || {};
-  const months6 = Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 5));
-  const monthsRange = churnRange(thisMonth);
+  const months6 = Array.from({ length: 6 }, (_, i) => addMonths(thisMonth, i - 5)); // trailing: KPI sparklines only
+  const monthsRange = churnRange(thisMonth);                                        // panel chart: past + future
 
+  // KPI: rescued revenue (this calendar month)
   const saved = num(row(thisMonth).revenue_saved_cents), savedPrev = num(row(last).revenue_saved_cents);
   setKpi('kpi-rescued', {
     value: moneyParts(saved, cur()), period: 'This month', fresh,
@@ -172,6 +176,7 @@ function renderChurn({ fresh }) {
     spark: months6.map((m) => num(row(m).revenue_saved_cents)),
   });
 
+  // KPI: deflection rate
   const rate = row(thisMonth).deflection_rate_pct, ratePrev = row(last).deflection_rate_pct;
   const hasRate = rate !== null && rate !== undefined;
   const pts = hasRate && ratePrev != null ? num(rate) - num(ratePrev) : null;
@@ -185,6 +190,7 @@ function renderChurn({ fresh }) {
     spark: months6.map((m) => num(row(m).deflection_rate_pct)),
   });
 
+  // Panel: month selector (history, this month, and at most two months ahead)
   const latest = addMonths(thisMonth, 2);
   const avail = [...new Set([thisMonth, ...map.keys()])].filter((m) => m <= latest).sort().reverse();
   if (!state.ui.churnMonth || !avail.includes(state.ui.churnMonth)) state.ui.churnMonth = thisMonth;
@@ -217,6 +223,7 @@ function paintChurnPanel(monthsRange) {
   q('rescued-note').textContent = `${int(kept)} appointment${kept === 1 ? '' : 's'} moved instead of cancelled`;
   q('lost-note').textContent = `${int(cancelled)} cancellation${cancelled === 1 ? '' : 's'}`;
 
+  // Flow bar + legend
   const flow = q('flow');
   clear(flow);
   const total = kept + cancelled + idle;
@@ -234,6 +241,7 @@ function paintChurnPanel(monthsRange) {
     h('li', {}, h('span', { class: 'swatch swatch-idle' }), 'Left without changing', h('span', { class: 'count' }, int(idle))),
   );
 
+  // Trend: upcoming (blue), rescued (green) and lost (red) per month
   const bars = monthsRange.map((mm) => {
     const x = map.get(mm) || {};
     const up = num(x.upcoming_revenue_cents), gain = num(x.revenue_saved_cents), loss = num(x.revenue_lost_cents);
@@ -247,9 +255,14 @@ function paintChurnPanel(monthsRange) {
   svg.setAttribute('aria-label', `Upcoming, rescued and lost revenue by month. ${bars.map((b) => b.title).join('. ')}`);
 }
 
+// ── Artist capacity ──
+// v_artist_capacity has one row per artist per week (Monday start, studio timezone), so every
+// window is a whole number of weeks starting at this week's Monday: 1, 2 or 4 weeks.
 const capGroup = () => $('#cap-window') || $('#week-seg');
 const CAP_LABEL = { 1: 'This week', 2: '2 weeks', 4: '4 weeks' };
 
+/** One artist's totals over `weeks` weeks from `startMonday`. A week with no row counts as 0 booked
+ *  but still adds a full week of capacity, so the percentage isn't inflated. */
 function capacityTotals(rows, startMonday, weeks) {
   const perWeek = num(rows[0].weekly_capacity_minutes);
   let minutes = 0, bookings = 0, cents = 0;
@@ -271,7 +284,7 @@ function renderCapacity() {
   const artists = new Map();
   rows.forEach((r) => { if (!artists.has(r.artist_id)) artists.set(r.artist_id, r.display_name); });
   const list = $('[data-role="artists"]', card);
-  const item = list.tagName === 'UL' || list.tagName === 'OL' ? 'li' : 'div';
+  const item = list.tagName === 'UL' || list.tagName === 'OL' ? 'li' : 'div'; // valid HTML for either container
   clear(list);
   const foot = $('[data-role="foot"]', card) || $('.footnote, .panel-foot', card);
   if (foot) {
@@ -294,6 +307,7 @@ function renderCapacity() {
     const meter = h('div', { class: `meter${full ? ' is-full' : ''}`, role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round(p), 'aria-label': `${name} utilization, ${CAP_LABEL[weeks].toLowerCase()}` }, fill);
     requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = `${Math.min(p, 100)}%`; }));
 
+    // Small bars: last week through four weeks ahead. The weeks inside the selected window are dark.
     const stripEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     stripEl.setAttribute('class', 'artist-strip');
     stripEl.setAttribute('role', 'img');
@@ -328,14 +342,14 @@ const SERVICE_CADENCE_DAYS = {
   'Facials': 35,
   'Makeup': 60,
   'PMU': 180,
-  'Other': 30
+  'Other': 30,
 };
 
 function getRiskTier(dslv, visits) {
   if (dslv == null) return null;
-  if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv: dslv };
-  if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv: dslv };
-  return { label: 'At Risk', cls: 'tag-risk', dslv: dslv };
+  if (dslv <= 30) return { label: 'Active', cls: 'tag-active', dslv };
+  if (dslv <= 45) return { label: 'Due', cls: 'tag-due', dslv };
+  return { label: 'At Risk', cls: 'tag-risk', dslv };
 }
 
 function openClientDossier(c) {
@@ -356,7 +370,7 @@ function openClientDossier(c) {
   clear(meta);
   meta.append(
     h('span', { class: `tag ${c.segment === 'returning' ? 'tag-returning' : 'tag-new'}` }, c.segment === 'returning' ? 'Returning' : 'New'),
-    h('span', { class: 'tag' }, c.locale === 'es' ? 'Spanish' : 'English')
+    h('span', { class: 'tag' }, c.locale === 'es' ? 'Spanish' : 'English'),
   );
 
   const ltvVal = num(c.ltv_cents);
@@ -370,7 +384,7 @@ function openClientDossier(c) {
   const dslv = getDslv(latest);
   const primaryCat = c.primary_category || 'Nails';
   const cadenceExpected = SERVICE_CADENCE_DAYS[primaryCat] || 30;
-  
+
   $('#drawer-last-service').textContent = `${primaryCat} · ${dslv != null ? `${dslv}d ago` : 'None recorded'}`;
   const badge = $('#drawer-cadence-badge');
   clear(badge);
@@ -399,7 +413,7 @@ function openClientDossier(c) {
   const affinityLegend = $('#drawer-affinity-legend');
   clear(affinityBar);
   clear(affinityLegend);
-  
+
   const barSeg = h('div', { class: 'cat-seg cat-bg-nails', style: 'width: 100%' });
   affinityBar.append(barSeg);
   affinityLegend.textContent = `${primaryCat} (100% of booked volume)`;
@@ -442,6 +456,9 @@ function closeDrawer() {
 
 // ───────────────────────── Clients table ─────────────────────────
 
+// Lifecycle filters. "Upcoming" uses next_appointment_at (active future bookings only, added by
+// migration 005). Until 005 has been run that column is absent, so we fall back to
+// last_appointment_at, which can include cancelled bookings (the old behaviour).
 const nextAppt = (c) => ('next_appointment_at' in c ? c.next_appointment_at : c.last_appointment_at);
 const isUpcoming = (c) => { const t = Date.parse(nextAppt(c)); return Number.isFinite(t) && t > Date.now(); };
 const CLIENT_FILTERS = {
@@ -470,7 +487,7 @@ function clientList() {
   const q = normalize(state.ui.search).split(/\s+/).filter(Boolean);
   const { key, dir } = state.ui.sort;
   const all = state.data.ltv || [];
-  const matched = q.length ? all.filter((c) => q.every((t) => c._hay.includes(t))) : all;
+  const matched = q.length ? all.filter((c) => q.every((t) => c._hay.includes(t))) : all; // search only: what the pill counts show
   const filtered = matched.filter(CLIENT_FILTERS[state.ui.filter] || CLIENT_FILTERS.all);
   const mult = dir === 'asc' ? 1 : -1;
   const byName = (a, b) => (a.display_name || '~').localeCompare(b.display_name || '~', 'en', { sensitivity: 'base' });
@@ -499,7 +516,8 @@ function paintClients() {
     ? `${int(all.length)} clients, ${int(returning)} have visited more than once`
     : 'Clients appear here after their first booking';
 
- $$('#client-filter [data-filter]').forEach((b) => {
+  // Filter pills: pressed state + a count that follows the search box
+  $$('#client-filter [data-filter]').forEach((b) => {
     const k = b.dataset.filter;
     b.setAttribute('aria-pressed', String(k === f));
     const n = $('.seg-count', b);
@@ -535,7 +553,7 @@ function paintClients() {
       'aria-label': `${shown ? 'Hide' : 'Show'} contact details for ${name}`, title: shown ? 'Hide contact details' : 'Show contact details',
     }, icon(shown ? 'eyeOff' : 'eye', { size: 16 }));
 
-    // IMPORTANT: Injected `data-phone: c.phone` so the drawer knows which client was clicked
+    // data-phone on the row is what the click delegate in wire() reads to open the drawer.
     rows.append(h('tr', { 'data-phone': c.phone, class: 'client-row', style: 'cursor: pointer;' },
       h('td', {},
         h('div', { class: 'client-name' }, name),
@@ -593,6 +611,7 @@ function renderFeed() {
     const day = dateInTz(e.occurred_at, tz());
     if (day !== lastDay) {
       lastDay = day;
+      // A plain <li>: an <ol> may only contain <li> elements.
       list.append(h('li', { class: 'feed-day' }, day === today ? 'Today' : day === yesterday ? 'Yesterday' : dayLabel(day)));
     }
     list.append(feedItem(e, state.primed && !state.seen.has(e.event_id)));
@@ -679,7 +698,8 @@ async function loadTenant() {
   state.data = { perf: null, churn: null, capacity: null, ltv: null, activity: null };
   state.ui = { churnMonth: null, capWeeks: 1, filter: 'all', search: '', sort: { key: 'ltv_cents', dir: 'desc' }, shown: CLIENT_PAGE, revealed: new Set() };
   state.seen = new Set(); state.primed = false;
-  $('#client-search').value = '';   $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
+  $('#client-search').value = '';
+  $$('.seg-btn', capGroup() || document).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.window === '1')));
   document.title = `${state.tenant.display_name} | Command Center`;
   setLive('loading', 'Loading');
 
@@ -736,12 +756,30 @@ function retry(key) {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem('cc-theme', theme); } catch (_) {}
-  const btn = $('#theme-toggle');   clear(btn);   btn.append(icon(theme === 'studio' ? 'moon' : 'sun', { size: 18 }));   const label = theme === 'studio' ? 'Switch to the dark terminal theme' : 'Switch to the studio theme';   btn.setAttribute('aria-label', label);   btn.title = label;   btn.setAttribute('aria-pressed', String(theme === 'terminal')); }  // ───────────────────────── boot ─────────────────────────  function fillStaticParts() {   $$('.card-skel').forEach((el) => {
+  const btn = $('#theme-toggle');
+  clear(btn);
+  btn.append(icon(theme === 'studio' ? 'moon' : 'sun', { size: 18 }));
+  const label = theme === 'studio' ? 'Switch to the dark terminal theme' : 'Switch to the studio theme';
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  btn.setAttribute('aria-pressed', String(theme === 'terminal'));
+}
+
+// ───────────────────────── boot ─────────────────────────
+
+function fillStaticParts() {
+  $$('.card-skel').forEach((el) => {
     const n = Number(el.dataset.lines) || 3;
     for (let i = 0; i < n; i++) el.append(h('div', { class: `skel${i === 0 && el.closest('.kpi') ? ' skel-big' : ''}` }));
   });
-  $$('.card-err').forEach((el) => {     el.append(       h('p', { class: 'err-title' }, icon('alert', { size: 18 }), 'This section didn’t load'),       h('p', { class: 'err-msg' }),       h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => retry(el.dataset.retryKey) }, 'Try again'),     );   });   $$
-('[data-icon]').forEach((el) => el.append(icon(el.dataset.icon, { size: 18 })));
+  $$('.card-err').forEach((el) => {
+    el.append(
+      h('p', { class: 'err-title' }, icon('alert', { size: 18 }), 'This section didn’t load'),
+      h('p', { class: 'err-msg' }),
+      h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => retry(el.dataset.retryKey) }, 'Try again'),
+    );
+  });
+  $$('[data-icon]').forEach((el) => el.append(icon(el.dataset.icon, { size: 18 })));
 }
 
 function wire() {
@@ -777,8 +815,15 @@ function wire() {
     const b = ev.target.closest('[data-range]');
     if (!b || Number(b.dataset.range) === state.range) return;
     state.range = Number(b.dataset.range);
-    $$('#range-seg .seg-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));     loadSource('perf');   });    capGroup()?.addEventListener('click', (ev) => {     const b = ev.target.closest('[data-window]');     if (!b) return;     state.ui.capWeeks = Number(b.dataset.window);     $$
-('.seg-btn', capGroup()).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    $$('#range-seg .seg-btn').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    loadSource('perf');
+  });
+
+  capGroup()?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-window]');
+    if (!b) return;
+    state.ui.capWeeks = Number(b.dataset.window);
+    $$('.seg-btn', capGroup()).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     if (state.data.capacity) renderCapacity();
   });
 
@@ -799,8 +844,9 @@ function wire() {
     state.ui.shown = Infinity; // back to the first page, like search does
     if (state.data.ltv) paintClients();
   });
-  
-  // MERGED DRAWER LOGIC: Safely intercepts row clicks without breaking existing table sorting functionality
+
+  // Row clicks: sort buttons and the reveal-contact button are handled first and return early,
+  // so clicking either of those never also opens the drawer.
   $('#clients-table')?.addEventListener('click', (ev) => {
     const th = ev.target.closest('.th-btn');
     if (th) {
@@ -819,16 +865,16 @@ function wire() {
       $(`.reveal[data-phone="${CSS.escape(p)}"]`)?.focus();
       return;
     }
-    
-    // NEW: Open slide-out drawer if a client row was clicked!
+
+    // Open the slide-out drawer when a client row itself was clicked.
     const row = ev.target.closest('tr.client-row');
     if (row && row.dataset.phone && state.data.ltv) {
-        const clientData = state.data.ltv.find(c => c.phone === row.dataset.phone);
-        if (clientData) openClientDossier(clientData);
+      const clientData = state.data.ltv.find((c) => c.phone === row.dataset.phone);
+      if (clientData) openClientDossier(clientData);
     }
   });
 
-  // Wire Drawer Close Triggers
+  // Drawer close triggers
   $('#drawer-backdrop')?.addEventListener('click', closeDrawer);
   $('#btn-close-drawer')?.addEventListener('click', closeDrawer);
 
@@ -863,7 +909,7 @@ const CATEGORY_COLORS = {
   'Waxing': 'cat-bg-waxing',
   'Makeup': 'cat-bg-makeup',
   'Lash Ext': 'cat-bg-lashext',
-  'Other': 'cat-bg-other'
+  'Other': 'cat-bg-other',
 };
 
 window.setTrendingRange = function(days) {
@@ -978,7 +1024,7 @@ async function fetchAndRenderTrending() {
       return {
         ...item,
         revenueNum: Number(String(item.revenue).replace(/[^0-9.-]+/g, '')) || 0,
-        velocityNum: velNum
+        velocityNum: velNum,
       };
     });
 
