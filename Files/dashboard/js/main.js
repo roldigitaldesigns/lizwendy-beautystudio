@@ -409,12 +409,13 @@ function openClientDossier(c) {
     }
   }
 
-  const affinityBar = $('#drawer-affinity-bar');
+ const affinityBar = $('#drawer-affinity-bar');
   const affinityLegend = $('#drawer-affinity-legend');
   clear(affinityBar);
   clear(affinityLegend);
 
-  const barSeg = h('div', { class: 'cat-seg cat-bg-nails', style: 'width: 100%' });
+  const colorClass = CATEGORY_COLORS[primaryCat] || 'cat-bg-other';
+  const barSeg = h('div', { class: `cat-seg ${colorClass}`, style: 'width: 100%' });
   affinityBar.append(barSeg);
   affinityLegend.textContent = `${primaryCat} (100% of booked volume)`;
 
