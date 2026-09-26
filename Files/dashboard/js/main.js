@@ -433,10 +433,11 @@ function openClientDossier(c) {
     };
   }
 
-  const bookBtn = $('#btn-in-house-book');
+ const bookBtn = $('#btn-in-house-book');
   if (bookBtn) {
     bookBtn.onclick = () => {
-      window.location.hash = `#book?client=${encodeURIComponent(c.phone)}`;
+    const bookingUrl = `https://lizwendybeautystudiollc.com/?client=${encodeURIComponent(c.phone)}&lang=${c.locale || 'en'}`;
+      window.open(bookingUrl, '_blank');
     };
   }
 }
