@@ -371,22 +371,90 @@
                   </button>
                 </th>
               </tr>
-            </thead>
-            <tbody id="trending-table-body">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>                <!-- Rendered via JS -->
+           </thead>
+              <tbody id="trending-table-body">
+                <!-- Rendered via JS -->
               </tbody>
             </table>
           </div>
         </div>
       </div>
+    </div>
 
-    <!-- The existing </main> should be right here below -->
-    
+<!-- Client Retention Dossier Drawer -->
+    <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+    <aside id="client-drawer" class="client-drawer" aria-hidden="true" hidden>
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span class="drawer-eyebrow">Client Retention Dossier</span>
+          <h2 id="drawer-client-name" class="drawer-client-name">—</h2>
+          <div id="drawer-client-meta" class="drawer-client-meta"></div>
+        </div>
+        <button type="button" class="drawer-close-btn" id="drawer-close" aria-label="Close dossier">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Cadence Module -->
+        <section class="dossier-card">
+          <h3 class="dossier-card-title">Cadence & Lifecycle</h3>
+          <div class="cadence-stat">
+            <span class="cadence-label">Last Service:</span>
+            <strong id="drawer-last-service">—</strong>
+          </div>
+          <div class="cadence-stat">
+            <span class="cadence-label">Cadence Status:</span>
+            <span id="drawer-cadence-badge" class="tag">—</span>
+          </div>
+        </section>
+
+        <!-- Financial Profile -->
+        <section class="dossier-card">
+          <h3 class="dossier-card-title">Financial Intelligence</h3>
+          <div class="dossier-grid-3">
+            <div>
+              <span class="dossier-mini-label">Lifetime Value</span>
+              <strong id="drawer-ltv" class="dossier-value">$0.00</strong>
+            </div>
+            <div>
+              <span class="dossier-mini-label">Total Visits</span>
+              <strong id="drawer-visits" class="dossier-value">0</strong>
+            </div>
+            <div>
+              <span class="dossier-mini-label">Average Ticket</span>
+              <strong id="drawer-avg-ticket" class="dossier-value">$0.00</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Service Affinity Distribution -->
+        <section class="dossier-card">
+          <h3 class="dossier-card-title">Service Affinity</h3>
+          <div id="drawer-affinity-bar" class="affinity-bar"></div>
+          <div id="drawer-affinity-legend" class="affinity-legend"></div>
+        </section>
+
+        <!-- Operational Action Triggers -->
+        <section class="dossier-card">
+          <h3 class="dossier-card-title">Operational Actions</h3>
+          <div class="dossier-action-row">
+            <button type="button" id="btn-in-house-book" class="btn btn-primary">+ In-House Booking</button>
+            <button type="button" id="btn-copy-link" class="btn btn-secondary">Copy Rebooking Link</button>
+          </div>
+          <div id="copy-confirm" class="copy-confirm" hidden>Rebooking link copied!</div>
+        </section>
+
+        <!-- Internal Notes Block -->
+        <section class="dossier-card">
+          <h3 class="dossier-card-title">Studio Operational Notes</h3>
+          <textarea id="drawer-notes-input" class="drawer-notes-field" placeholder="Client preferences, sensitivity alerts, mix formulas..." rows="3"></textarea>
+          <div class="notes-actions">
+            <button type="button" id="btn-save-note" class="btn btn-ghost">Save Note</button>
+            <span id="note-save-status" class="note-status"></span>
+          </div>
+        </section>
+      </div>
+    </aside>
+  
     </main>
   </div>
 
