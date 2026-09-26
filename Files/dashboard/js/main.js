@@ -876,8 +876,12 @@ function wire() {
   });
 
   // Drawer close triggers
-  $('#drawer-backdrop')?.addEventListener('click', closeDrawer);
-  $('#btn-close-drawer')?.addEventListener('click', closeDrawer);
+// Drawer close triggers via event delegation
+document.addEventListener('click', (ev) => {
+  if (ev.target.closest('#btn-close-drawer') || ev.target.closest('#drawer-backdrop')) {
+    closeDrawer();
+  }
+});
 
   $('#card-clients [data-role="more"]')?.addEventListener('click', () => { state.ui.shown += CLIENT_PAGE; paintClients(); });
 
