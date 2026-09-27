@@ -575,6 +575,20 @@
     #tab-accounting .acc-badge.capex { background: #fbeaea; color: var(--acc-danger); }
     #tab-accounting .acc-empty { text-align: center; color: var(--acc-muted); padding: 26px 14px; }
     #tab-accounting .acc-muted { color: var(--acc-muted); }
+    #tab-accounting .acc-del-btn {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  #tab-accounting .acc-del-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+  }
   </style>
 
   <div class="acc-head">
@@ -598,10 +612,11 @@
           <th>Payment</th>
           <th>Flags</th>
           <th>Receipt</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="accExpenseRows">
-        <tr id="accEmptyRow"><td class="acc-empty" colspan="8">No expenses logged yet. Click “Quick-Log Expense” to add your first one.</td></tr>
+        <tr id="accEmptyRow"><td class="acc-empty" colspan="9">No expenses logged yet. Click “Quick-Log Expense” to add your first one.</td></tr>
       </tbody>
     </table>
   </div>
