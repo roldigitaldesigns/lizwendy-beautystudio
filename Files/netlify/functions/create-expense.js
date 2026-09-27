@@ -144,10 +144,8 @@ exports.handler = async (event) => {
       );
 
       if (upRes.ok) {
-        // Store the object path (relative to the bucket). The bucket is private,
-        // so a later read step signs this path on demand — we never store a
-        // public URL. bucket = RECEIPTS_BUCKET.
-        receipt_url = objectPath;
+        // Store the full public URL so the frontend can display/open it directly
+        receipt_url = `${SUPABASE_URL}/storage/v1/object/public/${RECEIPTS_BUCKET}/${objectPath}`;
       } else {
         const t = await upRes.text();
         console.error('create-expense: receipt upload failed, continuing with null.', upRes.status, t.slice(0, 300));
