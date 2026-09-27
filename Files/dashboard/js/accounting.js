@@ -113,17 +113,42 @@ async function loadFinancials() {
   try {
     const res = await fetch(GET_FINANCIALS_ENDPOINT);
     if (!res.ok) throw new Error('Failed to fetch financials');
-    const data = await res.json();
+    let raw = await res.json();
 
-    const grossCents = Number(data.gross_revenue_cents) || 0;
-    const expCents   = Number(data.total_expenses_cents) || 0;
-    const netCents   = Number(data.net_profit_cents) || (grossCents - expCents);
-    const taxReserve = Math.max(0, Math.round(netCents * 0.30));
+    // Supabase RPC functions return an array with one row
+    const data = Array.isArray(raw) ? raw[0] : (raw || {});
+
+    // Sum service + retail revenue
+    const serviceCents = Number(data.gross_exempt_service_revenue_cents) || 0;
+    const retailCents  = Number(data.gross_taxable_retail_cents) || 0;
+    const grossCents   = serviceCents + retailCents;
+
+    // Total deductions = recorded business expenses + mileage write-off
+    const expCents     = Number(data.total_expenses_cents) || 0;
+    const mileageCents = Number(data.total_mileage_deduction_cents) || 0;
+    const totalDeduct  = expCents + mileageCents;
+
+    // Net taxable profit
+    const netProfitCents = data.net_taxable_profit_cents !== undefined 
+      ? Number(data.net_taxable_profit_cents) 
+      : (grossCents - totalDeduct);
+
+    // Tax reserve: 30% of profit if positive, else $0.00
+    const taxReserve = Math.max(0, Math.round(netProfitCents * 0.30));
 
     elGross.textContent = centsToUSD(grossCents);
-    elExp.textContent   = centsToUSD(expCents);
-    elNet.textContent   = centsToUSD(netCents);
-    elTax.textContent   = centsToUSD(taxReserve);
+    elExp.textContent   = centsToUSD(totalDeduct);
+    
+    // Display net profit with minus sign if negative
+    if (netProfitCents < 0) {
+      elNet.textContent = '-' + centsToUSD(Math.abs(netProfitCents));
+      elNet.style.color = '#ef4444'; // Red for net loss
+    } else {
+      elNet.textContent = centsToUSD(netProfitCents);
+      elNet.style.color = '#10b981'; // Green for profit
+    }
+
+    elTax.textContent = centsToUSD(taxReserve);
   } catch (err) {
     console.error('accounting: load financials error:', err);
   }
