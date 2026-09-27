@@ -1,51 +1,57 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * POST /api/delete-expense (→ /.netlify/functions/delete-expense)
+ * Deletes an expense by its ID via PostgREST.
+ */
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      }
-    };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server configuration error.' }) };
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch (e) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON.' }) };
+  }
+
+  const { id } = body;
+  if (!id) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing expense id.' }) };
   }
 
   try {
-    const { id } = JSON.parse(event.body || '{}');
-    if (!id) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing ID' }) };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('delete-expense failed:', res.status, errText);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Could not delete expense.' }) };
     }
 
-    const { error } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ success: true, id })
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, id }) };
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    console.error('delete-expense error:', err);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Unexpected error.' }) };
   }
-}
+};
