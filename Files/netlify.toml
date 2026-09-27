@@ -14,3 +14,7 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+[[redirects]]
+  from = "/api/get-financials"
+  to = "/.netlify/functions/get-financials"
+  status = 200
