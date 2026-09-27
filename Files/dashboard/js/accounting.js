@@ -229,12 +229,13 @@ function buildRowHTML(exp) {
     ? '<span class="acc-badge capex" title="Amount over $2,500 — flagged for Section 179 / De Minimis review">CapEx review</span>'
     : '<span class="acc-muted">—</span>';
 
+  // Make the receipt a clickable, opening link in a new tab
   const receipt = exp.receipt_url
-    ? '<span title="Receipt attached">📎</span>'
+    ? `<a href="${escapeHtml(exp.receipt_url)}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;" title="View attached receipt">📎 View</a>`
     : '<span class="acc-muted">—</span>';
 
   const catLabel = CATEGORY_LABELS[exp.category] || exp.category || '';
-  const miles = Number(exp.business_miles) || 0;
+  const miles = Number(exp.business_miles) || 0; 
 
   return (
     `<td>${escapeHtml(exp.expense_date)}</td>` +
@@ -248,7 +249,6 @@ function buildRowHTML(exp) {
     `<td><button type="button" class="acc-del-btn" data-id="${exp.id}" title="Delete expense">Delete</button></td>`
   );
 }
-
 function attachRowDeleteHandler(tr, id) {
   const btn = tr.querySelector('.acc-del-btn');
   if (btn) {
