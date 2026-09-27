@@ -6,15 +6,10 @@
  *
  * Responsibilities:
  *   - Open/close the Quick-Log modal (button, cancel, ESC, click-outside).
- *   - Live "deductible mileage" preview that mirrors the backend July 1 split:
- *       expense_date < 2026-07-01  → $0.725/mi
- *       expense_date >= 2026-07-01 → $0.760/mi
- *   - Submit to /api/create-expense as JSON (dollars in — server converts to
- *     cents). Receipt is read to base64 and included; if none, receipt is null.
- *   - Render the "Recent Expenses" table and prepend each newly-logged row for
- *     immediate visual feedback (with the trigger-computed CapEx flag).
- *
- * No Supabase keys here — every call goes through the Netlify /api/* endpoint.
+ *   - Live "deductible mileage" preview matching the backend split.
+ *   - Submit to /api/create-expense as JSON.
+ *   - Load existing expenses from /api/get-expenses on start/tab switch.
+ *   - Delete rows via /api/delete-expense with user confirmation.
  */
 
 // ── Mileage rate split — MUST match get_ytd_financials() in the database ──
@@ -23,7 +18,9 @@ const MILEAGE_RATE_POST = 0.76;          // on/after Jul 1, 2026
 const MILEAGE_CUTOFF    = '2026-07-01';  // YYYY-MM-DD compares correctly as a string
 
 const CREATE_EXPENSE_ENDPOINT = '/api/create-expense';
-const MAX_RECEIPT_BYTES = 4 * 1024 * 1024; // client-side cap; server backstops at 5 MB
+const GET_EXPENSES_ENDPOINT    = '/api/get-expenses';
+const DELETE_EXPENSE_ENDPOINT = '/api/delete-expense';
+const MAX_RECEIPT_BYTES        = 4 * 1024 * 1024; // client-side cap; server backstops at 5 MB
 
 const CATEGORY_LABELS = {
   'Line 22 - Supplies':            'Supplies',
@@ -35,6 +32,7 @@ const CATEGORY_LABELS = {
 
 let els = {};
 let wired = false;
+let hasLoaded = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -94,14 +92,14 @@ function readReceipt(file) {
     reader.onload = () => {
       const result = String(reader.result || '');
       const comma = result.indexOf(',');
-      resolve(comma === -1 ? result : result.slice(comma + 1)); // strip "data:...;base64,"
+      resolve(comma === -1 ? result : result.slice(comma + 1));
     };
     reader.onerror = () => reject(new Error('Could not read the receipt file.'));
     reader.readAsDataURL(file);
   });
 }
 
-// ── Submit ──
+// ── Submit (Create) ──
 async function handleSubmit(e) {
   e.preventDefault();
   clearStatus();
@@ -114,14 +112,12 @@ async function handleSubmit(e) {
   const business_miles = Number(els.miles && els.miles.value) || 0;
   const notes          = (els.notes && els.notes.value || '').trim();
 
-  // Client-side validation (server re-validates authoritatively)
-  if (!expense_date)                 return setStatus('Please choose a date.', 'err');
-  if (!vendor)                       return setStatus('Please enter a vendor.', 'err');
+  if (!expense_date)                           return setStatus('Please choose a date.', 'err');
+  if (!vendor)                                 return setStatus('Please enter a vendor.', 'err');
   if (!Number.isFinite(amount) || amount <= 0) return setStatus('Please enter an amount greater than 0.', 'err');
-  if (!category)                     return setStatus('Please select a category.', 'err');
-  if (!payment_source)               return setStatus('Please select a payment source.', 'err');
+  if (!category)                               return setStatus('Please select a category.', 'err');
+  if (!payment_source)                         return setStatus('Please select a payment source.', 'err');
 
-  // Optional receipt
   let receipt = null;
   const file = els.receipt && els.receipt.files && els.receipt.files[0];
   if (file) {
@@ -132,7 +128,6 @@ async function handleSubmit(e) {
       const dataBase64 = await readReceipt(file);
       receipt = { filename: file.name, contentType: file.type || 'application/octet-stream', dataBase64 };
     } catch (err) {
-      // A receipt read failure must not block logging — proceed without it.
       console.warn('accounting: receipt read failed, submitting without it:', err.message);
       receipt = null;
     }
@@ -156,7 +151,6 @@ async function handleSubmit(e) {
       return;
     }
 
-    // Immediate feedback: prepend the returned row (has trigger-computed capex).
     if (payload.expense) prependExpenseRow(payload.expense, true);
 
     els.form.reset();
@@ -171,14 +165,8 @@ async function handleSubmit(e) {
   }
 }
 
-// ── Recent Expenses table ──
-function prependExpenseRow(exp, isNew) {
-  if (!els.rows) return;
-  if (els.emptyRow) { els.emptyRow.remove(); els.emptyRow = null; }
-
-  const tr = document.createElement('tr');
-  if (isNew) tr.className = 'acc-new';
-
+// ── HTML Row Builder ──
+function buildRowHTML(exp) {
   const capex = exp.is_capex_review
     ? '<span class="acc-badge capex" title="Amount over $2,500 — flagged for Section 179 / De Minimis review">CapEx review</span>'
     : '<span class="acc-muted">—</span>';
@@ -190,7 +178,7 @@ function prependExpenseRow(exp, isNew) {
   const catLabel = CATEGORY_LABELS[exp.category] || exp.category || '';
   const miles = Number(exp.business_miles) || 0;
 
-  tr.innerHTML =
+  return (
     `<td>${escapeHtml(exp.expense_date)}</td>` +
     `<td>${escapeHtml(exp.vendor)}</td>` +
     `<td>${escapeHtml(catLabel)}</td>` +
@@ -198,9 +186,92 @@ function prependExpenseRow(exp, isNew) {
     `<td>${miles ? miles : '<span class="acc-muted">—</span>'}</td>` +
     `<td>${escapeHtml(exp.payment_source || '')}</td>` +
     `<td>${capex}</td>` +
-    `<td>${receipt}</td>`;
+    `<td>${receipt}</td>` +
+    `<td><button type="button" class="acc-del-btn" data-id="${exp.id}" title="Delete expense">Delete</button></td>`
+  );
+}
 
+function attachRowDeleteHandler(tr, id) {
+  const btn = tr.querySelector('.acc-del-btn');
+  if (btn) {
+    btn.addEventListener('click', () => deleteExpense(id));
+  }
+}
+
+function prependExpenseRow(exp, isNew) {
+  if (!els.rows) return;
+  const emptyRow = $('accEmptyRow');
+  if (emptyRow) emptyRow.remove();
+
+  const tr = document.createElement('tr');
+  tr.id = `expense-row-${exp.id}`;
+  if (isNew) tr.className = 'acc-new';
+  tr.innerHTML = buildRowHTML(exp);
+
+  attachRowDeleteHandler(tr, exp.id);
   els.rows.insertBefore(tr, els.rows.firstChild);
+}
+
+function showEmptyPlaceholder() {
+  if (!els.rows) return;
+  els.rows.innerHTML = '<tr id="accEmptyRow"><td class="acc-empty" colspan="9">No expenses logged yet. Click “+ Quick-Log Expense” to add your first one.</td></tr>';
+}
+
+// ── Fetch Existing Expenses (Read) ──
+async function loadExpenses() {
+  if (!els.rows) return;
+
+  try {
+    const res = await fetch(GET_EXPENSES_ENDPOINT);
+    if (!res.ok) throw new Error('Failed to load expenses');
+    const expenses = await res.json();
+
+    els.rows.innerHTML = '';
+    if (!Array.isArray(expenses) || expenses.length === 0) {
+      showEmptyPlaceholder();
+      return;
+    }
+
+    expenses.forEach((exp) => {
+      const tr = document.createElement('tr');
+      tr.id = `expense-row-${exp.id}`;
+      tr.innerHTML = buildRowHTML(exp);
+      attachRowDeleteHandler(tr, exp.id);
+      els.rows.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('accounting: load error:', err);
+  }
+}
+
+// ── Delete Expense (Delete) ──
+async function deleteExpense(id) {
+  if (!id) return;
+  if (!confirm('Are you sure you want to delete this expense record?')) return;
+
+  try {
+    const res = await fetch(DELETE_EXPENSE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || !payload.success) {
+      alert(payload.error || 'Could not delete the expense. Please try again.');
+      return;
+    }
+
+    const row = document.getElementById(`expense-row-${id}`);
+    if (row) row.remove();
+
+    if (els.rows && els.rows.children.length === 0) {
+      showEmptyPlaceholder();
+    }
+  } catch (err) {
+    console.error('accounting: delete error:', err);
+    alert('Network error while deleting expense.');
+  }
 }
 
 function escapeHtml(s) {
@@ -213,7 +284,7 @@ function escapeHtml(s) {
 function wire() {
   if (wired) return;
   const section = $('tab-accounting');
-  if (!section) return; // markup not on the page yet
+  if (!section) return;
 
   els = {
     overlay:         $('accModalOverlay'),
@@ -252,19 +323,18 @@ function wire() {
   if (els.date && !els.date.value) els.date.value = todayISO();
   updateMileagePreview();
   wired = true;
+
+  if (!hasLoaded) {
+    hasLoaded = true;
+    loadExpenses();
+  }
 }
 
-/**
- * Call when the tab becomes visible. Kept as a no-op-safe hook so a future
- * get-expenses endpoint can load persisted rows here without touching the HTML.
- * (Today the table fills from expenses logged during this session.)
- */
 function activate() {
   wire();
-  // Future: fetch('/api/get-expenses') and render persisted rows on load.
+  loadExpenses();
 }
 
-// Expose a tiny handle for the host tab switcher.
 window.AccountingTab = { activate };
 
 if (document.readyState === 'loading') {
