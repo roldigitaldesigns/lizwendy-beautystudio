@@ -1,46 +1,45 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * GET /api/get-expenses (→ /.netlify/functions/get-expenses)
+ * Retrieves expenses ordered by expense_date descending.
+ */
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json',
+  };
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS'
-      }
-    };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server configuration error.' }) };
   }
 
   try {
-    const { data, error } = await supabase
-      .from('expenses')
-      .select('*')
-      .order('expense_date', { ascending: false });
-
-    if (error) throw error;
-
-    return {
-      statusCode: 200,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/expenses?select=*&order=expense_date.desc,created_at.desc`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
       },
-      body: JSON.stringify(data || [])
-    };
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('get-expenses failed:', res.status, data);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Could not fetch expenses.' }) };
+    }
+
+    return { statusCode: 200, headers, body: JSON.stringify(data || []) };
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    console.error('get-expenses error:', err);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Unexpected error.' }) };
   }
-}
+};
