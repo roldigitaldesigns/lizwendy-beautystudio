@@ -65,10 +65,11 @@
   <main id="main" class="dash" tabindex="-1">
 
   <!-- 1. NEW TAB NAVIGATION -->
-  <nav class="cc-tab-nav" aria-label="Dashboard views">
-    <button class="cc-tab-btn active" onclick="switchTab('overview')">Overview</button>
-    <button class="cc-tab-btn" onclick="switchTab('trending')">Trending</button>
-  </nav>
+ <nav class="cc-tab-nav" aria-label="Dashboard views">
+      <button class="cc-tab-btn active" onclick="switchTab('overview')">Overview</button>
+      <button class="cc-tab-btn" onclick="switchTab('trending')">Trending</button>
+      <button class="cc-tab-btn" onclick="switchTab('accounting')">Accounting &amp; Tax</button>
+    </nav>
 
   <!-- 2. WRAP EXISTING CONTENT IN THE OVERVIEW TAB -->
   <div id="tab-overview" class="cc-tab-view">
@@ -281,6 +282,8 @@
           </div>
         </div>
 
+        
+
         <!-- PHASE 1: TOP 3 HERO SUMMARY CARDS -->
         <div class="trending-hero-grid">
           <!-- Volume Leader -->
@@ -454,11 +457,228 @@
         </section>
       </div>
     </aside>
+
+<!-- ============================================================================
+     ACCOUNTING & TAX TAB  —  paste into the Command Center index.html
+     ----------------------------------------------------------------------------
+     - All styles are scoped under #tab-accounting so nothing global changes.
+     - Import the module once, anywhere after this markup:
+         <script type="module" src="accounting.js"></script>
+     - Show/hide this container with your existing tab logic. On show, call
+         window.AccountingTab.activate()   (accounting.js exposes it)
+       so the Recent Expenses table loads. It also self-inits on DOMContentLoaded.
+     ============================================================================ -->
+
+<section id="tab-accounting" class="cc-tab-view" hidden>
+  <style>
+    #tab-accounting {
+      --acc-bg: #ffffff;
+      --acc-fg: #1a1712;
+      --acc-muted: #6b6257;
+      --acc-line: #e6e0d6;
+      --acc-gold: #b8912f;
+      --acc-gold-soft: #f5eeda;
+      --acc-danger: #8b1a1a;
+      --acc-radius: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      color: var(--acc-fg);
+    }
+    #tab-accounting * { box-sizing: border-box; }
+    #tab-accounting .acc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    #tab-accounting .acc-head h2 { font-size: 22px; margin: 0; }
+    #tab-accounting .acc-head p { margin: 4px 0 0; font-size: 13px; color: var(--acc-muted); }
+    #tab-accounting .acc-btn {
+      background: linear-gradient(135deg, #a8872a, var(--acc-gold));
+      color: #fff; border: none; cursor: pointer;
+      padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px;
+    }
+    #tab-accounting .acc-btn:disabled { opacity: .55; cursor: not-allowed; }
+    #tab-accounting .acc-btn-ghost {
+      background: none; border: 1px solid var(--acc-line); color: var(--acc-muted);
+      cursor: pointer; padding: 12px 18px; border-radius: 8px; font-size: 14px;
+    }
+
+    /* Modal */
+    #tab-accounting .acc-modal-overlay {
+      position: fixed; inset: 0; background: rgba(10,9,8,.55);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 32px 16px; overflow-y: auto; z-index: 9999;
+    }
+    #tab-accounting .acc-modal-overlay.open { display: flex; }
+    #tab-accounting .acc-modal {
+      background: var(--acc-bg); border-radius: var(--acc-radius);
+      width: 100%; max-width: 520px; padding: 26px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+    #tab-accounting .acc-modal h3 { margin: 0 0 4px; font-size: 19px; }
+    #tab-accounting .acc-modal .sub { margin: 0 0 18px; font-size: 12px; color: var(--acc-muted); }
+    #tab-accounting .acc-field { margin-bottom: 14px; }
+    #tab-accounting .acc-row { display: flex; gap: 12px; }
+    #tab-accounting .acc-row > .acc-field { flex: 1; }
+    #tab-accounting label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--acc-muted); margin-bottom: 5px;
+    }
+    #tab-accounting input, #tab-accounting select, #tab-accounting textarea {
+      width: 100%; padding: 10px 12px; font-size: 14px;
+      border: 1px solid var(--acc-line); border-radius: 8px;
+      background: #fff; color: var(--acc-fg); font-family: inherit;
+    }
+    #tab-accounting input:focus, #tab-accounting select:focus, #tab-accounting textarea:focus {
+      outline: none; border-color: var(--acc-gold);
+    }
+    #tab-accounting textarea { resize: vertical; min-height: 60px; }
+    #tab-accounting .acc-mileage-preview {
+      font-size: 13px; color: var(--acc-fg); background: var(--acc-gold-soft);
+      border-radius: 8px; padding: 8px 12px; margin-top: 6px;
+    }
+    #tab-accounting .acc-mileage-preview strong { color: var(--acc-gold); }
+    #tab-accounting .acc-modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+    }
+    #tab-accounting .acc-status {
+      font-size: 13px; margin-top: 12px; min-height: 18px;
+    }
+    #tab-accounting .acc-status.err { color: var(--acc-danger); }
+    #tab-accounting .acc-status.ok  { color: #1a7a3a; }
+
+    /* Recent Expenses table */
+    #tab-accounting .acc-table-wrap {
+      border: 1px solid var(--acc-line); border-radius: var(--acc-radius);
+      overflow: hidden; margin-top: 8px;
+    }
+    #tab-accounting table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #tab-accounting thead th {
+      text-align: left; padding: 12px 14px; background: #faf7f1;
+      color: var(--acc-muted); font-weight: 700; border-bottom: 1px solid var(--acc-line);
+      white-space: nowrap;
+    }
+    #tab-accounting tbody td { padding: 11px 14px; border-bottom: 1px solid var(--acc-line); }
+    #tab-accounting tbody tr:last-child td { border-bottom: none; }
+    #tab-accounting tbody tr.acc-new { animation: acc-flash 1.4s ease-out; }
+    @keyframes acc-flash { from { background: var(--acc-gold-soft); } to { background: transparent; } }
+    #tab-accounting .acc-amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+    #tab-accounting .acc-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px;
+    }
+    #tab-accounting .acc-badge.capex { background: #fbeaea; color: var(--acc-danger); }
+    #tab-accounting .acc-empty { text-align: center; color: var(--acc-muted); padding: 26px 14px; }
+    #tab-accounting .acc-muted { color: var(--acc-muted); }
+  </style>
+
+  <div class="acc-head">
+    <div>
+      <h2>Accounting &amp; Tax</h2>
+      <p>Log deductible expenses as they happen — mapped to IRS Schedule C, CPA-ready.</p>
+    </div>
+    <button type="button" class="acc-btn" id="accOpenModal">+ Quick-Log Expense</button>
+  </div>
+
+  <!-- Recent Expenses -->
+  <div class="acc-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Vendor</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Miles</th>
+          <th>Payment</th>
+          <th>Flags</th>
+          <th>Receipt</th>
+        </tr>
+      </thead>
+      <tbody id="accExpenseRows">
+        <tr id="accEmptyRow"><td class="acc-empty" colspan="8">No expenses logged yet. Click “Quick-Log Expense” to add your first one.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Quick-Log Modal -->
+  <div class="acc-modal-overlay" id="accModalOverlay" role="dialog" aria-modal="true" aria-labelledby="accModalTitle">
+    <div class="acc-modal">
+      <h3 id="accModalTitle">Quick-Log Expense</h3>
+      <p class="sub">Amounts are converted to cents and validated on the server.</p>
+
+      <form id="accExpenseForm" novalidate>
+        <div class="acc-row">
+          <div class="acc-field">
+            <label for="accDate">Date</label>
+            <input type="date" id="accDate" name="expense_date" required />
+          </div>
+          <div class="acc-field">
+            <label for="accAmount">Amount ($)</label>
+            <input type="number" id="accAmount" name="amount" min="0.01" step="0.01" placeholder="0.00" required />
+          </div>
+        </div>
+
+        <div class="acc-field">
+          <label for="accVendor">Vendor</label>
+          <input type="text" id="accVendor" name="vendor" placeholder="e.g. Sally Beauty, Amazon, Landlord" required />
+        </div>
+
+        <div class="acc-row">
+          <div class="acc-field">
+            <label for="accCategory">Category (Schedule C)</label>
+            <select id="accCategory" name="category" required>
+              <option value="" disabled selected>Select category…</option>
+              <option value="Line 22 - Supplies">Line 22 — Supplies</option>
+              <option value="Line 8 - Advertising">Line 8 — Advertising</option>
+              <option value="Line 20b - Rent/Lease">Line 20b — Rent/Lease</option>
+              <option value="Line 18 - Office/Software">Line 18 — Office/Software</option>
+              <option value="Line 27a - Other/Masterclasses">Line 27a — Other/Masterclasses</option>
+            </select>
+          </div>
+          <div class="acc-field">
+            <label for="accPayment">Payment Source</label>
+            <select id="accPayment" name="payment_source" required>
+              <option value="" disabled selected>Select…</option>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Checking">Checking</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="acc-field">
+          <label for="accMiles">Business Miles Driven</label>
+          <input type="number" id="accMiles" name="business_miles" min="0" step="0.1" placeholder="0" value="0" />
+          <div class="acc-mileage-preview" id="accMileagePreview">
+            Deductible mileage: <strong>$0.00</strong> <span class="acc-muted" id="accMileageRate"></span>
+          </div>
+        </div>
+
+        <div class="acc-field">
+          <label for="accReceipt">Receipt (optional — image or PDF, max 4&nbsp;MB)</label>
+          <input type="file" id="accReceipt" name="receipt" accept="image/*,application/pdf" />
+        </div>
+
+        <div class="acc-field">
+          <label for="accNotes">Notes (optional)</label>
+          <textarea id="accNotes" name="notes" placeholder="Anything useful at tax time…"></textarea>
+        </div>
+
+        <div class="acc-status" id="accStatus" role="status" aria-live="polite"></div>
+
+        <div class="acc-modal-actions">
+          <button type="button" class="acc-btn-ghost" id="accCancelBtn">Cancel</button>
+          <button type="submit" class="acc-btn" id="accSubmitBtn">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
   
     </main>
   </div>
 
   <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/accounting.js"></script>
   <noscript><p style="padding:2rem;font-family:sans-serif">The Command Center needs JavaScript to load its data.</p></noscript>
 </body>
 </html>
