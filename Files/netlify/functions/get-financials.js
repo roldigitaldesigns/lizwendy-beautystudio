@@ -32,7 +32,7 @@ exports.handler = async (event) => {
         Authorization: `Bearer ${SERVICE_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ p_year: currentYear }),
+      body: JSON.stringify({ fiscal_year: currentYear }),
     });
 
     const data = await res.json();
