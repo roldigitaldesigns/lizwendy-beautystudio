@@ -130,7 +130,7 @@ exports.handler = async (event) => {
       const objectPath = `${year}/${cryptoRandomId()}_${safeName}`;
       const contentType = receipt.contentType || 'application/octet-stream';
 
-      const cleanKey = (SERVICE_KEY || '').trim();
+     const cleanKey = String(SERVICE_KEY || '').trim().replace(/^["']|["']$/g, '');
       const upRes = await fetch(
         `${SUPABASE_URL}/storage/v1/object/${RECEIPTS_BUCKET}/${objectPath}`,
         {
