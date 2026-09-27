@@ -589,6 +589,42 @@
     background: #ef4444;
     color: #ffffff;
   }
+    /* KPI Grid */
+  #tab-accounting .acc-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  #tab-accounting .acc-kpi-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--acc-line);
+    border-radius: var(--acc-radius);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #tab-accounting .acc-kpi-card.highlight {
+    border-color: rgba(203, 163, 66, 0.4);
+    background: rgba(203, 163, 66, 0.05);
+  }
+  #tab-accounting .acc-kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--acc-muted);
+    font-weight: 600;
+  }
+  #tab-accounting .acc-kpi-val {
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  #tab-accounting .acc-kpi-sub {
+    font-size: 11px;
+    color: var(--acc-muted);
+  }
   </style>
 
   <div class="acc-head">
@@ -598,7 +634,29 @@
     </div>
     <button type="button" class="acc-btn" id="accOpenModal">+ Quick-Log Expense</button>
   </div>
-
+<!-- Financial Overview KPI Cards -->
+  <div class="acc-kpi-grid">
+    <div class="acc-kpi-card">
+      <div class="acc-kpi-label">Gross Revenue (YTD)</div>
+      <div class="acc-kpi-val" id="kpiGrossRev">$0.00</div>
+      <div class="acc-kpi-sub">Completed service income</div>
+    </div>
+    <div class="acc-kpi-card">
+      <div class="acc-kpi-label">Total Deductions (YTD)</div>
+      <div class="acc-kpi-val" id="kpiExpenses" style="color: #ef4444;">$0.00</div>
+      <div class="acc-kpi-sub">Expenses + mileage write-off</div>
+    </div>
+    <div class="acc-kpi-card">
+      <div class="acc-kpi-label">Net Profit (Line 31)</div>
+      <div class="acc-kpi-val" id="kpiNetProfit" style="color: #10b981;">$0.00</div>
+      <div class="acc-kpi-sub">Schedule C taxable profit</div>
+    </div>
+    <div class="acc-kpi-card highlight">
+      <div class="acc-kpi-label">Est. Tax Reserve (30%)</div>
+      <div class="acc-kpi-val" id="kpiTaxEst" style="color: var(--acc-gold);">$0.00</div>
+      <div class="acc-kpi-sub">SE & income tax set-aside</div>
+    </div>
+  </div>
   <!-- Recent Expenses -->
   <div class="acc-table-wrap">
     <table>
