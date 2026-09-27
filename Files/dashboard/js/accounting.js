@@ -10,6 +10,7 @@
  *   - Submit to /api/create-expense as JSON.
  *   - Load existing expenses from /api/get-expenses on start/tab switch.
  *   - Delete rows via /api/delete-expense with user confirmation.
+ *   - Load real-time KPI overview from /api/get-financials (Gross, Expenses, Net, Tax).
  */
 
 // ── Mileage rate split — MUST match get_ytd_financials() in the database ──
@@ -18,9 +19,10 @@ const MILEAGE_RATE_POST = 0.76;          // on/after Jul 1, 2026
 const MILEAGE_CUTOFF    = '2026-07-01';  // YYYY-MM-DD compares correctly as a string
 
 const CREATE_EXPENSE_ENDPOINT = '/api/create-expense';
-const GET_EXPENSES_ENDPOINT    = '/api/get-expenses';
+const GET_EXPENSES_ENDPOINT   = '/api/get-expenses';
 const DELETE_EXPENSE_ENDPOINT = '/api/delete-expense';
-const MAX_RECEIPT_BYTES        = 4 * 1024 * 1024; // client-side cap; server backstops at 5 MB
+const GET_FINANCIALS_ENDPOINT = '/api/get-financials';
+const MAX_RECEIPT_BYTES       = 4 * 1024 * 1024; // client-side cap; server backstops at 5 MB
 
 const CATEGORY_LABELS = {
   'Line 22 - Supplies':            'Supplies',
@@ -99,6 +101,34 @@ function readReceipt(file) {
   });
 }
 
+// ── Live Financial KPIs ──
+async function loadFinancials() {
+  const elGross = $('kpiGrossRev');
+  const elExp   = $('kpiExpenses');
+  const elNet   = $('kpiNetProfit');
+  const elTax   = $('kpiTaxEst');
+
+  if (!elGross) return;
+
+  try {
+    const res = await fetch(GET_FINANCIALS_ENDPOINT);
+    if (!res.ok) throw new Error('Failed to fetch financials');
+    const data = await res.json();
+
+    const grossCents = Number(data.gross_revenue_cents) || 0;
+    const expCents   = Number(data.total_expenses_cents) || 0;
+    const netCents   = Number(data.net_profit_cents) || (grossCents - expCents);
+    const taxReserve = Math.max(0, Math.round(netCents * 0.30));
+
+    elGross.textContent = centsToUSD(grossCents);
+    elExp.textContent   = centsToUSD(expCents);
+    elNet.textContent   = centsToUSD(netCents);
+    elTax.textContent   = centsToUSD(taxReserve);
+  } catch (err) {
+    console.error('accounting: load financials error:', err);
+  }
+}
+
 // ── Submit (Create) ──
 async function handleSubmit(e) {
   e.preventDefault();
@@ -152,6 +182,9 @@ async function handleSubmit(e) {
     }
 
     if (payload.expense) prependExpenseRow(payload.expense, true);
+
+    // Refresh KPI totals immediately
+    loadFinancials();
 
     els.form.reset();
     els.date.value = todayISO();
@@ -268,6 +301,9 @@ async function deleteExpense(id) {
     if (els.rows && els.rows.children.length === 0) {
       showEmptyPlaceholder();
     }
+
+    // Refresh KPI totals immediately
+    loadFinancials();
   } catch (err) {
     console.error('accounting: delete error:', err);
     alert('Network error while deleting expense.');
@@ -327,12 +363,14 @@ function wire() {
   if (!hasLoaded) {
     hasLoaded = true;
     loadExpenses();
+    loadFinancials();
   }
 }
 
 function activate() {
   wire();
   loadExpenses();
+  loadFinancials();
 }
 
 window.AccountingTab = { activate };
