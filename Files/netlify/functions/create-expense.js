@@ -130,12 +130,14 @@ exports.handler = async (event) => {
       const objectPath = `${year}/${cryptoRandomId()}_${safeName}`;
       const contentType = receipt.contentType || 'application/octet-stream';
 
+      const cleanKey = (SERVICE_KEY || '').trim();
       const upRes = await fetch(
         `${SUPABASE_URL}/storage/v1/object/${RECEIPTS_BUCKET}/${objectPath}`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${SERVICE_KEY}`,
+            apikey: cleanKey,
+            Authorization: `Bearer ${cleanKey}`,
             'Content-Type': contentType,
             'x-upsert': 'false',
           },
