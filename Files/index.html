@@ -3604,18 +3604,26 @@ async function submitBooking() {
   const rawDuration = (s.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
   const durationMinutes = Math.ceil(rawDuration / 15) * 15;
 
-  const bookingData = {
-    firstName, lastName, email, phone, notes,
-    date:     formatDateISO(s.date),
-    time:     s.time,
-    services: s.services,
-    total:    (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
-    artist:   s.artist || 'Liz Wendy Cedeño',
-    durationMinutes,
-    overridePin: staffOverridePin || '', // ignored server-side unless artist is Liz
-    lang:     es ? 'es' : 'en',         // routes EN/ES copy in confirmation email
-  };
-
+ const bookingData = {
+      firstName, lastName, email, phone, notes,
+      date:            formatDateISO(s.date),
+      time:            s.time,
+      services:        (s.services || []).map(item => {
+        if ((item.id === 'pmu-5' || item.id === 'pmu-6' || (item.name && item.name.toLowerCase().includes('touch-up'))) && pmuAreaChosen) {
+          const cleanName = item.name.replace(/\s*\([^)]*\)\s*$/, '');
+          return {
+            ...item,
+            name: `${cleanName} (${pmuAreaChosen})`
+          };
+        }
+        return item;
+      }),
+      total:           (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
+      artist:          s.artist || 'Liz Wendy Cedeño',
+      durationMinutes,
+      overridePin:     staffOverridePin || '',
+      lang:            es ? 'es' : 'en',
+    };
   try {
     const res = await fetch('/.netlify/functions/create-booking', {
       method:  'POST',
