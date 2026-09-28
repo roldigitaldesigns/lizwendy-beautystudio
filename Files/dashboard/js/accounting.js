@@ -261,6 +261,32 @@ function showEmptyPlaceholder() {
   els.rows.innerHTML = '<tr id="accEmptyRow"><td class="acc-empty" colspan="10">No expenses logged yet. Click “+ Quick-Log Expense” to add your first one.</td></tr>';
 }
 
+function attachRowDeleteHandler(row, id) {
+  const btn = row.querySelector('.acc-del-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const expenseId = id || btn.getAttribute('data-id');
+    if (!expenseId) return;
+    if (!confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      btn.disabled = true;
+      const res = await fetch(`/.netlify/functions/delete-expense?id=${encodeURIComponent(expenseId)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete expense');
+      row.remove();
+      state.expenses = state.expenses.filter((x) => x.id !== expenseId);
+      recalculateTotals();
+      if (!state.expenses.length) showEmptyPlaceholder();
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Could not delete expense. Check your connection.');
+      btn.disabled = false;
+    }
+  });
+}
+
 function prependExpenseRow(exp, isNew) {
   if (!els.rows) return;
   const emptyRow = $('accEmptyRow');
