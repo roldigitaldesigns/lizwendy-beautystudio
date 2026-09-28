@@ -269,24 +269,33 @@ function attachRowDeleteHandler(row, id) {
     const expenseId = id || btn.getAttribute('data-id');
     if (!expenseId) return;
     if (!confirm('Are you sure you want to delete this expense?')) return;
+
     try {
       btn.disabled = true;
-      const res = await fetch(`/.netlify/functions/delete-expense?id=${encodeURIComponent(expenseId)}`, {
-        method: 'DELETE',
+      const res = await fetch('/.netlify/functions/delete-expense', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: expenseId }),
       });
-      if (!res.ok) throw new Error('Failed to delete expense');
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to delete expense');
+      }
+
       row.remove();
       state.expenses = state.expenses.filter((x) => x.id !== expenseId);
       recalculateTotals();
       if (!state.expenses.length) showEmptyPlaceholder();
     } catch (err) {
       console.error('Delete error:', err);
-      alert('Could not delete expense. Check your connection.');
+      alert('Could not delete expense: ' + err.message);
       btn.disabled = false;
     }
   });
 }
-
 function prependExpenseRow(exp, isNew) {
   if (!els.rows) return;
   const emptyRow = $('accEmptyRow');
