@@ -625,7 +625,91 @@
     font-size: 11px;
     color: var(--acc-muted);
   }
+/* ── Phase 3: Print & CPA Audit View Engine ── */
+  @media print {
+    /* Hide non-printable dashboard elements */
+    nav,
+    header,
+    #login-form,
+    .acc-head button,
+    .acc-del-btn,
+    .nav-tabs,
+    .time-range-picker,
+    #accOpenModal,
+    #accExportCsvBtn,
+    #accPrintBtn {
+      display: none !important;
+    }
+
+    /* Clean white canvas for ink-saving paper / PDF */
+    body,
+    #tab-accounting,
+    .acc-kpi-card,
+    table {
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+
+    /* Container resets */
+    #tab-accounting {
+      display: block !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+
+    /* High-contrast KPI cards */
+    .acc-kpi-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 12px !important;
+      margin-bottom: 24px !important;
+    }
+
+    .acc-kpi-card {
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: none !important;
+      padding: 12px !important;
+    }
+
+    .acc-kpi-val {
+      color: #0f172a !important;
+    }
+
+    /* Ledger table borders */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 11px !important;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0 !important;
+      padding: 6px 8px !important;
+      color: #0f172a !important;
+    }
+
+    th {
+      background-color: #f8fafc !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+    }
+
+    /* Hide the Actions / Delete column from printed audit */
+    th:last-child,
+    td:last-child {
+      display: none !important;
+    }
+
+    /* Keep receipt URLs clickable in exported PDF */
+    a {
+      color: #0284c7 !important;
+      text-decoration: underline !important;
+    }
+  }
+    
   </style>
+
 
 <div class="acc-head" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
   <div>
@@ -633,11 +717,14 @@
     <p>Log deductible expenses as they happen — mapped to IRS Schedule C, CPA-ready.</p>
   </div>
   <div style="display: flex; gap: 10px; align-items: center;">
-    <button type="button" id="accExportCsvBtn" class="acc-btn" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
-       Export CSV
-    </button>
-    <button type="button" class="acc-btn" id="accOpenModal">+ Quick-Log Expense</button>
-  </div>
+  <button type="button" id="accPrintBtn" class="acc-btn" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
+    Print Report
+  </button>
+  <button type="button" id="accExportCsvBtn" class="acc-btn" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
+    Export CSV
+  </button>
+  <button type="button" class="acc-btn" id="accOpenModal">+ Quick-Log Expense</button>
+</div>
 </div>
 <!-- Financial Overview KPI Cards -->
   <div class="acc-kpi-grid">
