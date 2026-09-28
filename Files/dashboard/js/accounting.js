@@ -235,13 +235,19 @@ function buildRowHTML(exp) {
     : '<span class="acc-muted">—</span>';
 
   const catLabel = CATEGORY_LABELS[exp.category] || exp.category || '';
-  const miles = Number(exp.business_miles) || 0; 
+  const miles = Number(exp.business_miles) || 0;
+
+  // Calculate dynamic per-item deduction: Out-of-pocket + (miles * dynamic rate)
+  const rate = rateForDate(exp.expense_date);
+  const mileageDeductionCents = Math.round(miles * rate * 100);
+  const totalDeductionCents = (Number(exp.amount_cents) || 0) + mileageDeductionCents;
 
   return (
     `<td>${escapeHtml(exp.expense_date)}</td>` +
     `<td>${escapeHtml(exp.vendor)}</td>` +
     `<td>${escapeHtml(catLabel)}</td>` +
     `<td class="acc-amount">${centsToUSD(exp.amount_cents)}</td>` +
+    `<td class="acc-amount" style="font-weight: 600; color: #38bdf8;" title="Calculated tax write-off (${centsToUSD(exp.amount_cents)} direct + ${centsToUSD(mileageDeductionCents)} mileage)">${centsToUSD(totalDeductionCents)}</td>` +
     `<td>${miles ? miles : '<span class="acc-muted">—</span>'}</td>` +
     `<td>${escapeHtml(exp.payment_source || '')}</td>` +
     `<td>${capex}</td>` +
@@ -249,11 +255,10 @@ function buildRowHTML(exp) {
     `<td><button type="button" class="acc-del-btn" data-id="${exp.id}" title="Delete expense">Delete</button></td>`
   );
 }
-function attachRowDeleteHandler(tr, id) {
-  const btn = tr.querySelector('.acc-del-btn');
-  if (btn) {
-    btn.addEventListener('click', () => deleteExpense(id));
-  }
+
+function showEmptyPlaceholder() {
+  if (!els.rows) return;
+  els.rows.innerHTML = '<tr id="accEmptyRow"><td class="acc-empty" colspan="10">No expenses logged yet. Click “+ Quick-Log Expense” to add your first one.</td></tr>';
 }
 
 function prependExpenseRow(exp, isNew) {
