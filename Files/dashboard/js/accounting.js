@@ -261,6 +261,86 @@ function showEmptyPlaceholder() {
   els.rows.innerHTML = '<tr id="accEmptyRow"><td class="acc-empty" colspan="10">No expenses logged yet. Click “+ Quick-Log Expense” to add your first one.</td></tr>';
 }
 
+// ── Phase 2: Client-Side CSV Export Engine ──
+function exportExpensesToCSV() {
+  if (!els.rows) return;
+
+  const rowsElements = els.rows.querySelectorAll('tr:not(#accEmptyRow)');
+  if (!rowsElements || rowsElements.length === 0) {
+    alert('No expenses found to export.');
+    return;
+  }
+
+  // Standard CPA ledger headers
+  const headers = [
+    'Date',
+    'Vendor',
+    'Category (Schedule C)',
+    'Amount ($)',
+    'Total Deduction ($)',
+    'Business Miles',
+    'Payment Source',
+    'CapEx Review',
+    'Receipt URL'
+  ];
+
+  const csvRows = [];
+  csvRows.push(headers.join(','));
+
+  rowsElements.forEach((tr) => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length < 9) return;
+
+    const date = cells[0].textContent.trim();
+    const vendor = cells[1].textContent.trim();
+    const category = cells[2].textContent.trim();
+    const amount = cells[3].textContent.trim().replace(/[$,]/g, '');
+    const deduction = cells[4].textContent.trim().replace(/[$,]/g, '');
+    const miles = cells[5].textContent.trim() === '—' ? '0' : cells[5].textContent.trim();
+    const payment = cells[6].textContent.trim();
+    const capex = cells[7].textContent.includes('CapEx') ? 'YES' : 'NO';
+    
+    const receiptLink = cells[8].querySelector('a');
+    const receiptUrl = receiptLink ? receiptLink.getAttribute('href') : '';
+
+    const row = [
+      date,
+      vendor,
+      category,
+      amount,
+      deduction,
+      miles,
+      payment,
+      capex,
+      receiptUrl
+    ];
+
+    // Escape CSV values containing commas, quotes, or newlines
+    const escapedRow = row.map((field) => {
+      const stringValue = String(field ?? '');
+      if (/[",\n]/.test(stringValue)) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    });
+
+    csvRows.push(escapedRow.join(','));
+  });
+
+  const csvContent = csvRows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const today = new Date().toISOString().slice(0, 10);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `LWBS_Schedule_C_Expenses_${today}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function attachRowDeleteHandler(row, id) {
   const btn = row.querySelector('.acc-del-btn');
   if (!btn) return;
@@ -408,6 +488,7 @@ function wire() {
     mileageRate:     $('accMileageRate'),
     rows:            $('accExpenseRows'),
     emptyRow:        $('accEmptyRow'),
+    exportCsvBtn: $('accExportCsvBtn'),
   };
 
   if (els.openBtn)   els.openBtn.addEventListener('click', openModal);
@@ -415,6 +496,9 @@ function wire() {
   if (els.form)      els.form.addEventListener('submit', handleSubmit);
   if (els.miles)     els.miles.addEventListener('input', updateMileagePreview);
   if (els.date)      els.date.addEventListener('change', updateMileagePreview);
+  if (els.exportCsvBtn) {
+  els.exportCsvBtn.addEventListener('click', exportExpensesToCSV);
+}
 
   if (els.overlay) {
     els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) closeModal(); });
