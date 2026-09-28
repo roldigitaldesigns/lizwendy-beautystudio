@@ -275,11 +275,6 @@ function prependExpenseRow(exp, isNew) {
   els.rows.insertBefore(tr, els.rows.firstChild);
 }
 
-function showEmptyPlaceholder() {
-  if (!els.rows) return;
-  els.rows.innerHTML = '<tr id="accEmptyRow"><td class="acc-empty" colspan="9">No expenses logged yet. Click “+ Quick-Log Expense” to add your first one.</td></tr>';
-}
-
 // ── Fetch Existing Expenses (Read) ──
 async function loadExpenses() {
   if (!els.rows) return;
