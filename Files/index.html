@@ -2551,8 +2551,26 @@ function openPmuAreaPopup() {
 function confirmPmuArea(labelEn, labelEs) {
   pmuAreaChosen = isEs() ? labelEs : labelEn;
   document.getElementById('pmuAreaModal').style.display = 'none';
-}
 
+  // Option A: Append selected target area to PMU touch-up items
+  const touchUpIds = ['pmu-5', 'pmu-6'];
+  const catalog = (typeof SERVICES !== 'undefined' && SERVICES) ||
+                  (typeof CATEGORIES !== 'undefined' && CATEGORIES) ||
+                  (typeof MENU !== 'undefined' && MENU) || null;
+
+  if (catalog && catalog.pmu && Array.isArray(catalog.pmu.items)) {
+    catalog.pmu.items.forEach(item => {
+      if (touchUpIds.includes(item.id)) {
+      if (!item._baseName) item._baseName = item.name;
+        if (!item._baseNameEs) item._baseNameEs = item.nameEs;
+
+        item.name = `${item._baseName} (${labelEn})`;
+        item.nameEs = `${item._baseNameEs} (${labelEs})`;      
+    });
+  }
+
+  if (typeof updateStep2Cta === 'function') updateStep2Cta();
+}
 
 function goToStep2() {
   if (!selectedCats.size) return;
