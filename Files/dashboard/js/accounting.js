@@ -285,18 +285,25 @@ function attachRowDeleteHandler(row, id) {
         throw new Error(errData.error || 'Failed to delete expense');
       }
 
+      // Remove the row from the table
       row.remove();
-      state.expenses = state.expenses.filter((x) => x.id !== expenseId);
-      recalculateTotals();
-      if (!state.expenses.length) showEmptyPlaceholder();
+
+      // Check if table is empty
+      if (els.rows && els.rows.children.length === 0) {
+        showEmptyPlaceholder();
+      }
+
+      // Refresh data and metrics cleanly
+      if (typeof loadExpenses === 'function') {
+        loadExpenses();
+      }
     } catch (err) {
       console.error('Delete error:', err);
       alert('Could not delete expense: ' + err.message);
       btn.disabled = false;
     }
   });
-}
-function prependExpenseRow(exp, isNew) {
+}function prependExpenseRow(exp, isNew) {
   if (!els.rows) return;
   const emptyRow = $('accEmptyRow');
   if (emptyRow) emptyRow.remove();
