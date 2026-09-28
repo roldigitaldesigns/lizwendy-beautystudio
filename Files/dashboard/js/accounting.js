@@ -489,6 +489,7 @@ function wire() {
     rows:            $('accExpenseRows'),
     emptyRow:        $('accEmptyRow'),
     exportCsvBtn: $('accExportCsvBtn'),
+    printBtn: $('accPrintBtn'),
   };
 
   if (els.openBtn)   els.openBtn.addEventListener('click', openModal);
@@ -496,9 +497,8 @@ function wire() {
   if (els.form)      els.form.addEventListener('submit', handleSubmit);
   if (els.miles)     els.miles.addEventListener('input', updateMileagePreview);
   if (els.date)      els.date.addEventListener('change', updateMileagePreview);
-  if (els.exportCsvBtn) {
-  els.exportCsvBtn.addEventListener('click', exportExpensesToCSV);
-}
+ if (els.exportCsvBtn) els.exportCsvBtn.addEventListener('click', exportExpensesToCSV);
+if (els.printBtn) els.printBtn.addEventListener('click', () => window.print());
 
   if (els.overlay) {
     els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) closeModal(); });
