@@ -3224,96 +3224,92 @@ function renderCalendar() {
     grid.appendChild(cell);
   }
 }
+let currentAvailability = null;
 
 async function pickDate(date) {
   selectedDate = date;
   selectedTime = null;
-  takenSlots   = [];
+  currentAvailability = null;
 
-  // Re-render calendar to show selection
   renderCalendar();
 
-  // Show slots section
   const slotsSection = document.getElementById('slotsSection');
   slotsSection.style.display = 'block';
 
-  // Update date label
   const es = isEs();
-  const dateStr = date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday:'long', month:'long', day:'numeric' });
+  const dateStr = date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   document.getElementById('slotsDateLabel').textContent = dateStr;
 
-  // Disable next until time chosen
   document.getElementById('step4Next').classList.remove('enabled');
 
-  // Show loading
   document.getElementById('slotsArea').innerHTML = `
     <div class="slots-loading">
       <div class="spinner"></div>
       <span>${es ? 'Cargando horarios...' : 'Loading times...'}</span>
     </div>`;
 
-  // Scroll to slots
   setTimeout(() => {
     slotsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 100);
 
-  // Fetch taken slots
   try {
     const dateISO = formatDateISO(date);
     const artistId = (window.BOOKING_STATE && window.BOOKING_STATE.artistId) || 'liz';
     const res = await fetch(`/.netlify/functions/get-availability?date=${dateISO}&artistId=${artistId}`);
     if (res.ok) {
-      const data = await res.json();
-      takenSlots = data.takenSlots || [];
+      currentAvailability = await res.json();
     }
   } catch(e) {
-    takenSlots = []; // function not available locally — all slots open
+    currentAvailability = { isFullyBlocked: true, busyIntervals: [] };
   }
 
   renderSlots(date);
 }
 
 function renderSlots(date) {
-  const dow  = date.getDay();
-  const artistSchedule = getArtistSchedule(window.BOOKING_STATE && window.BOOKING_STATE.artistId);
-  const hrs  = artistSchedule[dow];
-  const es   = isEs();
+  const es = isEs();
 
-  if (!hrs) {
+  if (!currentAvailability || currentAvailability.isFullyBlocked) {
     document.getElementById('slotsArea').innerHTML = `<div class="slots-placeholder">${es ? 'Sin disponibilidad este día.' : 'No availability on this day.'}</div>`;
     return;
   }
 
-  const [start, end] = hrs;
-  // Per-artist slot step so the displayed grid matches what the backend
-  // (get-availability.js / create-booking.js) will actually accept:
-  //   Wendy (liz): 60-minute (hourly) slots
-  //   Johanna:     30-minute slots
-  const step = ((window.BOOKING_STATE && window.BOOKING_STATE.artistId) === 'liz') ? 60 : 30;
-  const slots = [];
-  for (let mins = start * 60; mins < end * 60; mins += step) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+  const rawDuration = (window.BOOKING_STATE?.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
+  const reqMinutes = Math.ceil(rawDuration / 15) * 15;
+
+  const stepMinutes = 30;
+
+  const availableSlots = [];
+  const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00-04:00`).getTime();
+  const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00-04:00`).getTime();
+
+  for (let timeMs = shiftStartMs; timeMs + (reqMinutes * 60000) <= shiftEndMs; timeMs += (stepMinutes * 60000)) {
+    const slotEndMs = timeMs + (reqMinutes * 60000);
+
+    const hasCollision = (currentAvailability.busyIntervals || []).some(busy => {
+      return (timeMs < busy.end && slotEndMs > busy.start);
+    });
+
+    const nowMs = Date.now();
+    const isTooSoon = (timeMs < nowMs + (30 * 60000));
+
+    if (!hasCollision && !isTooSoon) {
+      const d = new Date(timeMs);
+      const slotStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      availableSlots.push(slotStr);
+    }
   }
 
-  // If the selected date is today, disable any slot that's already passed
-  // or starts within the next 30 minutes (prep-time buffer).
-  const now = new Date();
-  const isToday = date.getFullYear() === now.getFullYear()
-    && date.getMonth() === now.getMonth()
-    && date.getDate() === now.getDate();
-  const bufferCutoff = new Date(now.getTime() + 30 * 60 * 1000);
+  if (availableSlots.length === 0) {
+    document.getElementById('slotsArea').innerHTML = `<div class="slots-placeholder">${es ? 'No hay suficiente tiempo continuo para estos servicios.' : 'Not enough continuous time for these services.'}</div>`;
+    return;
+  }
 
-  const html = slots.map(slot => {
-    const [slotH, slotM] = slot.split(':').map(Number);
-    const slotDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slotH, slotM, 0);
-    const tooSoon  = isToday && slotDateTime < bufferCutoff;
-    const taken    = takenSlots.includes(slot) || tooSoon;
-    const sel      = selectedTime === slot;
-    const label    = formatTimeLabel(slot);
-    const cls      = 'time-slot' + (taken ? ' slot-taken' : sel ? ' slot-selected' : '');
-    return `<div class="${cls}" ${!taken ? `onclick="pickTime('${slot}')"` : ''}>${label}</div>`;
+  const html = availableSlots.map(slot => {
+    const sel = selectedTime === slot;
+    const label = formatTimeLabel(slot);
+    const cls = 'time-slot' + (sel ? ' slot-selected' : '');
+    return `<div class="${cls}" onclick="pickTime('${slot}')">${label}</div>`;
   }).join('');
 
   document.getElementById('slotsArea').innerHTML = `<div class="slots-grid">${html}</div>`;
