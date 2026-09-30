@@ -167,16 +167,7 @@ exports.handler = async (event) => {
 
     const events = res.data.items || [];
 
-    // Generate all slots for the day at this artist's step (Wendy hourly,
-    // Johanna half-hourly).
-    const [start, end] = HOURS[dow];
-    const allSlots = buildSlots(start, end, SLOT_STEP_MIN);
-
-    // An all-day event's start.date/end.date are plain YYYY-MM-DD strings
-    // (end.date is EXCLUSIVE per Google's API — a single-day all-day event
-    // spanning just "today" has end.date equal to tomorrow). This checks
-    // whether dateStr genuinely falls within that range, independent of
-    // the padded query window above.
+// An all-day event's start.date/end.date are plain YYYY-MM-DD strings
     function isAllDayEventOnDate(ev) {
       if (!ev.start || !ev.start.date || ev.start.dateTime) return false;
       const startDate = ev.start.date;
@@ -184,38 +175,59 @@ exports.handler = async (event) => {
       return dateStr >= startDate && dateStr < endDate;
     }
 
-    // Mark slots as taken if any calendar event overlaps them.
-    //
-    // Each slot is a SLOT_STEP_MIN-wide window [slotStart, slotStart + step):
-    // 60 min for Wendy (hourly), 30 min for Johanna. So a Wendy slot correctly
-    // represents its whole hour block when tested for overlap.
-    // A timed event blocks not just its own span but an extra BUFFER_MIN
-    // afterward, giving the artist turnaround time — so the event's blocking
-    // window is [evStart, evEnd + BUFFER_MIN). Any slot that overlaps that
-    // extended window is unavailable.
-    const takenSlots = allSlots.filter(slot => {
-      const [slotH, slotM] = slot.split(':').map(Number);
-      const slotStart = new Date(`${dateStr}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00-04:00`);
-      const slotEnd   = new Date(slotStart.getTime() + SLOT_STEP_MIN * 60 * 1000);
+    // Return true busy windows without forcing rigid 60-min slots
+    let isFullyBlocked = false;
+    const busyIntervals = [];
 
-      return events.some(ev => {
-        if (!ev.start) return false;
-        // All-day events block the whole day — but only if the event's
-        // own date range actually includes dateStr (the padded query
-        // window can return neighboring days' all-day events too).
-        if (ev.start.date && !ev.start.dateTime) return isAllDayEventOnDate(ev);
+    events.forEach(ev => {
+      if (!ev.start) return;
+
+      if (ev.start.date && !ev.start.dateTime) {
+        if (isAllDayEventOnDate(ev)) isFullyBlocked = true;
+      } else {
         const evStart = new Date(ev.start.dateTime);
-        // Extend the event's blocking window by the turnaround buffer.
         const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
-        // Overlap check against the buffered window.
-        return evStart < slotEnd && evEnd > slotStart;
-      });
+
+        const targetDayStart = new Date(dateStr + 'T00:00:00-04:00');
+        const targetDayEnd   = new Date(dateStr + 'T23:59:59-04:00');
+
+        if (evEnd > targetDayStart && evStart < targetDayEnd) {
+          busyIntervals.push({
+            start: Math.max(evStart.getTime(), targetDayStart.getTime()),
+            end: Math.min(evEnd.getTime(), targetDayEnd.getTime())
+          });
+        }
+      }
     });
+
+    // Sort intervals chronologically
+    busyIntervals.sort((a, b) => a.start - b.start);
+
+    // Merge any overlapping busy intervals
+    const mergedIntervals = [];
+    if (busyIntervals.length > 0) {
+      let current = busyIntervals[0];
+      for (let i = 1; i < busyIntervals.length; i++) {
+        const next = busyIntervals[i];
+        if (next.start <= current.end) {
+          current.end = Math.max(current.end, next.end);
+        } else {
+          mergedIntervals.push(current);
+          current = next;
+        }
+      }
+      mergedIntervals.push(current);
+    }
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ takenSlots }),
+      body: JSON.stringify({
+        isFullyBlocked,
+        busyIntervals: mergedIntervals,
+        shiftStart: HOURS[dow][0],
+        shiftEnd: HOURS[dow][1]
+      }),
     };
 
   } catch (err) {
@@ -223,7 +235,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Failed to fetch availability', takenSlots: [] }),
+      body: JSON.stringify({ error: 'Failed to fetch availability', busyIntervals: [], isFullyBlocked: true }),
     };
   }
 };
