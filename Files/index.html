@@ -3280,9 +3280,19 @@ function renderSlots(date) {
   const stepMinutes = 30;
 
   const availableSlots = [];
-  const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00-04:00`).getTime();
-  const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00-04:00`).getTime();
+ // Calculate precise DST offset for the requested date
+  function getNYOffset(dStr) {
+    const d = new Date(`${dStr}T12:00:00Z`);
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
+    const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+    let diff = nyHour - 12;
+    if (diff > 0) diff -= 24;
+    return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
+  }
+  const offset = getNYOffset(formatDateISO(date));
 
+  const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00${offset}`).getTime();
+  const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00${offset}`).getTime();
   for (let timeMs = shiftStartMs; timeMs + (reqMinutes * 60000) <= shiftEndMs; timeMs += (stepMinutes * 60000)) {
     const slotEndMs = timeMs + (reqMinutes * 60000);
 
