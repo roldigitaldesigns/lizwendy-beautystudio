@@ -3604,8 +3604,11 @@ async function submitBooking() {
   const rawDuration = (s.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
   const durationMinutes = Math.ceil(rawDuration / 15) * 15;
 
- const bookingData = {
-      firstName, lastName, email, phone, notes,
+const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  const bookingData = {
+      firstName:       formatName(firstName),
+      lastName:        formatName(lastName),
+      email, phone, notes,
       date:            formatDateISO(s.date),
       time:            s.time,
       services:        (s.services || []).map(item => {
