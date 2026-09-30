@@ -149,11 +149,21 @@ exports.handler = async (event) => {
     // guarantees the event is included in the raw results; the explicit
     // date check below (isAllDayEventOnDate) then filters back down to
     // only events that actually apply to dateStr.
-    const dayBefore = new Date(dateStr + 'T00:00:00-04:00');
-    dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
-    const dayAfter = new Date(dateStr + 'T23:59:59-04:00');
-    dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
+   // Calculate precise DST offset for the requested date
+    function getNYOffset(dStr) {
+      const d = new Date(`${dStr}T12:00:00Z`);
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
+      const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      let diff = nyHour - 12;
+      if (diff > 0) diff -= 24;
+      return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
+    }
+    const offset = getNYOffset(dateStr);
 
+    const dayBefore = new Date(`${dateStr}T00:00:00${offset}`);
+    dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
+    const dayAfter = new Date(`${dateStr}T23:59:59${offset}`);
+    dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
     const timeMin = dayBefore.toISOString();
     const timeMax = dayAfter.toISOString();
 
@@ -188,9 +198,9 @@ exports.handler = async (event) => {
         const evStart = new Date(ev.start.dateTime);
         const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
 
-        const targetDayStart = new Date(dateStr + 'T00:00:00-04:00');
-        const targetDayEnd   = new Date(dateStr + 'T23:59:59-04:00');
-
+       const targetDayStart = new Date(`${dateStr}T00:00:00${offset}`);
+        const targetDayEnd   = new Date(`${dateStr}T23:59:59${offset}`);
+        
         if (evEnd > targetDayStart && evStart < targetDayEnd) {
           busyIntervals.push({
             start: Math.max(evStart.getTime(), targetDayStart.getTime()),
