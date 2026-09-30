@@ -306,8 +306,20 @@ exports.handler = async (event) => {
     // minutes must be preserved — parsing only the hour would silently book
     // a 10:30 request at 10:00. Fall back to :00 if a time somehow arrives
     // without minutes (older/hourly callers, voice edge cases).
-    const [slotH, slotM = 0] = time.split(':').map(Number);
-    const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00-04:00`);
+ const [slotH, slotM = 0] = time.split(':').map(Number);
+    
+    // Calculate precise DST offset for the booked date
+    function getNYOffset(dStr) {
+      const d = new Date(`${dStr}T12:00:00Z`);
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
+      const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      let diff = nyHour - 12;
+      if (diff > 0) diff -= 24;
+      return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
+    }
+    
+    const offset = getNYOffset(date);
+    const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00${offset}`);
 
     // Duration: prefer durationMinutes if the caller sent one (website
     // already computes this precisely client-side). If it's missing or
