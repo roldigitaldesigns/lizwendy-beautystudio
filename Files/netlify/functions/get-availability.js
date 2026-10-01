@@ -5,38 +5,40 @@
 const { google } = require('googleapis');
 const { createClient } = require('@supabase/supabase-js');
 
-// ── SUPABASE CONFIG (with direct fallbacks from admin.html) ──
+// ── SUPABASE CONFIG ──
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── GOOGLE CREDENTIALS PARSER (Matches working admin-sync-gcal.js) ──
-function getGoogleAuth() {
-  let credentials = null;
-  const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || 
-                  process.env.GOOGLE_CREDENTIALS || 
-                  process.env.GOOGLE_SERVICE_ACCOUNT ||
-                  process.env.GOOGLE_APPLICATION_CREDENTIALS;
+// ── GOOGLE CREDENTIALS PARSER ──
+let credentials = {};
+const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_CREDENTIALS || process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
-  if (rawJson) {
+if (rawJson) {
+  try {
+    credentials = JSON.parse(rawJson);
+  } catch (e) {
     try {
-      credentials = JSON.parse(rawJson);
-    } catch (e) {
       credentials = JSON.parse(Buffer.from(rawJson, 'base64').toString('utf8'));
+    } catch (e2) {
+      console.error("Could not parse GOOGLE_CREDENTIALS JSON");
     }
-  } else {
-    credentials = {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-    };
   }
-
-  return new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-  });
+} else {
+  credentials = {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+  };
 }
+
+const auth = new google.auth.JWT({
+  email: credentials.client_email,
+  key: credentials.private_key,
+  scopes: ['https://www.googleapis.com/auth/calendar.readonly']
+});
+
+const calendar = google.calendar({ version: 'v3', auth });
 
 // ── CALENDAR ROUTING ──
 const CALENDAR_IDS = {
@@ -95,13 +97,9 @@ async function getDynamicArtistAvailability(artistId, dateStr, dow) {
       return { isBlackedOut: false, shift: null };
     }
 
-    // Safety fallback
-    const fallback = DEFAULT_HOURS[artistId] || DEFAULT_HOURS.liz;
-    return { isBlackedOut: false, shift: fallback[dow] || null };
+    return { isBlackedOut: false, shift: DEFAULT_HOURS[artistId]?.[dow] || DEFAULT_HOURS.liz[dow] || null };
   } catch (err) {
-    console.warn('Supabase query failed, using safety defaults:', err.message);
-    const fallback = DEFAULT_HOURS[artistId] || DEFAULT_HOURS.liz;
-    return { isBlackedOut: false, shift: fallback[dow] || null };
+    return { isBlackedOut: false, shift: DEFAULT_HOURS[artistId]?.[dow] || DEFAULT_HOURS.liz[dow] || null };
   }
 }
 
@@ -124,7 +122,6 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ isFullyBlocked: false, busyIntervals: [], shiftStart: 9, shiftEnd: 19 }) };
     }
 
-    // Parse Day of Week using UTC date parts to prevent timezone drift
     const [y, m, d] = dateStr.split('-').map(Number);
     const targetDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
     const dow = targetDate.getUTCDay();
@@ -138,9 +135,6 @@ exports.handler = async (event) => {
         body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }),
       };
     }
-
-    const auth = getGoogleAuth();
-    const calendar = google.calendar({ version: 'v3', auth });
 
     function getNYOffset(dStr) {
       const dt = new Date(`${dStr}T12:00:00Z`);
@@ -169,6 +163,10 @@ exports.handler = async (event) => {
 
     function isAllDayEventOnDate(ev) {
       if (!ev.start || !ev.start.date || ev.start.dateTime) return false;
+      const summary = (ev.summary || '').toLowerCase();
+      const isClosure = summary.includes('closed') || summary.includes('off') || summary.includes('vacation') || summary.includes('holiday') || summary.includes('cerrado');
+      if (!isClosure) return false;
+
       const startDate = ev.start.date;
       const endDate = (ev.end && ev.end.date) || startDate;
       return dateStr >= startDate && dateStr < endDate;
@@ -227,7 +225,6 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error('get-availability error:', err);
     return {
       statusCode: 500,
       headers,
