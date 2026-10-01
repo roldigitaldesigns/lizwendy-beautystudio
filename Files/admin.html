@@ -83,11 +83,12 @@ body {
 }
 .form-input:focus { outline: none; border-color: var(--gold); }
 .btn-gold {
-  width: 100%; padding: 13px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 11px 20px;
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
   color: var(--bg); font-family: var(--sans); font-size: 11px; font-weight: 700;
   letter-spacing: .16em; text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s; margin-top: 8px;
+  cursor: pointer; transition: filter .2s;
 }
 .btn-gold:hover { filter: brightness(1.1); }
 .auth-error {
@@ -157,7 +158,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
 }
 .action-link:hover { text-decoration: underline; }
 
-/* ── EDIT MODAL ── */
+/* ── MODALS ── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
   display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
@@ -174,11 +175,12 @@ tr:hover td { background: rgba(255,255,255,.015); }
 .modal-title { font-family: var(--serif); font-size: 20px; color: var(--white); margin-bottom: 16px; }
 
 /* Schedule Grid */
-.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .schedule-card {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 18px; display: flex; flex-direction: column; gap: 12px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px; position: relative;
 }
+.card-header-actions { display: flex; justify-content: space-between; align-items: flex-start; }
 .day-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
 .day-row:last-child { border-bottom: none; }
 </style>
@@ -217,7 +219,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <input type="password" class="form-input" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
     </div>
     
-    <button class="btn-gold" id="loginBtn" onclick="handleLogin()">Sign In ✦</button>
+    <button class="btn-gold" id="loginBtn" onclick="handleLogin()" style="width:100%;">Sign In ✦</button>
     <div class="auth-error" id="authError"></div>
   </div>
 </div>
@@ -264,9 +266,10 @@ tr:hover td { background: rgba(255,255,255,.015); }
   <div class="tab-pane" id="tab-schedules">
     <div class="panel-header">
       <div>
-        <h2 class="panel-title">Working Hours & Blackouts</h2>
-        <p style="font-size:12px; color:var(--muted-lt);">Adjust regular shifts or add vacation date ranges.</p>
+        <h2 class="panel-title">Working Hours & Staff</h2>
+        <p style="font-size:12px; color:var(--muted-lt);">Manage active team members and customize daily availability shifts.</p>
       </div>
+      <button class="btn-gold" onclick="openAddArtistModal()">+ Add Team Member</button>
     </div>
     <div class="schedule-grid" id="scheduleCardsWrap">
       <div style="color:var(--muted); padding:20px;">Loading schedules...</div>
@@ -360,7 +363,62 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <label for="editIsActive" style="font-size:12px; color:var(--text); cursor:pointer;">Active on live website</label>
     </div>
 
-    <button class="btn-gold" id="saveServiceBtn" onclick="saveServiceChanges()">Save Changes ✦</button>
+    <button class="btn-gold" id="saveServiceBtn" onclick="saveServiceChanges()" style="width:100%;">Save Changes ✦</button>
+  </div>
+</div>
+
+<!-- ── ARTIST MODAL (ADD / EDIT) ── -->
+<div class="modal-overlay" id="artistModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeArtistModal()">&times;</button>
+    <h3 class="modal-title" id="artistModalTitle">Team Member</h3>
+
+    <input type="hidden" id="editArtistId"/>
+
+    <div class="form-group">
+      <label class="form-label">Artist ID (e.g., maria, wendy)</label>
+      <input type="text" class="form-input" id="artistFieldId" placeholder="johanna"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="artistFieldName" placeholder="Johanna"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Professional Title (EN)</label>
+      <input type="text" class="form-input" id="artistFieldTitleEn" placeholder="Nail Artist"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Professional Title (ES)</label>
+      <input type="text" class="form-input" id="artistFieldTitleEs" placeholder="Artista de Uñas"/>
+    </div>
+
+    <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="artistFieldIsActive" checked style="accent-color:var(--gold); width:16px; height:16px;"/>
+      <label for="artistFieldIsActive" style="font-size:12px; color:var(--text); cursor:pointer;">Active (Can be booked by clients)</label>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn-gold" id="saveArtistBtn" onclick="saveArtist()" style="flex:1;">Save Member ✦</button>
+      <button class="btn-logout" id="deleteArtistBtn" onclick="deleteArtist()" style="display:none; color:var(--danger); border-color:var(--danger);">Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE EDITOR MODAL ── -->
+<div class="modal-overlay" id="hoursModal">
+  <div class="modal-card" style="max-width:580px;">
+    <button class="modal-close" onclick="closeHoursModal()">&times;</button>
+    <h3 class="modal-title" id="hoursModalTitle">Edit Working Hours</h3>
+    <input type="hidden" id="hoursArtistId"/>
+
+    <div id="hoursRowsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <!-- Populated via JS -->
+    </div>
+
+    <button class="btn-gold" id="saveHoursBtn" onclick="saveHoursChanges()" style="width:100%;">Save Working Hours ✦</button>
   </div>
 </div>
 
@@ -369,19 +427,19 @@ tr:hover td { background: rgba(255,255,255,.015); }
 const SUPABASE_URL = 'https://dayyxufmvxqxobjxdxzv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
 
-// Using sbClient to avoid naming collisions with window.supabase
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let ALL_SERVICES = [];
+let ALL_ARTISTS = [];
+let ALL_SCHEDS = [];
 
-// ── AUTH CHECK ON LOAD ──
+const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// ── AUTH CHECK ──
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
-  if (session) {
-    showDashboard();
-  } else {
-    showLogin();
-  }
+  if (session) showDashboard();
+  else showLogin();
 
   sbClient.auth.onAuthStateChange((event, session) => {
     if (session) showDashboard();
@@ -509,7 +567,7 @@ function openEditService(id) {
   const preview = document.getElementById('currentPhotoPreview');
   preview.innerHTML = s.img_url 
     ? `<img src="${s.img_url}" style="height:60px; border-radius:4px; border:1px solid var(--border); object-fit:cover;"/>`
-    : '<span style="font-size:11px; color:var(--muted);">No photo set</span>';
+    : '<span style="font-size:11px; color:var(--muted);">No custom photo uploaded</span>';
 
   document.getElementById('serviceModal').style.display = 'flex';
 }
@@ -528,7 +586,6 @@ async function saveServiceChanges() {
     let img_url = null;
     const file = document.getElementById('editPhotoFile').files[0];
 
-    // Upload to Supabase Storage if a new file was chosen
     if (file) {
       const ext = file.name.split('.').pop();
       const path = `${id}-${Date.now()}.${ext}`;
@@ -568,18 +625,23 @@ async function saveServiceChanges() {
   }
 }
 
-// ── SCHEDULES TAB ──
+// ── SCHEDULES & TEAM TAB ──
 async function loadSchedules() {
   const wrap = document.getElementById('scheduleCardsWrap');
-  const dowNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  const { data: artists } = await sbClient.from('artists').select('*').eq('is_active', true);
+  const { data: artists } = await sbClient.from('artists').select('*').order('name');
   const { data: scheds } = await sbClient.from('artist_schedules').select('*');
 
-  if (!artists) return;
+  ALL_ARTISTS = artists || [];
+  ALL_SCHEDS = scheds || [];
 
-  wrap.innerHTML = artists.map(art => {
-    const artScheds = (scheds || []).filter(s => s.artist_id === art.id);
+  if (!ALL_ARTISTS.length) {
+    wrap.innerHTML = `<div style="color:var(--muted); padding:20px;">No team members added yet.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = ALL_ARTISTS.map(art => {
+    const artScheds = ALL_SCHEDS.filter(s => s.artist_id === art.id);
     
     const rows = [0,1,2,3,4,5,6].map(d => {
       const entry = artScheds.find(s => s.day_of_week === d);
@@ -590,7 +652,7 @@ async function loadSchedules() {
 
       return `
         <div class="day-row">
-          <span style="font-weight:600;">${dowNames[d]}</span>
+          <span style="font-weight:600;">${DOW_NAMES[d]}</span>
           <span style="color:${isWork ? 'var(--gold)' : 'var(--muted)'}; font-size:12px;">${hoursText}</span>
         </div>
       `;
@@ -598,12 +660,183 @@ async function loadSchedules() {
 
     return `
       <div class="schedule-card">
-        <h3 style="font-family:var(--serif); color:var(--white);">${art.name}</h3>
-        <p style="font-size:11px; color:var(--muted);">${art.title_en || ''}</p>
+        <div class="card-header-actions">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="font-family:var(--serif); color:var(--white); font-size:17px;">${art.name}</h3>
+              <span class="badge ${art.is_active ? 'badge-active' : 'badge-hidden'}">${art.is_active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <p style="font-size:11px; color:var(--muted);">${art.title_en || ''}</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <span class="action-link" onclick="openEditArtistModal('${art.id}')">Edit Info</span>
+            <span class="action-link" onclick="openHoursModal('${art.id}')">Edit Hours</span>
+          </div>
+        </div>
         <div>${rows}</div>
       </div>
     `;
   }).join('');
+}
+
+// ── ARTIST MODAL LOGIC ──
+function openAddArtistModal() {
+  document.getElementById('editArtistId').value = '';
+  document.getElementById('artistModalTitle').textContent = 'Add Team Member';
+  document.getElementById('artistFieldId').value = '';
+  document.getElementById('artistFieldId').disabled = false;
+  document.getElementById('artistFieldName').value = '';
+  document.getElementById('artistFieldTitleEn').value = '';
+  document.getElementById('artistFieldTitleEs').value = '';
+  document.getElementById('artistFieldIsActive').checked = true;
+  document.getElementById('deleteArtistBtn').style.display = 'none';
+  document.getElementById('artistModal').style.display = 'flex';
+}
+
+function openEditArtistModal(artistId) {
+  const art = ALL_ARTISTS.find(a => a.id === artistId);
+  if (!art) return;
+
+  document.getElementById('editArtistId').value = art.id;
+  document.getElementById('artistModalTitle').textContent = `Edit ${art.name}`;
+  document.getElementById('artistFieldId').value = art.id;
+  document.getElementById('artistFieldId').disabled = true;
+  document.getElementById('artistFieldName').value = art.name;
+  document.getElementById('artistFieldTitleEn').value = art.title_en || '';
+  document.getElementById('artistFieldTitleEs').value = art.title_es || '';
+  document.getElementById('artistFieldIsActive').checked = art.is_active;
+  document.getElementById('deleteArtistBtn').style.display = 'block';
+  document.getElementById('artistModal').style.display = 'flex';
+}
+
+function closeArtistModal() {
+  document.getElementById('artistModal').style.display = 'none';
+}
+
+async function saveArtist() {
+  const existingId = document.getElementById('editArtistId').value;
+  const id = existingId || document.getElementById('artistFieldId').value.trim().toLowerCase();
+  const name = document.getElementById('artistFieldName').value.trim();
+  const title_en = document.getElementById('artistFieldTitleEn').value.trim();
+  const title_es = document.getElementById('artistFieldTitleEs').value.trim();
+  const is_active = document.getElementById('artistFieldIsActive').checked;
+
+  if (!id || !name) {
+    alert('Please provide an Artist ID and Full Name.');
+    return;
+  }
+
+  const payload = { id, name, title_en, title_es, is_active };
+
+  let error;
+  if (existingId) {
+    ({ error } = await sbClient.from('artists').update(payload).eq('id', existingId));
+  } else {
+    ({ error } = await sbClient.from('artists').insert([payload]));
+    // Pre-populate standard shifts for the new artist if new
+    if (!error) {
+      const defaultShifts = [
+        { artist_id: id, day_of_week: 1, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 2, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 3, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 4, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 5, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 6, start_hour: 8, end_hour: 16, is_active: true },
+        { artist_id: id, day_of_week: 0, start_hour: 0, end_hour: 0, is_active: false }
+      ];
+      await sbClient.from('artist_schedules').insert(defaultShifts);
+    }
+  }
+
+  if (error) {
+    alert('Failed to save artist: ' + error.message);
+    return;
+  }
+
+  closeArtistModal();
+  loadSchedules();
+}
+
+async function deleteArtist() {
+  const id = document.getElementById('editArtistId').value;
+  if (!confirm(`Are you sure you want to toggle deactivation for this artist?`)) return;
+
+  const { error } = await sbClient.from('artists').update({ is_active: false }).eq('id', id);
+  if (error) alert('Error: ' + error.message);
+  else {
+    closeArtistModal();
+    loadSchedules();
+  }
+}
+
+// ── HOURS EDITOR MODAL ──
+function openHoursModal(artistId) {
+  const art = ALL_ARTISTS.find(a => a.id === artistId);
+  if (!art) return;
+
+  document.getElementById('hoursArtistId').value = artistId;
+  document.getElementById('hoursModalTitle').textContent = `Hours for ${art.name}`;
+  const container = document.getElementById('hoursRowsContainer');
+
+  const artScheds = ALL_SCHEDS.filter(s => s.artist_id === artistId);
+
+  container.innerHTML = [0,1,2,3,4,5,6].map(d => {
+    const entry = artScheds.find(s => s.day_of_week === d) || { start_hour: 9, end_hour: 19, is_active: false };
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--border); padding:8px 12px; border-radius:4px;" data-dow="${d}">
+        <div style="width:90px; font-weight:600;">${DOW_NAMES[d]}</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" class="day-active-check" ${entry.is_active ? 'checked' : ''} style="accent-color:var(--gold);"/>
+          <span style="font-size:11px; color:var(--muted-lt);">Working</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="number" class="day-start-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="22" value="${entry.start_hour}"/>
+          <span>to</span>
+          <input type="number" class="day-end-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="23" value="${entry.end_hour}"/>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('hoursModal').style.display = 'flex';
+}
+
+function closeHoursModal() {
+  document.getElementById('hoursModal').style.display = 'none';
+}
+
+async function saveHoursChanges() {
+  const artistId = document.getElementById('hoursArtistId').value;
+  const rows = document.querySelectorAll('#hoursRowsContainer > div');
+  const btn = document.getElementById('saveHoursBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const updates = [];
+  rows.forEach(r => {
+    const dow = parseInt(r.getAttribute('data-dow'), 10);
+    const is_active = r.querySelector('.day-active-check').checked;
+    const start_hour = parseInt(r.querySelector('.day-start-hour').value, 10);
+    const end_hour = parseInt(r.querySelector('.day-end-hour').value, 10);
+
+    updates.push({
+      artist_id: artistId,
+      day_of_week: dow,
+      start_hour,
+      end_hour,
+      is_active
+    });
+  });
+
+  const { error } = await sbClient.from('artist_schedules').upsert(updates, { onConflict: 'artist_id,day_of_week' });
+  if (error) {
+    alert('Error saving hours: ' + error.message);
+  } else {
+    closeHoursModal();
+    loadSchedules();
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save Working Hours ✦';
 }
 
 // ── APPOINTMENTS TAB ──
