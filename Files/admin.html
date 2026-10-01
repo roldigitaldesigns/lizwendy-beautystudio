@@ -295,16 +295,14 @@ tr:hover td { background: rgba(255,255,255,.015); }
       </div>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
+  <thead>
           <tr>
-            <th>Date & Time</th>
-            <th>Client</th>
+            <th onclick="toggleSort('start_time')" style="cursor:pointer; user-select:none;">Date & Time <span id="sort-start_time">▼</span></th>
+            <th onclick="toggleSort('customer_name')" style="cursor:pointer; user-select:none;">Client <span id="sort-customer_name"></span></th>
             <th>Phone</th>
-            <th>Artist</th>
+            <th onclick="toggleSort('artist_id')" style="cursor:pointer; user-select:none;">Artist <span id="sort-artist_id"></span></th>
             <th>Services</th>
-            <th>Total</th>
+            <th onclick="toggleSort('total_price')" style="cursor:pointer; user-select:none;">Total <span id="sort-total_price"></span></th>
             <th>Deposit</th>
           </tr>
         </thead>
@@ -883,17 +881,18 @@ async function saveHoursChanges() {
 
 // ── APPOINTMENTS TAB ──
 let ALL_APPOINTMENTS = [];
+let CURRENT_SORT_COL = 'start_time';
+let CURRENT_SORT_ASC = true; // true = earliest / A-Z first
 
 async function loadAppointments() {
   const tbody = document.getElementById('appointmentsTableBody');
   tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>`;
 
-  // Sort upcoming first (ascending from today)
+  // Fetch using the raw ISO start_time timestamp so order is mathematically exact
   const { data, error } = await sbClient
     .from('appointments')
     .select('*')
-    .order('appointment_date', { ascending: true })
-    .order('appointment_time', { ascending: true });
+    .order('start_time', { ascending: true });
 
   if (error) {
     tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
@@ -906,9 +905,7 @@ async function loadAppointments() {
 
 function cleanClientName(rawName) {
   if (!rawName) return 'Client';
-  // Strip emojis like 💅, 💉, ✨
   let cleaned = rawName.replace(/[\p{Emoji}\u200d]+/gu, '').trim();
-  // Strip trailing "— Service Name" if present in title
   if (cleaned.includes('—')) {
     cleaned = cleaned.split('—')[0].trim();
   } else if (cleaned.includes('-')) {
@@ -917,11 +914,36 @@ function cleanClientName(rawName) {
   return cleaned || rawName;
 }
 
+function toggleSort(col) {
+  if (CURRENT_SORT_COL === col) {
+    CURRENT_SORT_ASC = !CURRENT_SORT_ASC; // Flip between Ascending and Descending
+  } else {
+    CURRENT_SORT_COL = col;
+    CURRENT_SORT_ASC = true;
+  }
+  updateSortIndicators();
+  filterAppointments();
+}
+
+function updateSortIndicators() {
+  ['start_time', 'customer_name', 'artist_id', 'total_price'].forEach(col => {
+    const el = document.getElementById(`sort-${col}`);
+    if (el) {
+      if (CURRENT_SORT_COL === col) {
+        el.textContent = CURRENT_SORT_ASC ? ' ▲' : ' ▼';
+        el.style.color = 'var(--gold)';
+      } else {
+        el.textContent = '';
+      }
+    }
+  });
+}
+
 function filterAppointments() {
   const q = (document.getElementById('apptSearch')?.value || '').toLowerCase().trim();
   const artist = document.getElementById('apptArtistFilter')?.value || 'all';
 
-  const filtered = ALL_APPOINTMENTS.filter(app => {
+  let filtered = ALL_APPOINTMENTS.filter(app => {
     if (artist !== 'all' && app.artist_id !== artist) return false;
 
     if (q) {
@@ -933,6 +955,30 @@ function filterAppointments() {
       return name.includes(q) || phone.includes(q) || email.includes(q) || svcs.includes(q);
     }
     return true;
+  });
+
+  // Sort logic
+  filtered.sort((a, b) => {
+    let valA = a[CURRENT_SORT_COL];
+    let valB = b[CURRENT_SORT_COL];
+
+    if (CURRENT_SORT_COL === 'start_time') {
+      valA = new Date(valA || a.appointment_date + ' ' + a.appointment_time).getTime() || 0;
+      valB = new Date(valB || b.appointment_date + ' ' + b.appointment_time).getTime() || 0;
+    } else if (CURRENT_SORT_COL === 'total_price') {
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+    } else if (CURRENT_SORT_COL === 'customer_name') {
+      valA = cleanClientName(valA).toLowerCase();
+      valB = cleanClientName(valB).toLowerCase();
+    } else if (typeof valA === 'string') {
+      valA = valA.toLowerCase();
+      valB = (valB || '').toLowerCase();
+    }
+
+    if (valA < valB) return CURRENT_SORT_ASC ? -1 : 1;
+    if (valA > valB) return CURRENT_SORT_ASC ? 1 : -1;
+    return 0;
   });
 
   renderAppointmentsTable(filtered);
