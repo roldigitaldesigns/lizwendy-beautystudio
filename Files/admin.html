@@ -369,20 +369,21 @@ tr:hover td { background: rgba(255,255,255,.015); }
 const SUPABASE_URL = 'https://dayyxufmvxqxobjxdxzv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Using sbClient to avoid naming collisions with window.supabase
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let ALL_SERVICES = [];
 
 // ── AUTH CHECK ON LOAD ──
 async function initAuth() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
     showDashboard();
   } else {
     showLogin();
   }
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  sbClient.auth.onAuthStateChange((event, session) => {
     if (session) showDashboard();
     else showLogin();
   });
@@ -413,7 +414,7 @@ async function handleLogin() {
   btn.disabled = true;
   btn.textContent = 'Signing in...';
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await sbClient.auth.signInWithPassword({ email, password });
   if (error) {
     errEl.textContent = error.message;
     errEl.style.display = 'block';
@@ -423,7 +424,7 @@ async function handleLogin() {
 }
 
 async function handleLogout() {
-  await supabase.auth.signOut();
+  await sbClient.auth.signOut();
 }
 
 // ── TABS NAVIGATION ──
@@ -438,7 +439,7 @@ function switchTab(tabId) {
 // ── SERVICES TAB ──
 async function loadServices() {
   const tbody = document.getElementById('servicesTableBody');
-  const { data, error } = await supabase
+  const { data, error } = await sbClient
     .from('services')
     .select('*')
     .order('category')
@@ -531,13 +532,13 @@ async function saveServiceChanges() {
     if (file) {
       const ext = file.name.split('.').pop();
       const path = `${id}-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await sbClient.storage
         .from('service-photos')
         .upload(path, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: pubData } = supabase.storage.from('service-photos').getPublicUrl(path);
+      const { data: pubData } = sbClient.storage.from('service-photos').getPublicUrl(path);
       img_url = pubData.publicUrl;
     }
 
@@ -554,7 +555,7 @@ async function saveServiceChanges() {
 
     if (img_url) updates.img_url = img_url;
 
-    const { error } = await supabase.from('services').update(updates).eq('id', id);
+    const { error } = await sbClient.from('services').update(updates).eq('id', id);
     if (error) throw error;
 
     closeServiceModal();
@@ -572,8 +573,8 @@ async function loadSchedules() {
   const wrap = document.getElementById('scheduleCardsWrap');
   const dowNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  const { data: artists } = await supabase.from('artists').select('*').eq('is_active', true);
-  const { data: scheds } = await supabase.from('artist_schedules').select('*');
+  const { data: artists } = await sbClient.from('artists').select('*').eq('is_active', true);
+  const { data: scheds } = await sbClient.from('artist_schedules').select('*');
 
   if (!artists) return;
 
@@ -608,7 +609,7 @@ async function loadSchedules() {
 // ── APPOINTMENTS TAB ──
 async function loadAppointments() {
   const tbody = document.getElementById('appointmentsTableBody');
-  const { data, error } = await supabase
+  const { data, error } = await sbClient
     .from('appointments')
     .select('*')
     .order('start_time', { ascending: false })
