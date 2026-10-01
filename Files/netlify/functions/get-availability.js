@@ -1,93 +1,83 @@
 /**
  * GET /.netlify/functions/get-availability?date=YYYY-MM-DD&artistId=liz
  *
- * Returns taken 30-min slots for a given date by reading the correct
- * artist's Google Calendar (artistId: liz | johanna).
- * Defaults to Wendy's calendar if artistId is missing (back-compat).
- *
- * Working hours are read from schedules.json (same file the front-end
- * fetches), so the calendar shown to customers and the hours enforced
- * here can never disagree. See schedules.json's "_readme" for how to
- * edit hours — no code changes needed to update someone's schedule.
- *
- * Response: { takenSlots: ["09:00", "09:30", "11:00", ...] }
+ * Dynamically queries Supabase for artist schedules & blackout dates,
+ * then checks Google Calendar for busy intervals to offer continuous 30-min slots.
  */
 
 const { google } = require('googleapis');
+const { createClient } = require('@supabase/supabase-js');
 
-// schedules.json must sit in this same folder (next to this function file)
-// so it gets bundled and deployed automatically with the function.
-const SCHEDULES = require('./schedules.json');
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 // ── ARTIST → CALENDAR ID ROUTING ──
-// Johanna's ID is a placeholder until her dedicated studio calendar is
-// created and shared with the service account. Swap the env var in
-// Netlify once you have it — no code changes needed.
 const CALENDAR_IDS = {
-  liz:      process.env.GOOGLE_CALENDAR_ID,
-  johanna:  process.env.JOHANNA_CALENDAR_ID,  // placeholder — set in Netlify when available
+  liz:     process.env.GOOGLE_CALENDAR_ID,
+  johanna: process.env.JOHANNA_CALENDAR_ID,
 };
 
-// Fallback hours, used ONLY if schedules.json is ever missing/malformed,
-// so the calendar never breaks entirely. Keep schedules.json as the real
-// source of truth — this is a safety net, not something to edit routinely.
+// Safety net hours if DB lookup ever fails
 const DEFAULT_HOURS = {
-  1: [9, 19],  // Mon
-  3: [9, 19],  // Wed
-  4: [9, 19],  // Thu
-  5: [9, 19],  // Fri
-  6: [7, 16],  // Sat
+  liz: {
+    1: [9, 19], // Mon
+    3: [9, 19], // Wed
+    4: [9, 19], // Thu
+    5: [9, 19], // Fri
+    6: [7, 16], // Sat
+  },
+  johanna: {
+    2: [10, 18], // Tue
+    3: [10, 18], // Wed
+    4: [10, 18], // Thu
+    5: [10, 18], // Fri
+    6: [10, 18], // Sat
+  }
 };
 
-function getArtistHours(artistId) {
-  if (SCHEDULES && SCHEDULES[artistId]) return SCHEDULES[artistId];
-  return DEFAULT_HOURS;
-}
+const BUFFER_MIN = 0;
 
-// ── SLOT + BUFFER CONFIG ──
-// Slots are offered every 30 minutes (":00" and ":30"). After any booked
-// appointment, an additional buffer is blocked so the artist has turnaround
-// time between clients — cleanup, sanitizing, reset. The buffer is added on
-// top of the appointment's real duration (a 90-min set at 10:00 blocks until
-// 11:30 + buffer). Applies to ALL artists.
-// Per-artist slot step (minutes between offered start times). This ALSO acts
-// as the width of each slot's overlap window in the availability check below,
-// so a slot correctly represents its whole block:
-//   Wendy (liz): 60 → hourly slots, each a 60-minute block (9:00, 10:00, ...)
-//   Johanna:     30 → half-hour slots, each a 30-minute block
-// Unknown artist falls back to 30 (the tighter, safer granularity).
-const SLOT_STEP_BY_ARTIST = { liz: 60, johanna: 30 };
-const DEFAULT_SLOT_STEP_MIN = 30;
-const BUFFER_MIN = 0;         // turnaround blocked after each appointment ends
+// Fetch artist shift hours and blackouts from Supabase
+async function getDynamicArtistAvailability(artistId, dateStr, dow) {
+  try {
+    // 1. Check for active blackout on this date
+    const { data: blackouts } = await supabase
+      .from('artist_blackouts')
+      .select('id')
+      .eq('artist_id', artistId)
+      .lte('start_date', dateStr)
+      .gte('end_date', dateStr);
 
-function getSlotStep(artistId) {
-  return SLOT_STEP_BY_ARTIST[artistId] || DEFAULT_SLOT_STEP_MIN;
-}
+    if (blackouts && blackouts.length > 0) {
+      return { isBlackedOut: true, shift: null };
+    }
 
-// Build every "HH:MM" start time from `start` (inclusive) to `end`
-// (exclusive) in `step` increments. `start`/`end` are whole-hour numbers
-// from schedules.json (e.g. 9, step 60 → "09:00", "10:00", ...;
-// step 30 → "09:00", "09:30", ...).
-function buildSlots(start, end, step) {
-  const slots = [];
-  for (let mins = start * 60; mins < end * 60; mins += step) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    // 2. Fetch shift hours for this day of week
+    const { data: schedules } = await supabase
+      .from('artist_schedules')
+      .select('start_hour, end_hour')
+      .eq('artist_id', artistId)
+      .eq('day_of_week', dow)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (schedules) {
+      return { isBlackedOut: false, shift: [schedules.start_hour, schedules.end_hour] };
+    }
+
+    // No row found means artist does not work this day
+    return { isBlackedOut: false, shift: null };
+  } catch (err) {
+    console.warn('Supabase schedule query failed, using safety defaults:', err.message);
+    const fallback = DEFAULT_HOURS[artistId] || DEFAULT_HOURS.liz;
+    return { isBlackedOut: false, shift: fallback[dow] || null };
   }
-  return slots;
-}
-
-// Checks an artist's optional "blackout" date ranges in schedules.json
-// (e.g. Wendy unavailable for all of August). dateStr and range bounds
-// are YYYY-MM-DD, which compares correctly as plain strings.
-function isDateBlackedOut(artistId, dateStr) {
-  const schedule = SCHEDULES && SCHEDULES[artistId];
-  if (!schedule || !Array.isArray(schedule.blackout)) return false;
-  return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
 }
 
 exports.handler = async (event) => {
@@ -110,26 +100,21 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: [] }) };
     }
 
-    const HOURS = getArtistHours(artistId);
-    const SLOT_STEP_MIN = getSlotStep(artistId); // 60 for Wendy, 30 for Johanna
-
-    // Check it's a work day
     const date = new Date(dateStr + 'T00:00:00');
     const dow  = date.getDay();
-    if (!HOURS[dow]) {
-      return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: [] }) };
+
+    // Query Supabase for dynamic shift & blackout
+    const { isBlackedOut, shift } = await getDynamicArtistAvailability(artistId, dateStr, dow);
+
+    if (isBlackedOut || !shift) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }),
+      };
     }
 
-    // Blackout override (e.g. Wendy unavailable all of August) — mark every
-    // slot on this date as taken so nothing can be booked, even if a
-    // request bypasses the calendar UI's greyed-out day.
-    if (isDateBlackedOut(artistId, dateStr)) {
-      const [bStart, bEnd] = HOURS[dow];
-      const blockedSlots = buildSlots(bStart, bEnd, SLOT_STEP_MIN);
-      return { statusCode: 200, headers, body: JSON.stringify({ takenSlots: blockedSlots, blackout: true }) };
-    }
-
-    // Auth
+    // Auth with Google Calendar
     const auth = new google.auth.JWT({
       email: CLIENT_EMAIL,
       key:   PRIVATE_KEY,
@@ -138,18 +123,7 @@ exports.handler = async (event) => {
 
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // Query events for the full day, widened by one day on each side.
-    //
-    // Why the padding: Google Calendar stores all-day events using a
-    // date-only boundary in UTC, not a timezone-aware timestamp. When the
-    // query window is built from Eastern Time offsets (-04:00), an all-day
-    // event can fall just outside that shifted window and get silently
-    // excluded from the API response — even though it visually belongs to
-    // this date on the calendar. Padding the query by a day on each side
-    // guarantees the event is included in the raw results; the explicit
-    // date check below (isAllDayEventOnDate) then filters back down to
-    // only events that actually apply to dateStr.
-   // Calculate precise DST offset for the requested date
+    // Calculate precise DST offset for the requested date
     function getNYOffset(dStr) {
       const d = new Date(`${dStr}T12:00:00Z`);
       const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
@@ -164,20 +138,17 @@ exports.handler = async (event) => {
     dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
     const dayAfter = new Date(`${dateStr}T23:59:59${offset}`);
     dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
-    const timeMin = dayBefore.toISOString();
-    const timeMax = dayAfter.toISOString();
 
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
-      timeMin,
-      timeMax,
+      timeMin: dayBefore.toISOString(),
+      timeMax: dayAfter.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
 
     const events = res.data.items || [];
 
-// An all-day event's start.date/end.date are plain YYYY-MM-DD strings
     function isAllDayEventOnDate(ev) {
       if (!ev.start || !ev.start.date || ev.start.dateTime) return false;
       const startDate = ev.start.date;
@@ -185,7 +156,6 @@ exports.handler = async (event) => {
       return dateStr >= startDate && dateStr < endDate;
     }
 
-    // Return true busy windows without forcing rigid 60-min slots
     let isFullyBlocked = false;
     const busyIntervals = [];
 
@@ -198,7 +168,7 @@ exports.handler = async (event) => {
         const evStart = new Date(ev.start.dateTime);
         const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
 
-       const targetDayStart = new Date(`${dateStr}T00:00:00${offset}`);
+        const targetDayStart = new Date(`${dateStr}T00:00:00${offset}`);
         const targetDayEnd   = new Date(`${dateStr}T23:59:59${offset}`);
         
         if (evEnd > targetDayStart && evStart < targetDayEnd) {
@@ -210,10 +180,9 @@ exports.handler = async (event) => {
       }
     });
 
-    // Sort intervals chronologically
     busyIntervals.sort((a, b) => a.start - b.start);
 
-    // Merge any overlapping busy intervals
+    // Merge overlapping intervals
     const mergedIntervals = [];
     if (busyIntervals.length > 0) {
       let current = busyIntervals[0];
@@ -235,8 +204,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         isFullyBlocked,
         busyIntervals: mergedIntervals,
-        shiftStart: HOURS[dow][0],
-        shiftEnd: HOURS[dow][1]
+        shiftStart: shift[0],
+        shiftEnd: shift[1]
       }),
     };
 
