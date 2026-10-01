@@ -1,38 +1,3 @@
-/**
- * POST /.netlify/functions/ledger-read
- *
- * The Command Center dashboard's ONLY door into the ledger. The browser never
- * talks to Supabase: this function holds the service-role key, checks a
- * passcode-derived session token, and returns rows for ONE tenant at a time.
- *
- * WHY EXPLICIT TENANT FILTERING: the service role bypasses Row Level
- * Security, so RLS cannot isolate tenants here. Every read below is filtered
- * by tenant_id in code, and the view names are an allowlist. Don't add a code
- * path that skips either.
- *
- * Actions (JSON body):
- *   { action: "login",   passcode }                          → { token, expires_at }
- *   { action: "tenants" }                                    → { tenants: [...] }
- *   { action: "read", tenant, view, from?, to?, limit? }     → { rows: [...] }
- *       tenant: slug, e.g. "lwbs"
- *       view:   v_daily_performance | v_churn_deflection | v_artist_capacity
- *               | v_customer_ltv | v_recent_activity
- *       from/to: YYYY-MM-DD, `from` inclusive, `to` exclusive, applied to the
- *                view's date column (not supported by v_customer_ltv)
- *   tenants / read require:  Authorization: Bearer <token>
- *
- * Env vars (Netlify):
- *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (already set for the ledger)
- *   DASHBOARD_PASSCODE        ≥ 12 chars. What you type into the login screen.
- *   DASHBOARD_TOKEN_SECRET    ≥ 32 chars, random. Signs session tokens.
- *   DASHBOARD_ALLOWED_ORIGIN  optional. Only if the dashboard is served from a
- *                             different origin than this function.
- *
- * NOTE: phone numbers and emails are returned in full to an authenticated
- * session. Masking in the UI is shoulder-surfing protection for presentations,
- * not a security boundary.
- */
-
 'use strict';
 
 const crypto = require('crypto');
@@ -42,7 +7,6 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 const TENANT_CACHE_MS = 5 * 60 * 1000;
 
 // ── VIEW ALLOWLIST ──
-// order: PostgREST order clause. rangeCol: column that from/to filter on.
 const VIEWS = {
   v_daily_performance: { order: 'day.desc',                          rangeCol: 'day',         defLimit: 120, maxLimit: 400 },
   v_churn_deflection:  { order: 'month_start.desc',                  rangeCol: 'month_start', defLimit: 12,  maxLimit: 60  },
@@ -54,14 +18,14 @@ const VIEWS = {
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// ── CONFIG (read per call so a misconfiguration is reported, not cached) ──
+// ── CONFIG ──
 function config() {
   const c = {
-    url:      (process.env.SUPABASE_URL || '').replace(/\/+$/, ''),
+    url:      (process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co').replace(/\/+$/, ''),
     key:      process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     passcode: process.env.DASHBOARD_PASSCODE || '',
     secret:   process.env.DASHBOARD_TOKEN_SECRET || '',
-    origin:   process.env.DASHBOARD_ALLOWED_ORIGIN || '',
+    origin:   process.env.DASHBOARD_ALLOWED_ORIGIN || '*',
   };
   const problems = [];
   if (!c.url || !c.key)          problems.push('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing');
@@ -88,7 +52,7 @@ function respond(statusCode, body, origin) {
 
 // ── AUTH ──
 const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest();
-const safeEqual = (a, b) => crypto.timingSafeEqual(sha256(a), sha256(b)); // equal-length digests
+const safeEqual = (a, b) => crypto.timingSafeEqual(sha256(a), sha256(b));
 
 const sign = (payloadB64, secret) =>
   crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
@@ -114,9 +78,7 @@ function verifyToken(token, secret) {
   }
 }
 
-// Best-effort brute-force brake. Serverless instances don't share memory, so
-// this is a speed bump, not a guarantee — the real defence is a long passcode.
-const failures = new Map(); // ip -> { n, reset }
+const failures = new Map();
 const MAX_FAILS = 8, FAIL_WINDOW_MS = 10 * 60 * 1000;
 const isLockedOut = (ip) => { const f = failures.get(ip); return !!f && f.reset > Date.now() && f.n >= MAX_FAILS; };
 function noteFailure(ip) {
@@ -127,10 +89,9 @@ function noteFailure(ip) {
   else f.n++;
 }
 
-// ── SUPABASE (PostgREST) ──
+// ── SUPABASE (PostgREST via Native Fetch) ──
 async function sb(cfg, path, params) {
   const headers = { apikey: cfg.key, Accept: 'application/json' };
-  // Legacy service_role keys are JWTs (also sent as Bearer); sb_secret_ keys are not.
   if (cfg.key.startsWith('eyJ')) headers.Authorization = `Bearer ${cfg.key}`;
 
   const qs = params.toString();
@@ -139,14 +100,16 @@ async function sb(cfg, path, params) {
   try {
     const res = await fetch(`${cfg.url}/rest/v1/${path}${qs ? `?${qs}` : ''}`, { headers, signal: ctrl.signal });
     const text = await res.text();
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
+    }
     return JSON.parse(text);
   } finally {
     clearTimeout(timer);
   }
 }
 
-const tenantCache = new Map(); // slug -> { id, row, at }
+const tenantCache = new Map();
 async function resolveTenant(cfg, slug) {
   const hit = tenantCache.get(slug);
   if (hit && Date.now() - hit.at < TENANT_CACHE_MS) return hit;
@@ -174,7 +137,7 @@ exports.handler = async (event) => {
 
   if (problems.length) {
     console.error('ledger-read: server misconfigured —', problems.join('; '));
-    return respond(500, { error: 'server_misconfigured' }, origin);
+    return respond(500, { error: 'server_misconfigured', details: problems }, origin);
   }
 
   let data;
@@ -194,7 +157,7 @@ exports.handler = async (event) => {
       if (isLockedOut(ip)) return respond(429, { error: 'too_many_attempts' }, origin);
       if (typeof data.passcode !== 'string' || !safeEqual(data.passcode, cfg.passcode)) {
         noteFailure(ip);
-        await new Promise((r) => setTimeout(r, 400)); // slow down guessing
+        await new Promise((r) => setTimeout(r, 400));
         return respond(401, { error: 'invalid_passcode' }, origin);
       }
       failures.delete(ip);
@@ -202,12 +165,12 @@ exports.handler = async (event) => {
       return respond(200, { ok: true, token, expires_at: new Date(exp).toISOString() }, origin);
     }
 
-    // Everything below needs a valid session.
+    // ── AUTH CHECK ──
     const authHeader = headers.authorization || headers.Authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (!verifyToken(token, cfg.secret)) return respond(401, { error: 'unauthorized' }, origin);
 
-    // ── TENANT LIST (for the switcher) ──
+    // ── TENANTS ──
     if (data.action === 'tenants') {
       const rows = await sb(cfg, 'tenants', new URLSearchParams({
         select: 'slug,display_name,vertical,currency,timezone',
@@ -240,7 +203,7 @@ exports.handler = async (event) => {
       const limit = Math.min(Math.max(parseInt(data.limit, 10) || spec.defLimit, 1), spec.maxLimit);
       const params = new URLSearchParams({
         select: '*',
-        tenant_id: `eq.${tenant.id}`,   // ← THE tenant isolation (service role bypasses RLS)
+        tenant_id: `eq.${tenant.id}`,
         order: spec.order,
         limit: String(limit),
       });
@@ -248,7 +211,6 @@ exports.handler = async (event) => {
       if (data.to)   params.append(spec.rangeCol, `lt.${data.to}`);
 
       const rows = await sb(cfg, data.view, params);
-      // tenant_id is the internal join key; the client only ever needs the slug.
       const clean = rows.map(({ tenant_id, ...rest }) => rest);
       return respond(200, {
         ok: true,
@@ -263,8 +225,7 @@ exports.handler = async (event) => {
     return respond(400, { error: 'invalid_action' }, origin);
 
   } catch (err) {
-    // Details stay in the server log; the client gets a generic error.
     console.error('ledger-read error:', err && err.message ? err.message : err);
-    return respond(502, { error: 'upstream_error' }, origin);
+    return respond(502, { error: 'upstream_error', message: err && err.message ? err.message : String(err) }, origin);
   }
 };
