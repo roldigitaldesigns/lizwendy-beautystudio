@@ -276,14 +276,23 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 
-  <!-- TAB 3: APPOINTMENTS -->
+
+<!-- TAB 3: APPOINTMENTS -->
   <div class="tab-pane" id="tab-appointments">
     <div class="panel-header">
       <div>
         <h2 class="panel-title">Bookings Ledger</h2>
         <p style="font-size:12px; color:var(--muted-lt);">Real-time appointments confirmed through the booking engine.</p>
       </div>
-      <button class="btn-logout" onclick="loadAppointments()">Refresh ⟳</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <input type="text" class="search-input" id="apptSearch" placeholder="Search client, phone, service..." oninput="filterAppointments()" style="width:230px;"/>
+        <select class="form-input" id="apptArtistFilter" onchange="filterAppointments()" style="width:130px; padding:7px 10px; font-size:12px;">
+          <option value="all">All Artists</option>
+          <option value="liz">Liz Wendy</option>
+          <option value="johanna">Johanna</option>
+        </select>
+        <button class="btn-logout" onclick="loadAppointments()">Refresh ⟳</button>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -305,7 +314,6 @@ tr:hover td { background: rgba(255,255,255,.015); }
       </table>
     </div>
   </div>
-</div>
 
 <!-- ── EDIT SERVICE MODAL ── -->
 <div class="modal-overlay" id="serviceModal">
@@ -872,37 +880,94 @@ async function saveHoursChanges() {
   btn.textContent = 'Save Working Hours ✦';
 }
 
+
 // ── APPOINTMENTS TAB ──
+let ALL_APPOINTMENTS = [];
+
 async function loadAppointments() {
   const tbody = document.getElementById('appointmentsTableBody');
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>`;
+
+  // Sort upcoming first (ascending from today)
   const { data, error } = await sbClient
     .from('appointments')
     .select('*')
-    .order('start_time', { ascending: false })
-    .limit(50);
+    .order('appointment_date', { ascending: true })
+    .order('appointment_time', { ascending: true });
 
   if (error) {
     tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
     return;
   }
 
-  if (!data || !data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No appointments recorded yet.</td></tr>`;
+  ALL_APPOINTMENTS = data || [];
+  filterAppointments();
+}
+
+function cleanClientName(rawName) {
+  if (!rawName) return 'Client';
+  // Strip emojis like 💅, 💉, ✨
+  let cleaned = rawName.replace(/[\p{Emoji}\u200d]+/gu, '').trim();
+  // Strip trailing "— Service Name" if present in title
+  if (cleaned.includes('—')) {
+    cleaned = cleaned.split('—')[0].trim();
+  } else if (cleaned.includes('-')) {
+    cleaned = cleaned.split('-')[0].trim();
+  }
+  return cleaned || rawName;
+}
+
+function filterAppointments() {
+  const q = (document.getElementById('apptSearch')?.value || '').toLowerCase().trim();
+  const artist = document.getElementById('apptArtistFilter')?.value || 'all';
+
+  const filtered = ALL_APPOINTMENTS.filter(app => {
+    if (artist !== 'all' && app.artist_id !== artist) return false;
+
+    if (q) {
+      const name = (app.customer_name || '').toLowerCase();
+      const phone = (app.customer_phone || '').toLowerCase();
+      const email = (app.customer_email || '').toLowerCase();
+      const svcs = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(' ').toLowerCase();
+
+      return name.includes(q) || phone.includes(q) || email.includes(q) || svcs.includes(q);
+    }
+    return true;
+  });
+
+  renderAppointmentsTable(filtered);
+}
+
+function renderAppointmentsTable(list) {
+  const tbody = document.getElementById('appointmentsTableBody');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No matching appointments found.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = data.map(app => {
-    const dateStr = `${app.appointment_date} · ${app.appointment_time}`;
+  tbody.innerHTML = list.map(app => {
+    const dateStr = `${app.appointment_date || ''} · ${app.appointment_time || ''}`;
+    const cleanName = cleanClientName(app.customer_name);
     const svcNames = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
+    const artistBadgeColor = app.artist_id === 'johanna' ? '#E8C84A' : 'var(--gold)';
+    const displayEmail = app.customer_email ? `<div style="font-size:11px; color:var(--muted);">${app.customer_email}</div>` : '';
 
     return `
       <tr>
         <td><strong>${dateStr}</strong></td>
-        <td><strong>${app.customer_name}</strong>${app.notes ? `<div style="font-size:10px; color:var(--muted-lt);">Note: ${app.notes}</div>` : ''}</td>
+        <td>
+          <strong>${cleanName}</strong>
+          ${displayEmail}
+        </td>
         <td><a href="tel:${app.customer_phone}" style="color:var(--text); text-decoration:none;">${app.customer_phone}</a></td>
-        <td><span class="badge" style="background:var(--card2); border:1px solid var(--border);">${app.artist_id}</span></td>
-        <td style="max-width:220px; font-size:12px;">${svcNames}</td>
-        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price).toFixed(2)}</td>
+        <td>
+          <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:${artistBadgeColor};">
+            ${app.artist_id}
+          </span>
+        </td>
+        <td style="max-width:240px; font-size:12px;">${svcNames}</td>
+        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
         <td>
           <span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">
             ${app.deposit_paid ? 'Paid' : 'Waived/None'}
@@ -912,7 +977,6 @@ async function loadAppointments() {
     `;
   }).join('');
 }
-
 // Start
 initAuth();
 </script>
