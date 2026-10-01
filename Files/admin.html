@@ -395,6 +395,30 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <input type="text" class="form-input" id="artistFieldTitleEs" placeholder="Artista de Uñas"/>
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Categories Covered</label>
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-top:4px; background:var(--card2); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius);">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="makeup" style="accent-color:var(--gold);"/> Makeup
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="nails" style="accent-color:var(--gold);"/> Nails
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="facial" style="accent-color:var(--gold);"/> Facials
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="waxing" style="accent-color:var(--gold);"/> Waxing
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="pmu" style="accent-color:var(--gold);"/> PMU
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+          <input type="checkbox" class="artist-cat-check" value="lashext" style="accent-color:var(--gold);"/> Lash Ext.
+        </label>
+      </div>
+    </div>
+
     <div class="form-group" style="display:flex; align-items:center; gap:8px;">
       <input type="checkbox" id="artistFieldIsActive" checked style="accent-color:var(--gold); width:16px; height:16px;"/>
       <label for="artistFieldIsActive" style="font-size:12px; color:var(--text); cursor:pointer;">Active (Can be booked by clients)</label>
@@ -688,9 +712,11 @@ function openAddArtistModal() {
   document.getElementById('artistFieldName').value = '';
   document.getElementById('artistFieldTitleEn').value = '';
   document.getElementById('artistFieldTitleEs').value = '';
+  document.querySelectorAll('.artist-cat-check').forEach(c => c.checked = false);
   document.getElementById('artistFieldIsActive').checked = true;
   document.getElementById('deleteArtistBtn').style.display = 'none';
   document.getElementById('artistModal').style.display = 'flex';
+  
 }
 
 function openEditArtistModal(artistId) {
@@ -704,6 +730,11 @@ function openEditArtistModal(artistId) {
   document.getElementById('artistFieldName').value = art.name;
   document.getElementById('artistFieldTitleEn').value = art.title_en || '';
   document.getElementById('artistFieldTitleEs').value = art.title_es || '';
+const cats = art.categories || [];
+  document.querySelectorAll('.artist-cat-check').forEach(c => {
+    c.checked = cats.includes(c.value);
+  });
+  
   document.getElementById('artistFieldIsActive').checked = art.is_active;
   document.getElementById('deleteArtistBtn').style.display = 'block';
   document.getElementById('artistModal').style.display = 'flex';
@@ -720,13 +751,15 @@ async function saveArtist() {
   const title_en = document.getElementById('artistFieldTitleEn').value.trim();
   const title_es = document.getElementById('artistFieldTitleEs').value.trim();
   const is_active = document.getElementById('artistFieldIsActive').checked;
+  const selectedCats = Array.from(document.querySelectorAll('.artist-cat-check:checked')).map(c => c.value);
+
 
   if (!id || !name) {
     alert('Please provide an Artist ID and Full Name.');
     return;
   }
 
-  const payload = { id, name, title_en, title_es, is_active };
+  const payload = { id, name, title_en, title_es, is_active, categories: selectedCats };
 
   let error;
   if (existingId) {
