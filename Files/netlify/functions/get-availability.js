@@ -8,94 +8,28 @@ const { createClient } = require('@supabase/supabase-js');
 // ── SUPABASE CONFIG ──
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── GOOGLE CREDENTIALS PARSER ──
-let credentials = {};
-const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_CREDENTIALS || process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-if (rawJson) {
-  try {
-    credentials = JSON.parse(rawJson);
-  } catch (e) {
-    try {
-      credentials = JSON.parse(Buffer.from(rawJson, 'base64').toString('utf8'));
-    } catch (e2) {
-      console.error("Could not parse GOOGLE_CREDENTIALS JSON");
-    }
-  }
-} else {
-  credentials = {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
-  };
-}
-
-const auth = new google.auth.JWT({
-  email: credentials.client_email,
-  key: credentials.private_key,
-  scopes: ['https://www.googleapis.com/auth/calendar.readonly']
-});
-
-const calendar = google.calendar({ version: 'v3', auth });
-
-// ── CALENDAR ROUTING ──
 const CALENDAR_IDS = {
   liz:     process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID,
   johanna: process.env.JOHANNA_CALENDAR_ID || process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID,
 };
 
 const DEFAULT_HOURS = {
-  liz: {
-    1: [9, 19], // Mon
-    2: [9, 19], // Tue
-    3: [9, 19], // Wed
-    4: [9, 19], // Thu
-    5: [9, 19], // Fri
-    6: [8, 16], // Sat
-    0: null     // Sun
-  },
-  johanna: {
-    1: [9, 19],
-    2: [10, 18],
-    3: [10, 18],
-    4: [10, 18],
-    5: [10, 18],
-    6: [10, 18],
-    0: null
-  }
+  liz: { 1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [8, 16], 0: null },
+  johanna: { 1: [9, 19], 2: [10, 18], 3: [10, 18], 4: [10, 18], 5: [10, 18], 6: [10, 18], 0: null }
 };
 
 const BUFFER_MIN = 0;
 
 async function getDynamicArtistAvailability(artistId, dateStr, dow) {
   try {
-    const { data: blackouts } = await supabase
-      .from('artist_blackouts')
-      .select('id')
-      .eq('artist_id', artistId)
-      .lte('start_date', dateStr)
-      .gte('end_date', dateStr);
+    const { data: blackouts } = await supabase.from('artist_blackouts').select('id').eq('artist_id', artistId).lte('start_date', dateStr).gte('end_date', dateStr);
+    if (blackouts && blackouts.length > 0) return { isBlackedOut: true, shift: null };
 
-    if (blackouts && blackouts.length > 0) {
-      return { isBlackedOut: true, shift: null };
-    }
-
-    const { data: schedules } = await supabase
-      .from('artist_schedules')
-      .select('start_hour, end_hour, is_active')
-      .eq('artist_id', artistId)
-      .eq('day_of_week', dow)
-      .maybeSingle();
-
-    if (schedules && schedules.is_active) {
-      return { isBlackedOut: false, shift: [schedules.start_hour, schedules.end_hour] };
-    }
-
-    if (schedules && !schedules.is_active) {
-      return { isBlackedOut: false, shift: null };
-    }
+    const { data: schedules } = await supabase.from('artist_schedules').select('start_hour, end_hour, is_active').eq('artist_id', artistId).eq('day_of_week', dow).maybeSingle();
+    if (schedules && schedules.is_active) return { isBlackedOut: false, shift: [schedules.start_hour, schedules.end_hour] };
+    if (schedules && !schedules.is_active) return { isBlackedOut: false, shift: null };
 
     return { isBlackedOut: false, shift: DEFAULT_HOURS[artistId]?.[dow] || DEFAULT_HOURS.liz[dow] || null };
   } catch (err) {
@@ -104,10 +38,7 @@ async function getDynamicArtistAvailability(artistId, dateStr, dow) {
 }
 
 exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-  };
+  const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
   try {
     const dateStr  = event.queryStringParameters && event.queryStringParameters.date;
@@ -122,6 +53,31 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ isFullyBlocked: false, busyIntervals: [], shiftStart: 9, shiftEnd: 19 }) };
     }
 
+    // ── GOOGLE CREDENTIALS PARSER (Safely inside try/catch) ──
+    let credentials = {};
+    const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_CREDENTIALS || process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    
+    if (rawJson) {
+      try { credentials = JSON.parse(rawJson); } 
+      catch (e) {
+        try { credentials = JSON.parse(Buffer.from(rawJson, 'base64').toString('utf8')); } 
+        catch (e2) { console.warn("JSON Parse failed"); }
+      }
+    } else {
+      credentials = {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+      };
+    }
+
+    const auth = new google.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ['https://www.googleapis.com/auth/calendar.readonly']
+    });
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    // ── SHIFT LOGIC ──
     const [y, m, d] = dateStr.split('-').map(Number);
     const targetDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
     const dow = targetDate.getUTCDay();
@@ -129,11 +85,7 @@ exports.handler = async (event) => {
     const { isBlackedOut, shift } = await getDynamicArtistAvailability(artistId, dateStr, dow);
 
     if (isBlackedOut || !shift) {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }),
-      };
+      return { statusCode: 200, headers, body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }) };
     }
 
     function getNYOffset(dStr) {
@@ -177,13 +129,11 @@ exports.handler = async (event) => {
 
     events.forEach(ev => {
       if (!ev.start) return;
-
       if (ev.start.date && !ev.start.dateTime) {
         if (isAllDayEventOnDate(ev)) isFullyBlocked = true;
       } else {
         const evStart = new Date(ev.start.dateTime);
         const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
-
         const targetDayStart = new Date(`${dateStr}T00:00:00${offset}`);
         const targetDayEnd   = new Date(`${dateStr}T23:59:59${offset}`);
         
@@ -197,18 +147,13 @@ exports.handler = async (event) => {
     });
 
     busyIntervals.sort((a, b) => a.start - b.start);
-
     const mergedIntervals = [];
     if (busyIntervals.length > 0) {
       let current = busyIntervals[0];
       for (let i = 1; i < busyIntervals.length; i++) {
         const next = busyIntervals[i];
-        if (next.start <= current.end) {
-          current.end = Math.max(current.end, next.end);
-        } else {
-          mergedIntervals.push(current);
-          current = next;
-        }
+        if (next.start <= current.end) current.end = Math.max(current.end, next.end);
+        else { mergedIntervals.push(current); current = next; }
       }
       mergedIntervals.push(current);
     }
@@ -216,19 +161,10 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        isFullyBlocked,
-        busyIntervals: mergedIntervals,
-        shiftStart: shift[0],
-        shiftEnd: shift[1]
-      }),
+      body: JSON.stringify({ isFullyBlocked, busyIntervals: mergedIntervals, shiftStart: shift[0], shiftEnd: shift[1] }),
     };
 
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message, busyIntervals: [], isFullyBlocked: true }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message, busyIntervals: [], isFullyBlocked: true }) };
   }
 };
