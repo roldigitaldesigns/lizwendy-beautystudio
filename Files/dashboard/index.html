@@ -853,5 +853,20 @@
   <script type="module" src="js/main.js"></script>
   <script type="module" src="js/accounting.js"></script>
   <noscript><p style="padding:2rem;font-family:sans-serif">The Command Center needs JavaScript to load its data.</p></noscript>
+<!-- Drilldown Drawer -->
+<div id="drilldown-backdrop" class="drawer-backdrop" hidden></div>
+<aside id="drilldown-drawer" class="drawer-panel" hidden aria-hidden="true" role="dialog" aria-labelledby="drawer-title">
+  <div class="drawer-header">
+    <div>
+      <h3 id="drawer-title" class="drawer-heading">Details</h3>
+      <p id="drawer-subtitle" class="drawer-sub"></p>
+    </div>
+    <button type="button" id="drawer-close" class="drawer-close-btn" aria-label="Close panel">&times;</button>
+  </div>
+  <div id="drawer-body" class="drawer-content">
+    <ul id="drawer-list" class="drawer-items"></ul>
+  </div>
+</aside>
+  
 </body>
 </html>
