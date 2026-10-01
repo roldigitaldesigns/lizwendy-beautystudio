@@ -1157,3 +1157,92 @@ window.renderTrendingTable = function(data) {
     `;
   }).join('');
 };
+
+function openChurnDrawer(type, month) {
+  const backdrop = document.getElementById('drilldown-backdrop');
+  const drawer = document.getElementById('drilldown-drawer');
+  const title = document.getElementById('drawer-title');
+  const sub = document.getElementById('drawer-subtitle');
+  const list = document.getElementById('drawer-list');
+
+  const isLost = type === 'lost';
+  const label = isLost ? 'Lost Revenue' : 'Rescued Revenue';
+  title.textContent = `${label} — ${monthLabel(month)}`;
+  sub.textContent = isLost
+    ? 'Clients who cancelled their appointment.'
+    : 'Clients who rescheduled instead of cancelling.';
+
+  // Filter in-memory activity records matching the target type and month
+  const targetPrefix = month.slice(0, 7); // e.g. "2026-10"
+  const records = (state.data.activity || []).filter((e) => {
+    const eventMonth = (dateInTz(e.occurred_at, tz()) || '').slice(0, 7);
+    if (eventMonth !== targetPrefix) return false;
+    return isLost ? e.event_type === 'cancelled' : (e.event_type === 'rescheduled' && e.from_cancel_flow);
+  });
+
+  list.innerHTML = '';
+  if (!records.length) {
+    list.innerHTML = `<li class="drawer-card" style="color:#8c93a0;text-align:center;padding:2rem 1rem;">
+      No ${isLost ? 'cancellations' : 'rescued appointments'} found in recent activity for this month.
+    </li>`;
+  } else {
+    records.forEach((e) => {
+      const card = document.createElement('li');
+      card.className = 'drawer-card';
+      const cleanPhone = (e.phone || '').replace(/[^0-9+]/g, '');
+      const phoneHtml = cleanPhone
+        ? `<div class="drawer-actions">
+             <a class="drawer-btn" href="tel:${cleanPhone}">Call</a>
+             <a class="drawer-btn" href="sms:${cleanPhone}">Text</a>
+           </div>`
+        : '';
+
+      card.innerHTML = `
+        <div class="drawer-card-header">
+          <span class="drawer-client">${e.customer_name || 'A client'}</span>
+          <span class="drawer-badge ${isLost ? 'loss' : 'gain'}">
+            ${isLost ? 'Lost' : 'Rescued'} ${money(num(e.price_cents_at_event), cur())}
+          </span>
+        </div>
+        <div class="drawer-meta-line"><strong>Service:</strong> ${e.service_summary || 'Appointment'}</div>
+        <div class="drawer-meta-line"><strong>Artist:</strong> ${e.artist_name || 'Unassigned'}</div>
+        <div class="drawer-meta-line"><strong>Date:</strong> ${relTime(e.occurred_at)}</div>
+        ${phoneHtml}
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  backdrop.hidden = false;
+  drawer.hidden = false;
+  requestAnimationFrame(() => {
+    backdrop.classList.add('is-active');
+    drawer.classList.add('is-active');
+    drawer.setAttribute('aria-hidden', 'false');
+  });
+}
+
+function closeChurnDrawer() {
+  const backdrop = document.getElementById('drilldown-backdrop');
+  const drawer = document.getElementById('drilldown-drawer');
+  if (!drawer || drawer.hidden) return;
+
+  backdrop.classList.remove('is-active');
+  drawer.classList.remove('is-active');
+  drawer.setAttribute('aria-hidden', 'true');
+  setTimeout(() => {
+    backdrop.hidden = true;
+    drawer.hidden = true;
+  }, 250);
+}
+
+// Global Drawer Close Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('drawer-close');
+  const backdrop = document.getElementById('drilldown-backdrop');
+  if (closeBtn) closeBtn.addEventListener('click', closeChurnDrawer);
+  if (backdrop) backdrop.addEventListener('click', closeChurnDrawer);
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') closeChurnDrawer();
+  });
+});
