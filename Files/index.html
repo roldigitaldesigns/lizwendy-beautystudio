@@ -3,22 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Liz Wendy Beauty Studio — Makeup, PMU & Beauty Academy | New Brunswick, NJ</title>
-<meta name="description" content="Premium makeup artistry, permanent makeup (PMU), nails, waxing &amp; professional beauty education in New Brunswick, NJ. Book online with Liz Wendy Beauty Studio. Bilingual — English &amp; Español."/>
-<meta name="keywords" content="makeup artist New Brunswick NJ, PMU New Brunswick, permanent makeup, bridal makeup, beauty academy, nail salon New Brunswick, microblading, lip blush"/>
-<meta name="robots" content="index, follow"/>
-<link rel="canonical" href="https://lizwendybeautystudiollc.com/"/>
-<meta property="og:title" content="Liz Wendy Beauty Studio — Makeup, PMU &amp; Beauty Academy"/>
-<meta property="og:description" content="Premium makeup, permanent makeup &amp; beauty education in New Brunswick, NJ. Book online. Bilingual studio."/>
-<meta property="og:image" content="https://lizwendybeautystudiollc.com/logo.png"/>
-<meta property="og:type" content="website"/>
-<meta property="og:locale" content="en_US"/>
-<meta property="og:locale:alternate" content="es_ES"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="Liz Wendy Beauty Studio — New Brunswick, NJ"/>
-<meta name="twitter:description" content="Premium makeup, PMU &amp; beauty education. Book online."/>
+<title>Studio Management Portal — Liz Wendy Beauty Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --bg:        #0A0908;
@@ -30,3766 +18,870 @@
   --gold-lt:   #E8C84A;
   --gold-dim:  #A8891F;
   --gold-pale: rgba(212,175,55,.09);
-  --gold-glow: rgba(212,175,55,.22);
   --white:     #FAF7F2;
   --text:      #EDE8DF;
   --muted:     #7A7060;
   --muted-lt:  #A09080;
+  --danger:    #c0392b;
+  --success:   #2ea043;
   --serif:     'Playfair Display', Georgia, serif;
   --sans:      'Montserrat', sans-serif;
   --radius:    4px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.6;
   min-height: 100vh;
 }
-*::-webkit-scrollbar { width: 4px; background: var(--bg); }
-*::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 
-/* ── NAV ── */
-.nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+/* ── NAV BAR ── */
+.admin-nav {
   height: 64px;
-  background: rgba(10,9,8,.92);
+  background: rgba(10,9,8,.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px;
+  position: sticky; top: 0; z-index: 100;
 }
-/* ── LANG SWITCH ── */
-.lang-switch {
-  display: flex; align-items: center; gap: 0;
-  background: rgba(255,255,255,.06); border: 1px solid var(--border);
-  border-radius: 20px; padding: 3px; flex-shrink: 0;
-}
-.lang-btn {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em;
-  padding: 5px 13px; border: none; border-radius: 16px;
-  cursor: pointer; transition: all .22s; font-family: var(--sans);
-  background: transparent; color: var(--muted);
-}
-.lang-btn.active {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg);
-}
-.gold-shimmer {
-  background: linear-gradient(90deg, var(--gold-dim) 0%, var(--gold) 30%, var(--gold-lt) 50%, var(--gold) 70%, var(--gold-dim) 100%);
-  background-size: 300% auto;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-@keyframes shimmerBg { to { background-position: -200% center; } }
-.nav-logo-name { font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: .06em; }
-.nav-logo-sub  { font-size: 8px; letter-spacing: .32em; color: rgba(212,175,55,.45); text-transform: uppercase; margin-top: 1px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.brand img { height: 38px; width: 38px; border-radius: 50%; object-fit: contain; }
+.brand-title { font-family: var(--serif); font-size: 18px; color: var(--gold); }
+.brand-sub { font-size: 9px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
 
-/* ── LAYOUT ── */
-.page { max-width: 860px; margin: 0 auto; padding: 88px 20px 80px; }
-body.cart-active .page { padding-bottom: 80px; }
+.nav-actions { display: flex; align-items: center; gap: 14px; }
+.btn-logout {
+  background: transparent; border: 1px solid var(--border); color: var(--muted-lt);
+  padding: 6px 14px; border-radius: var(--radius); font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s;
+}
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
-/* ── STEP INDICATOR ── */
-.funnel-steps {
+/* ── LOGIN VIEW ── */
+#loginView {
+  min-height: calc(100vh - 64px);
   display: flex; align-items: center; justify-content: center;
-  gap: 0; margin-bottom: 44px;
+  padding: 20px;
 }
-.fstep {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 9px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted);
-  transition: color .3s;
-}
-.fstep.active { color: var(--gold); }
-.fstep.done   { color: var(--muted-lt); }
-.fstep-num {
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
-  background: var(--card); transition: all .3s;
-}
-.fstep.active .fstep-num { background: var(--gold); border-color: var(--gold); color: var(--bg); }
-.fstep.done   .fstep-num { background: var(--card2); border-color: var(--muted); color: var(--muted-lt); }
-.fstep-label { display: none; }
-@media (min-width: 480px) { .fstep-label { display: inline; } }
-.fstep-line { width: 32px; height: 1px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
-@media (min-width: 600px) { .fstep-line { width: 48px; } }
-
-/* ── PAGE HEADER ── */
-.funnel-header {
-  text-align: center; margin-bottom: 36px;
-  animation: fadeUp .5s ease both;
-}
-.funnel-header .eyebrow {
-  font-size: 10px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 10px;
-}
-.funnel-header h1 {
-  font-family: var(--serif);
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 600; color: var(--white); line-height: 1.1; margin-bottom: 8px;
-}
-.funnel-header h1 em { font-style: italic; color: var(--gold); }
-.funnel-header p { font-size: 13px; color: var(--muted-lt); max-width: 420px; margin: 0 auto; }
-
-/* ── STEP PANELS ── */
-.funnel-panel {
-  display: none !important; animation: fadeUp .4s ease both;
-}
-.funnel-panel.active { display: block !important; }
-
-/* ── STEP 1: CATEGORY PILLS ── */
-.step1-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--muted-lt);
-  margin-bottom: 20px; text-align: center;
-}
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 32px;
-}
-@media (max-width: 480px) { .category-grid { grid-template-columns: repeat(2, 1fr); } }
-
-.cat-pill {
-  position: relative; cursor: pointer;
-  border-radius: var(--radius); overflow: hidden;
-  aspect-ratio: 1; border: 2px solid transparent;
-  transition: border-color .22s, transform .18s;
-  background: var(--card2);
-}
-.cat-pill:hover { transform: scale(1.02); }
-.cat-pill.selected { border-color: var(--gold); }
-.cat-pill-bg {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center;
-  transition: transform .4s ease;
-}
-.cat-pill:hover .cat-pill-bg { transform: scale(1.06); }
-.cat-pill-emoji {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px; z-index: 1;
-}
-.cat-pill-overlay {
-  position: absolute; inset: 0; z-index: 2;
-  background: linear-gradient(to bottom, rgba(10,9,8,.1) 0%, rgba(10,9,8,.5) 55%, rgba(10,9,8,.85) 100%);
-  transition: background .3s;
-}
-.cat-pill:hover .cat-pill-overlay {
-  background: linear-gradient(to bottom, rgba(10,9,8,.0) 0%, rgba(10,9,8,.35) 50%, rgba(10,9,8,.75) 100%);
-}
-.cat-pill.selected .cat-pill-overlay {
-  background: linear-gradient(to bottom, rgba(212,175,55,.08) 0%, rgba(10,9,8,.35) 50%, rgba(10,9,8,.8) 100%);
-}
-.cat-pill-label {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
-  padding: 10px 6px; text-align: center;
-  font-size: 9px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--white); transition: color .22s;
-}
-.cat-pill.selected .cat-pill-label { color: var(--gold); }
-.cat-pill-check {
-  position: absolute; top: 7px; right: 7px; z-index: 4;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--gold); color: var(--bg);
-  font-size: 9px; font-weight: 700;
-  display: none; align-items: center; justify-content: center;
-}
-.cat-pill.selected .cat-pill-check { display: flex; }
-
-.cat-pill-disabled { cursor: default; }
-.cat-pill-disabled .cat-pill-bg { filter: grayscale(100%); opacity: .35; }
-.cat-pill-notavailable {
-  position: absolute; top: 36%; left: 0; right: 0; z-index: 3;
-  text-align: center; padding: 0 6px;
-  font-family: var(--serif); font-weight: 700; font-size: 12px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: #e8433d; letter-spacing: .03em; text-shadow: 0 1px 3px rgba(0,0,0,.6);
-}
-.cat-pill-whatsapp {
-  position: absolute; top: 54%; left: 0; right: 0; z-index: 4;
-  text-align: center; font-size: 10px; font-weight: 700;
-  color: var(--gold); text-decoration: none; letter-spacing: .03em;
-}
-.cat-pill-whatsapp:hover { text-decoration: underline; }
-
-.step1-cta-wrap { display: flex; justify-content: center; }
-.btn-next {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 10px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s, transform .15s;
-  opacity: .4; pointer-events: none;
-}
-.btn-next.enabled { opacity: 1; pointer-events: all; }
-.btn-next.enabled:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-/* ── STEP 2: SERVICE ACCORDIONS ── */
-.step2-back {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
+.login-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  padding: 8px 14px; margin-bottom: 28px;
-  transition: color .2s, border-color .2s, background .2s;
-  min-height: 36px;
-}
-.step2-back:hover { color: var(--gold); border-color: rgba(212,175,55,.4); background: var(--card2); }
-.step2-back svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-.accordions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
-
-.accordion {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
-  transition: border-color .22s;
-}
-.accordion.has-selection { border-color: rgba(212,175,55,.4); }
-
-.accordion-head {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 20px; cursor: pointer;
-  user-select: none; transition: background .18s;
-}
-.accordion-head:hover { background: var(--card2); }
-/* .svc-row-img emoji fallbacks hidden inline via JS — photos show normally */
-.accordion-title {
-  font-size: 11px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--white); flex: 1;
-}
-.accordion-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em;
-  color: var(--bg); background: var(--gold);
-  padding: 2px 8px; border-radius: 10px;
-  display: none;
-}
-.accordion.has-selection .accordion-badge { display: inline-block; }
-.accordion-chevron {
-  font-size: 12px; color: var(--muted);
-  transition: transform .25s;
-}
-.accordion.open .accordion-chevron { transform: rotate(180deg); }
-
-.accordion-body {
-  max-height: 0; overflow: hidden;
-  transition: max-height .35s ease;
-}
-.accordion.open .accordion-body { max-height: 4000px; }
-
-/* ── SERVICE ROWS ── */
-.service-rows { padding: 0 0 8px; }
-.service-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  cursor: pointer; transition: background .18s;
-  position: relative; min-height: 90px;
-}
-.service-row:hover { background: var(--card2); }
-.service-row.selected { background: rgba(212,175,55,.04); }
-
-.svc-row-img {
-  width: 90px; height: 78px; border-radius: 4px;
-  overflow: hidden; flex-shrink: 0;
-  background: var(--card2);
-  border: 1px solid rgba(212,175,55,.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
-}
-.svc-row-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-.svc-row-info { flex: 1; min-width: 0; }
-.svc-row-name {
-  font-size: 13px; font-weight: 600; color: var(--white);
-  margin-bottom: 4px;
-}
-.svc-row-sub {
-  font-size: 11px; color: var(--muted); line-height: 1.5;
-}
-.svc-row-right { text-align: right; flex-shrink: 0; }
-.svc-row-price {
-  font-family: var(--serif); font-size: 14px; font-weight: 600;
-  color: var(--gold);
-}
-.svc-row-time { font-size: 10px; color: var(--muted); margin-top: 3px; }
-
-.svc-row-check {
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: all .18s;
-  font-size: 11px; color: transparent;
-}
-.service-row.selected .svc-row-check {
-  background: var(--gold); border-color: var(--gold);
-  color: var(--bg);
-}
-
-/* ══════════════════════════════════════════════════════════
-   FACIAL MENU — "Hierarchy by Density"
-   This category has no photography, so visual hierarchy is
-   carried entirely by spacing, borders and type. Three tiers,
-   each progressively less dense / more premium:
-     Tier 1 Essentials  → tight rows, fast scanning
-     Tier 2 Targeted    → standard spacing + left accent rule
-     Tier 3 Signature   → centered, boxed, maximum whitespace
-   ══════════════════════════════════════════════════════════ */
-
-/* ── Anchor jump-nav (skips the scroll without any filter logic) ── */
-.facial-jumpnav {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 14px 20px 4px;
-  border-top: 1px solid var(--border);
-}
-.facial-jumpnav a {
-  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted-lt); text-decoration: none;
-  border: 1px solid var(--border); border-radius: 999px;
-  padding: 6px 13px; transition: color .18s, border-color .18s, background .18s;
-}
-.facial-jumpnav a:hover {
-  color: var(--gold); border-color: var(--gold-dim); background: var(--gold-pale);
-}
-
-/* ── Tier header ── */
-.facial-tier-head {
-  padding: 22px 20px 10px;
-  scroll-margin-top: 80px; /* so anchor links don't hide under the nav */
-  text-align: center;
-}
-.facial-tier-title {
-  font-family: var(--serif); font-size: 15px; color: var(--gold);
-  letter-spacing: .04em; margin-bottom: 5px;
-}
-.facial-tier-blurb {
-  font-size: 11px; color: var(--muted); line-height: 1.65; max-width: 46ch;
-  margin: 0 auto; /* center the text block itself, not just the text within it */
-}
-
-/* ── TIER 1: Essentials — high density, restaurant-menu feel ── */
-.service-row.facial-tier1 { min-height: 0; padding: 11px 20px; gap: 12px; }
-.service-row.facial-tier1 .svc-row-img { display: none; }
-
-/* ── TIER 2: Targeted — standard density, left accent rule ── */
-.service-row.facial-tier2 {
-  min-height: 0; padding: 13px 20px 13px 18px;
-  border-left: 2px solid var(--gold-dim);
-}
-.service-row.facial-tier2 .svc-row-img { display: none; }
-
-/* Upsell seed under a Targeted Treatment row. Tappable once the parent
-   facial is selected — one tap adds the paired add-on, same as picking
-   it manually down in "Enhance Your Facial." Three states:
-     disabled → parent facial not selected yet, inert/muted
-     active   → parent selected, add-on not yet added, tappable to add
-     added    → add-on is in the cart, tappable to remove */
-.facial-addon-nudge {
-  padding: 8px 20px 13px 18px;
-  border-left: 2px solid var(--gold-dim);
-  margin-top: -4px;
-  transition: background .15s;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.facial-addon-nudge span {
-  font-size: 10px; color: var(--muted-lt); letter-spacing: .02em;
-}
-.facial-addon-nudge b { color: var(--gold-dim); font-weight: 600; }
-
-/* Small square check, same visual language as .svc-row-check on every
-   other row — outlined and empty, fills solid gold with a ✓ once added. */
-.facial-nudge-check {
-  width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; color: transparent;
-  transition: all .18s;
-}
-
-.facial-addon-nudge.nudge-disabled { opacity: .55; }
-
-.facial-addon-nudge.nudge-active {
-  cursor: pointer; border-left-color: var(--gold);
-}
-.facial-addon-nudge.nudge-active:hover { background: var(--gold-pale); }
-.facial-addon-nudge.nudge-active span { color: var(--text); }
-.facial-addon-nudge.nudge-active b { color: var(--gold); }
-.facial-addon-nudge.nudge-active .facial-nudge-check { border-color: var(--gold); }
-
-.facial-addon-nudge.nudge-added {
-  cursor: pointer; border-left-color: var(--gold);
-  background: var(--gold-pale);
-}
-.facial-addon-nudge.nudge-added span { color: var(--text); }
-.facial-addon-nudge.nudge-added b { color: var(--gold); }
-.facial-addon-nudge.nudge-added .facial-nudge-check {
-  background: var(--gold); border-color: var(--gold); color: var(--bg);
-}
-
-/* ── TIER 3: Signature — low density, centered, boxed ── */
-.facial-signature-wrap { padding: 4px 20px 8px; }
-.service-row.facial-tier3 {
-  flex-direction: column; text-align: center; gap: 7px;
-  min-height: 0; padding: 22px 18px;
-  border: 1px solid var(--gold-dim); border-radius: var(--radius);
-  border-top: 1px solid var(--gold-dim);
-  margin-bottom: 12px; background: var(--card);
-}
-.service-row.facial-tier3 .svc-row-img { display: none; }
-.service-row.facial-tier3 .svc-row-info { text-align: center; }
-.service-row.facial-tier3 .svc-row-name {
-  font-family: var(--serif); font-size: 16px; margin-bottom: 6px;
-}
-.service-row.facial-tier3 .svc-row-sub { font-size: 11px; }
-.service-row.facial-tier3 .svc-row-right { text-align: center; }
-.service-row.facial-tier3 .svc-row-price { font-size: 19px; }
-.service-row.facial-tier3 .svc-row-check { position: absolute; top: 12px; right: 12px; }
-.facial-sig-badge {
-  font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--gold-dim); margin-bottom: 2px;
-}
-
-/* ── Membership — deliberately NOT bookable; sits outside the cart ── */
-.facial-membership {
-  margin: 6px 20px 18px; padding: 18px;
-  border: 1px dashed var(--gold-dim); border-radius: var(--radius);
-  text-align: center; background: var(--gold-pale);
-}
-.facial-membership-title {
-  font-family: var(--serif); font-size: 14px; color: var(--gold); margin-bottom: 6px;
-}
-.facial-membership-text {
-  font-size: 11px; color: var(--muted-lt); line-height: 1.65; margin-bottom: 12px;
-}
-.facial-membership a {
-  display: inline-block; font-size: 11px; font-weight: 600;
-  letter-spacing: .04em; color: var(--bg); background: var(--gold);
-  text-decoration: none; padding: 9px 20px; border-radius: var(--radius);
-}
-
-@media (max-width: 480px) {
-  .svc-row-img { width: 70px; height: 62px; font-size: 22px; }
-  .service-row { padding: 12px 14px; gap: 10px; }
-  .svc-row-name { font-size: 12px; }
-  .svc-row-sub  { font-size: 10px; }
-}
-
-/* ── STAGE 2: ARTIST CARDS ── */
-.artist-grid {
-  display: flex; flex-direction: column;
-  gap: 14px; margin-bottom: 32px;
-}
-
-.artist-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
-  cursor: pointer; transition: border-color .22s, background .22s;
-  position: relative;
-  display: flex; flex-direction: row; align-items: stretch;
-}
-.artist-card:hover:not(.coming-soon) { border-color: rgba(212,175,55,.4); background: var(--card2); }
-.artist-card.selected { border-color: var(--gold); background: rgba(212,175,55,.05); }
-.artist-card.coming-soon { opacity: .45; cursor: not-allowed; }
-
-.artist-card-photo {
-  width: 110px; min-width: 110px;
-  align-self: stretch; height: auto;
-  background: linear-gradient(155deg, #2a1a08 0%, #1a1006 50%, #0e0b07 100%);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 40px; overflow: hidden; position: relative; flex-shrink: 0;
-}
-.artist-card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.artist-card-soon-badge {
-  position: absolute; inset: 0;
-  background: rgba(10,9,8,.6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; color: rgba(212,175,55,.7);
-  text-align: center; padding: 8px;
-}
-.artist-card-info {
-  padding: 14px 16px; flex: 1; display: flex;
-  flex-direction: column; justify-content: center; gap: 6px;
-}
-.artist-card-name {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); line-height: 1.2;
-}
-.artist-card-title { font-size: 10px; color: var(--gold-dim); letter-spacing: .08em; }
-.artist-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.artist-tag {
-  font-size: 8px; letter-spacing: .1em; padding: 3px 7px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.2);
-  color: var(--gold); border-radius: 2px; text-transform: uppercase; font-weight: 600;
-}
-.artist-select-btn {
-  align-self: flex-start; margin-top: 4px;
-  padding: 7px 16px;
-  font-size: 9px; letter-spacing: .18em; font-weight: 700; text-transform: uppercase;
-  border: 1px solid rgba(212,175,55,.3); background: transparent;
-  color: var(--gold); border-radius: 2px; transition: all .2s; cursor: pointer;
-}
-.artist-select-btn:hover { background: rgba(212,175,55,.08); border-color: var(--gold); }
-.artist-card.selected .artist-select-btn {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); border-color: transparent;
-}
-.artist-selected-check {
-  position: absolute; top: 8px; right: 8px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--gold); color: var(--bg);
-  font-size: 11px; font-weight: 700;
-  display: none; align-items: center; justify-content: center; z-index: 2;
-}
-.artist-card.selected .artist-selected-check { display: flex; }
-
-/* ── STAFF PIN OVERRIDE (Wendy only) ──
-   Deliberately subtle — not styled like a real control — so it reads
-   as visual noise to regular customers, not a feature worth tapping. */
-.artist-select-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-.artist-select-row .artist-select-btn { margin-top: 0; }
-.staff-override-lock {
-  background: none; border: none; padding: 4px; cursor: pointer;
-  font-size: 12px; line-height: 1; opacity: .32; color: var(--muted, #8a8a8a);
-  transition: opacity .2s;
-}
-.staff-override-lock:hover { opacity: .55; }
-.staff-override-lock.active { opacity: 1; }
-.staff-override-panel {
-  display: none; align-items: center; gap: 6px; margin-top: 8px;
-}
-.staff-override-panel.open { display: flex; }
-.staff-override-input {
-  flex: 1; min-width: 0; background: rgba(0,0,0,.25);
-  border: 1px solid rgba(212,175,55,.3); border-radius: 2px;
-  color: var(--white); padding: 6px 8px; font-size: 12px; letter-spacing: .06em;
-}
-.staff-override-input:focus { outline: none; border-color: var(--gold); }
-.staff-override-apply {
-  flex-shrink: 0; width: 28px; height: 28px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.3);
-  color: var(--gold); border-radius: 2px; font-size: 12px; cursor: pointer;
-}
-.staff-override-apply:hover { background: rgba(212,175,55,.18); }
-
-/* ── STAGE 2: CALENDAR ── */
-.calendar-wrap {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 32px;
-}
-.calendar-header-row {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px;
-}
-.cal-artist-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold-dim);
-  margin-bottom: 4px;
-}
-.cal-month-label {
-  font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--white);
-}
-.cal-nav-btn {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--card2); border: 2px solid var(--gold-dim);
-  color: var(--gold-dim); display: flex; align-items: center;
-  justify-content: center; cursor: pointer; transition: all .2s; font-size: 20px; font-weight: 700;
-}
-.cal-nav-btn:hover { border-color: var(--gold); color: var(--gold); }
-.cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
-  margin-bottom: 20px;
-}
-.cal-dow {
-  text-align: center; font-size: 9px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--muted); padding: 6px 0;
-}
-.cal-day {
-  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 500; border-radius: var(--radius);
-  cursor: pointer; border: 1px solid transparent; transition: all .2s; position: relative;
-}
-.cal-day:hover:not(.cal-disabled):not(.cal-empty):not(.cal-past) {
-  border-color: var(--gold); color: var(--gold); background: var(--gold-pale);
-}
-.cal-day.cal-selected {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-weight: 700; border-color: var(--gold);
-}
-.cal-day.cal-today { color: var(--gold); font-weight: 700; }
-.cal-day.cal-today::after {
-  content: ''; position: absolute; bottom: 3px; left: 50%;
-  transform: translateX(-50%);
-  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
-}
-.cal-day.cal-today.cal-selected::after { background: var(--bg); }
-.cal-day.cal-disabled, .cal-day.cal-past { color: var(--border); cursor: not-allowed; }
-.cal-day.cal-empty { cursor: default; }
-
-/* ── STAGE 2: TIME SLOTS ── */
-.slots-section { margin-top: 4px; }
-.slots-date-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 14px;
-}
-.slots-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px;
-}
-.time-slot {
-  padding: 10px 8px; text-align: center;
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 12px; font-weight: 600;
-  color: var(--text); cursor: pointer; transition: all .2s;
-}
-.time-slot:hover:not(.slot-taken) { border-color: var(--gold); color: var(--gold); background: var(--gold-pale); }
-.time-slot.slot-selected { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); border-color: var(--gold); color: var(--bg); }
-.time-slot.slot-taken { color: var(--border); cursor: not-allowed; text-decoration: line-through; }
-.slots-placeholder {
-  text-align: center; padding: 28px 0;
-  color: var(--muted); font-size: 12px;
-}
-.slots-loading {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 28px 0; color: var(--muted); font-size: 12px;
-}
-.spinner {
-  width: 16px; height: 16px; border: 2px solid var(--border);
-  border-top-color: var(--gold); border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── STAGE 2: BACK BUTTON ── */
-.step-back {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  padding: 8px 14px; margin-bottom: 28px;
-  transition: color .2s, border-color .2s, background .2s;
-  min-height: 36px;
-}
-.step-back:hover { color: var(--gold); border-color: rgba(212,175,55,.4); background: var(--card2); }
-.step-back svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-/* ── GALLERY SECTION ── */
-.gallery-section {
-  padding: 80px 20px;
-  max-width: 860px; margin: 0 auto;
-  border-top: 1px solid rgba(212,175,55,.12);
-}
-.gallery-section-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
-}
-.section-label {
-  font-size: 10px; letter-spacing: .28em; font-weight: 600;
-  color: rgba(212,175,55,.55); text-transform: uppercase; margin-bottom: 8px;
-}
-.section-title {
-  font-family: var(--serif); font-size: clamp(28px, 4vw, 44px);
-  font-weight: 600; color: var(--white); line-height: 1.1;
-}
-.section-title em { font-style: italic; color: var(--gold); }
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 200px;
-  grid-auto-flow: dense;
-  gap: 10px;
-}
-@media (max-width: 700px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; } }
-.gallery-cell {
-  border-radius: 3px; overflow: hidden; position: relative; cursor: pointer;
-}
-.gallery-cell:hover .gallery-overlay { opacity: 1; }
-.gallery-cell:hover .gallery-cell-inner { transform: scale(1.04); }
-.gallery-cell-inner {
-  width: 100%; height: 100%;
-  transition: transform .5s ease;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 44px;
-}
-.gallery-overlay {
-  position: absolute; inset: 0;
-  background: rgba(10,9,8,.7);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity .3s;
-}
-.gallery-overlay span {
-  font-size: 9px; letter-spacing: .2em;
-  color: var(--gold); font-weight: 600; text-transform: uppercase;
-}
-.gallery-tall { grid-row: span 2; }
-.gallery-wide { grid-column: span 2; }
-
-.btn-ghost-sm {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: transparent;
-  border: 1px solid rgba(212,175,55,.4);
-  color: var(--gold); font-size: 10px; font-weight: 600;
-  letter-spacing: .18em; text-transform: uppercase;
-  padding: 10px 20px; border-radius: 3px;
-  transition: border-color .2s, background .2s;
-  text-decoration: none;
-}
-.btn-ghost-sm:hover { border-color: var(--gold); background: rgba(212,175,55,.07); }
-
-/* ── STAGE 3: BOOKING SUMMARY CARD ── */
-.booking-summary-card {
-  background: var(--card); border: 1px solid rgba(212,175,55,.3);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
-}
-.booking-summary-title {
-  font-size: 9px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 16px;
-}
-.booking-summary-rows { display: flex; flex-direction: column; gap: 12px; }
-.booking-summary-row {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 12px; color: var(--muted-lt); line-height: 1.6;
-}
-.booking-summary-icon { color: var(--gold); flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-.booking-summary-row strong { color: var(--text); }
-.booking-summary-row .svc-list {
-  display: flex; flex-direction: column; gap: 2px;
-}
-.booking-summary-row .svc-pill {
-  font-size: 11px; color: var(--text);
-}
-
-/* ── STAGE 3: FORM ── */
-.form-section {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
-}
-.form-section-title {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); margin-bottom: 20px;
-  display: flex; align-items: center; gap: 10px;
-}
-.form-section-icon {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--gold-pale); border: 1px solid rgba(212,175,55,.2);
-  display: flex; align-items: center; justify-content: center; font-size: 12px;
-}
-.form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-}
-@media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group.full { grid-column: 1 / -1; }
-.form-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
-}
+  border-radius: var(--radius); padding: 36px 32px;
+  max-width: 400px; width: 100%; text-align: center;
+}
+.login-title { font-family: var(--serif); font-size: 24px; color: var(--white); margin-bottom: 8px; }
+.login-sub { font-size: 12px; color: var(--muted-lt); margin-bottom: 24px; }
+.form-group { text-align: left; margin-bottom: 16px; }
+.form-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 6px; }
 .form-input {
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
-  font-family: var(--sans); font-size: 13px; color: var(--text);
-  transition: border-color .2s; width: 100%;
+  width: 100%; background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 11px 14px; color: var(--text);
+  font-family: var(--sans); font-size: 13px; transition: border-color .2s;
 }
-.form-input:focus { outline: none; border-color: var(--gold); background: rgba(212,175,55,.04); }
-.form-input::placeholder { color: var(--muted); }
-.form-input.error { border-color: #c0392b; }
-.form-input:disabled { opacity: .5; cursor: not-allowed; }
-
-/* ── STAGE 3: POLICY GATE ── */
-.policy-gate {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
-}
-.policy-box {
-  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.2);
-  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
-}
-.policy-box-label {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold);
-}
-.policy-box p { font-size: 12px; color: var(--muted-lt); line-height: 1.75; margin: 0; }
-.policy-cancel-box {
-  background: rgba(192,57,43,.06); border: 1px solid rgba(192,57,43,.2);
-  border-left: 3px solid #c0392b; border-radius: var(--radius);
-  padding: 14px 16px; margin-bottom: 20px;
-}
-.policy-cancel-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: #e74c3c; margin-bottom: 8px;
-}
-.policy-cancel-box p { font-size: 12px; color: var(--muted-lt); line-height: 1.75; margin: 0; }
-.policy-checkbox-row {
-  display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
-  padding: 14px 16px; background: var(--card2);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  transition: border-color .2s;
-}
-.policy-checkbox-row:hover { border-color: rgba(212,175,55,.3); }
-.policy-checkbox-row input[type=checkbox] {
-  width: 16px; height: 16px; margin-top: 2px;
-  accent-color: var(--gold); cursor: pointer; flex-shrink: 0;
-}
-.policy-checkbox-row span { font-size: 12px; color: var(--muted-lt); line-height: 1.7; }
-
-/* ── STAGE 3: PAYMENT GATE ── */
-.payment-gate {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
-  opacity: .4; pointer-events: none; transition: opacity .4s;
-}
-.payment-gate.unlocked { opacity: 1; pointer-events: all; }
-.payment-gate-label {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); margin-bottom: 6px;
-  display: flex; align-items: center; gap: 10px;
-}
-.payment-gate-sub {
-  font-size: 12px; color: var(--muted-lt); margin-bottom: 20px; line-height: 1.7;
-}
-.btn-deposit {
-  display: block; width: 100%; padding: 16px;
+.form-input:focus { outline: none; border-color: var(--gold); }
+.btn-gold {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 11px 20px;
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 11px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; text-align: center; text-decoration: none;
-  transition: filter .2s, transform .1s; margin-bottom: 8px;
+  color: var(--bg); font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; border: none; border-radius: var(--radius);
+  cursor: pointer; transition: filter .2s;
 }
-.btn-deposit:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.deposit-note {
-  font-size: 10px; color: var(--muted); text-align: center;
-  margin-bottom: 16px; line-height: 1.6;
+.btn-gold:hover { filter: brightness(1.1); }
+.auth-error {
+  background: rgba(192,57,43,.15); border: 1px solid var(--danger);
+  border-radius: var(--radius); padding: 10px; font-size: 11px; color: #ff7675;
+  margin-top: 14px; display: none;
 }
-.deposit-confirm-row {
-  display: none; flex-direction: column; gap: 12px;
-}
-.deposit-confirm-row.visible { display: flex; }
 
-/* ── STAGE 3: AUTO-DETECT PAYMENT STATUS ──
-   Shown while the page quietly polls for the Clover deposit to land, so
-   most customers never have to touch the manual checkbox below at all. */
-.deposit-auto-status {
-  display: none; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: var(--radius);
-  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.2);
-  font-size: 11px; color: var(--gold-dim); margin-bottom: 4px;
-}
-.deposit-auto-status.visible { display: flex; }
-.deposit-auto-status.confirmed {
-  background: rgba(46,160,67,.08); border-color: rgba(46,160,67,.3); color: #6fcf7a;
-}
-.deposit-auto-status-spinner {
-  width: 14px; height: 14px; flex-shrink: 0;
-  border: 2px solid rgba(212,175,55,.25); border-top-color: var(--gold);
-  border-radius: 50%; animation: spin .7s linear infinite;
-}
-.deposit-auto-status.confirmed .deposit-auto-status-spinner { display: none; }
-.deposit-auto-status-check { display: none; font-size: 13px; }
-.deposit-auto-status.confirmed .deposit-auto-status-check { display: inline; }
+/* ── DASHBOARD VIEW ── */
+#dashboardView { display: none; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
 
-/* ── STAGE 3: FORM ERROR ── */
-.form-error {
-  background: rgba(192,57,43,.1); border: 1px solid rgba(192,57,43,.3);
-  border-radius: var(--radius); padding: 12px 16px;
-  font-size: 12px; color: #e74c3c; margin-bottom: 12px; display: none;
+/* Tabs */
+.tabs-bar {
+  display: flex; gap: 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 28px; overflow-x: auto;
 }
-.form-error.visible { display: block; }
+.tab-btn {
+  background: transparent; border: none; padding: 12px 18px;
+  font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .2s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-/* ── STAGE 3: SUBMIT BUTTON ── */
-.btn-confirm-submit {
-  width: 100%; padding: 17px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 11px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s, transform .1s;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-}
-.btn-confirm-submit:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-.btn-confirm-submit:disabled { background: var(--card2); color: var(--muted); cursor: not-allowed; }
-.btn-confirm-submit .btn-spinner {
-  display: none; width: 16px; height: 16px;
-  border: 2px solid rgba(10,9,8,.3); border-top-color: var(--bg);
-  border-radius: 50%; animation: spin .7s linear infinite;
-}
-.btn-confirm-submit.loading .btn-text { display: none; }
-.btn-confirm-submit.loading .btn-spinner { display: block; }
-.submit-note { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.7; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
 
-/* ── STAGE 3: SUCCESS SCREEN ── */
-.success-screen {
-  display: none; text-align: center; padding: 60px 20px;
-  animation: fadeUp .5s ease both; max-width: 860px; margin: 0 auto;
+/* Tables & Lists */
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
 }
-.success-screen.visible { display: block; }
-.success-icon {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 28px; font-size: 32px;
-}
-.success-title {
-  font-family: var(--serif); font-size: clamp(28px, 4vw, 42px);
-  font-weight: 600; color: var(--white); margin-bottom: 12px;
-}
-.success-title em { font-style: italic; color: var(--gold); }
-.success-msg {
-  font-size: 13px; color: var(--muted-lt); max-width: 420px;
-  margin: 0 auto 36px; line-height: 1.8;
-}
-.success-details {
-  background: var(--card); border: 1px solid rgba(212,175,55,.25);
-  border-radius: var(--radius); padding: 24px;
-  max-width: 440px; margin: 0 auto 32px; text-align: left;
-}
-.success-detail-row {
-  display: flex; gap: 12px; align-items: flex-start;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.success-detail-row:last-child { border-bottom: none; }
-.success-detail-icon { color: var(--gold); flex-shrink: 0; }
-.success-detail-label {
-  font-size: 9px; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 3px;
-}
-.success-detail-value { color: var(--text); font-weight: 500; }
-.btn-back-home {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 13px 32px; border: 1px solid var(--gold);
-  border-radius: var(--radius); color: var(--gold);
-  font-size: 11px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; text-decoration: none;
-  transition: all .2s;
-}
-.btn-back-home:hover { background: var(--gold-pale); }
-
-/* ── REVIEWS SECTION ── */
-.reviews-section {
-  padding: 80px 20px;
-  background: var(--surface);
-  border-top: 1px solid rgba(212,175,55,.1);
-  border-bottom: 1px solid rgba(212,175,55,.1);
-}
-.reviews-inner { max-width: 860px; margin: 0 auto; }
-.reviews-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px; margin-top: 36px;
-}
-@media (max-width: 700px) { .reviews-grid { grid-template-columns: 1fr; } }
-.review-card {
+.panel-title { font-family: var(--serif); font-size: 22px; color: var(--white); }
+.search-input {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 3px; padding: 24px; position: relative;
+  border-radius: var(--radius); padding: 8px 14px; color: var(--text);
+  font-family: var(--sans); font-size: 12px; width: 240px;
 }
-.review-card::before {
-  content: '"'; font-family: var(--serif); font-size: 72px; line-height: 1;
-  color: rgba(212,175,55,.1); position: absolute; top: 8px; right: 14px;
-}
-.review-stars { display: flex; gap: 3px; margin-bottom: 12px; color: var(--gold); font-size: 12px; }
-.review-text { font-size: 12px; color: var(--muted-lt); line-height: 1.8; margin-bottom: 18px; }
-.review-author { display: flex; align-items: center; gap: 10px; }
-.review-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold-dim), rgba(212,175,55,.3));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: var(--bg); font-family: var(--serif);
-}
-.review-name { font-size: 12px; font-weight: 600; color: var(--white); }
-.review-loc  { font-size: 9px; letter-spacing: .1em; color: var(--muted); margin-top: 1px; }
 
-/* ── CONTACT SECTION ── */
-.contact-section { padding: 80px 20px; }
-.contact-inner {
-  max-width: 860px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start;
-}
-@media (max-width: 700px) { .contact-inner { grid-template-columns: 1fr; gap: 32px; } }
-.contact-card {
+.table-wrap {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 3px; padding: 28px;
+  border-radius: var(--radius); overflow-x: auto;
 }
-.contact-card-icon { font-size: 26px; margin-bottom: 12px; }
-.contact-card-title {
-  font-family: var(--serif); font-size: 20px; font-weight: 500;
-  color: var(--white); margin-bottom: 10px;
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th {
+  background: var(--surface); padding: 12px 16px;
+  font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted-lt); border-bottom: 1px solid var(--border);
 }
-.contact-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.contact-list-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 12px; color: var(--muted-lt); line-height: 1.6;
+td {
+  padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle;
 }
-.contact-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-top: 6px; }
-.contact-directions {
-  display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 16px; padding: 10px 18px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.25);
-  border-radius: 3px; font-size: 10px; font-weight: 700;
-  letter-spacing: .14em; color: var(--gold); text-decoration: none;
-  text-transform: uppercase; transition: background .2s;
-}
-.contact-directions:hover { background: rgba(212,175,55,.14); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.015); }
 
-/* Step 2 CTA bar */
-.step2-cta {
-  position: sticky; bottom: 0;
-  background: rgba(10,9,8,.97); backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(212,175,55,.2);
-  padding: 8px 20px 10px;
-  display: none; align-items: center; justify-content: space-between; gap: 6px;
+/* Badges & Actions */
+.badge {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .08em;
+  padding: 3px 8px; border-radius: 2px; text-transform: uppercase;
 }
-.step2-cta.visible { display: flex; }
-.step2-cta-info { display: flex; flex-direction: column; gap: 1px; }
-.step2-cta-count {
-  font-size: 9px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--gold-dim);
+.badge-active { background: rgba(46,160,67,.15); color: #6fcf7a; border: 1px solid rgba(46,160,67,.3); }
+.badge-hidden { background: rgba(122,112,96,.2); color: var(--muted-lt); border: 1px solid var(--border); }
+.action-link {
+  font-size: 11px; font-weight: 600; color: var(--gold); text-decoration: none;
+  cursor: pointer; margin-right: 12px;
 }
-.step2-cta-total {
-  font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--gold);
+.action-link:hover { text-decoration: underline; }
+
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
 }
-
-/* ── ANIMATIONS ── */
-@keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── GOLD LINE ── */
-.gold-line { height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-
-/* ── FOOTER ── */
-.footer {
-  text-align: center; padding: 32px 20px;
-  border-top: 1px solid var(--border);
-  margin-top: 40px; font-size: 11px; color: var(--muted);
+.modal-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; max-width: 520px; width: 100%;
+  max-height: 90vh; overflow-y: auto; position: relative;
 }
-.footer a { color: var(--gold-dim); text-decoration: none; }
+.modal-close {
+  position: absolute; top: 18px; right: 20px; background: none; border: none;
+  color: var(--muted); font-size: 20px; cursor: pointer;
+}
+.modal-title { font-family: var(--serif); font-size: 20px; color: var(--white); margin-bottom: 16px; }
 
-/* ── BILINGUAL ── */
-[data-en], [data-es] { transition: opacity .15s; }
-body.lang-es [data-en] { display: none !important; }
-body.lang-en [data-es] { display: none !important; }
+/* Schedule Grid */
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.schedule-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; display: flex; flex-direction: column; gap: 14px; position: relative;
+}
+.card-header-actions { display: flex; justify-content: space-between; align-items: flex-start; }
+.day-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.day-row:last-child { border-bottom: none; }
 </style>
-  <!-- Supabase Client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="lang-en">
-<script>
-(function(){
-  var lang = localStorage.getItem('lw-lang') || 'en';
-  document.body.className = (lang === 'es') ? 'lang-es' : 'lang-en';
-})();
-</script>
-
-<!-- CATEGORY CONFLICT MODAL (pilot mode: no single artist covers some combos) -->
-<div id="catConflictModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;">
-    <button onclick="closeCatConflictModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
-    <div style="font-size:32px;margin-bottom:12px;">✨</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px;color:#fff;">
-      <span data-en>These services are not available together</span>
-      <span data-es>Estos servicios no están disponibles juntos</span>
-    </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">
-      <span data-en>Message us directly and we'll get you booked with both artists!</span>
-      <span data-es>¡Escríbenos directamente y te agendamos con ambas artistas!</span>
-    </p>
-    <a id="catConflictWhatsapp" href="#" target="_blank" class="btn-next" style="display:inline-block;text-decoration:none;">
-      <span data-en>💬 Message us on WhatsApp</span>
-      <span data-es>💬 Escríbenos por WhatsApp</span>
-    </a>
-    <div style="margin-top:14px;">
-      <button onclick="closeCatConflictModal()" style="background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;">
-        <span data-en>Adjust my selection instead</span>
-        <span data-es>Ajustar mi selección</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- NAIL ART / DESIGN ADD-ON POPUP (shown when any nail-art trigger service is selected) -->
-<div id="nailArtModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;">
-    <div style="font-size:32px;margin-bottom:12px;">💅</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px;color:#fff;">
-      <span data-en>Add nail art or a design?</span>
-      <span data-es>¿Agregar arte o diseño de uñas?</span>
-    </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">
-      <span data-en>Would you like to add nail art or a design to your appointment? This adds about 30 minutes. Pricing varies by design and is confirmed at your appointment.</span>
-      <span data-es>¿Deseas agregar arte o diseño de uñas a tu cita? Esto agrega aproximadamente 30 minutos. El precio varía según el diseño y se confirma durante tu cita.</span>
-    </p>
-    <button onclick="confirmNailArt(true)" class="btn-next enabled" style="display:block;width:100%;margin-bottom:10px;">
-      <span data-en>Yes, add nail art</span>
-      <span data-es>Sí, agregar diseño</span>
-    </button>
-    <button onclick="confirmNailArt(false)" style="background:none;border:1px solid var(--gold-dim);color:var(--muted);font-size:13px;padding:11px 16px;border-radius:10px;cursor:pointer;width:100%;">
-      <span data-en>No, thanks</span>
-      <span data-es>No, gracias</span>
-    </button>
-  </div>
-</div>
-
-<!-- PMU TOUCH-UP AREA POPUP (shown when a PMU touch-up service is selected) -->
-<div id="pmuAreaModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;">
-    <div style="font-size:32px;margin-bottom:12px;">💉</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:16px;color:#fff;">
-      <span data-en>What are you touching up?</span>
-      <span data-es>¿Qué te estás retocando?</span>
-    </div>
-    <button onclick="confirmPmuArea('Eyebrows','Cejas')" class="btn-next enabled" style="display:block;width:100%;margin-bottom:10px;">
-      <span data-en>Eyebrows</span><span data-es>Cejas</span>
-    </button>
-    <button onclick="confirmPmuArea('Lips','Labios')" class="btn-next enabled" style="display:block;width:100%;margin-bottom:10px;">
-      <span data-en>Lips</span><span data-es>Labios</span>
-    </button>
-    <button onclick="confirmPmuArea('Eyeliner','Delineado')" class="btn-next enabled" style="display:block;width:100%;">
-      <span data-en>Eyeliner</span><span data-es>Delineado</span>
-    </button>
-  </div>
-</div>
+<body>
 
 <!-- NAV -->
-<nav class="nav">
-  <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-    <img src="Images/logo.png" alt="Liz Wendy Beauty Studio" style="height:40px;width:40px;object-fit:contain;border-radius:50%;flex-shrink:0;">    <div>
-      <div class="nav-logo-name gold-shimmer">Liz Wendy</div>
-      <div class="nav-logo-sub">Beauty Studio · 76 Livingston Ave, New Brunswick, NJ</div>
+<nav class="admin-nav">
+  <a href="/" class="brand">
+    <img src="Images/logo.png" alt="Logo"/>
+    <div>
+      <div class="brand-title">Liz Wendy Studio</div>
+      <div class="brand-sub">Management Portal</div>
     </div>
   </a>
-  <div class="lang-switch">
-    <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
-    <button class="lang-btn"        id="btn-es" onclick="setLang('es')">ES</button>
+  <div class="nav-actions">
+    <a href="/" style="font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); text-decoration: none;">← View Live Site</a>
+    <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="handleLogout()">Sign Out</button>
   </div>
 </nav>
 
-<div id="bookingFunnel">
-<div class="page">
-
-  <!-- STEP INDICATOR -->
-  <div class="funnel-steps">
-    <div class="fstep active" id="fstep1">
-      <div class="fstep-num">1</div>
-      <span class="fstep-label" data-en>Services</span>
-      <span class="fstep-label" data-es>Servicios</span>
+<!-- ── 1. LOGIN SCREEN ── -->
+<div id="loginView">
+  <div class="login-card">
+    <div style="font-size:32px; margin-bottom: 12px;">✦</div>
+    <h1 class="login-title">Staff Portal</h1>
+    <p class="login-sub">Sign in with your studio account to manage services, hours & bookings.</p>
+    
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-input" id="authEmail" placeholder="wendy@email.com" autocomplete="email"/>
     </div>
-    <div class="fstep-line"></div>
-    <div class="fstep" id="fstep2">
-      <div class="fstep-num">2</div>
-      <span class="fstep-label" data-en>Artist</span>
-      <span class="fstep-label" data-es>Artista</span>
+    
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
     </div>
-    <div class="fstep-line"></div>
-    <div class="fstep" id="fstep3">
-      <div class="fstep-num">3</div>
-      <span class="fstep-label" data-en>Date &amp; Time</span>
-      <span class="fstep-label" data-es>Fecha y Hora</span>
-    </div>
-    <div class="fstep-line"></div>
-    <div class="fstep" id="fstep4">
-      <div class="fstep-num">4</div>
-      <span class="fstep-label" data-en>Confirm</span>
-      <span class="fstep-label" data-es>Confirmar</span>
-    </div>
+    
+    <button class="btn-gold" id="loginBtn" onclick="handleLogin()" style="width:100%;">Sign In ✦</button>
+    <div class="auth-error" id="authError"></div>
   </div>
-
-
-  <!-- ── STEP 1: CATEGORY SELECTION ── -->
-  <div class="funnel-panel active" id="panel-step1">
-
-    <div class="funnel-header">
-      <div class="eyebrow">✦ <span data-en>Book Your Appointment</span><span data-es>Reserva tu Cita</span></div>
-      <h1><span data-en>What are you looking<br>for <em>today?</em></span><span data-es>¿Qué estás buscando<br><em>hoy?</em></span></h1>
-      <p data-en>Select one or more categories, then choose your services.</p>
-      <p data-es>Selecciona una o más categorías, luego elige tus servicios.</p>
-    </div>
-
- <div class="category-grid">
-      <div class="cat-pill" data-cat="makeup" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/Makeup.png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>Makeup</div>
-        <div class="cat-pill-label" data-es>Maquillaje</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-      <div class="cat-pill" data-cat="nails" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/NAILS.png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>Nails</div>
-        <div class="cat-pill-label" data-es>Uñas</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-      <div class="cat-pill" data-cat="facial" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/facials.png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>Facials</div>
-        <div class="cat-pill-label" data-es>Faciales</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-      <div class="cat-pill" data-cat="waxing" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/waxing.png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>Waxing</div>
-        <div class="cat-pill-label" data-es>Depilación</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-      <div class="cat-pill" data-cat="pmu" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/PMU.png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>PMU</div>
-        <div class="cat-pill-label" data-es>PMU</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-      <div class="cat-pill" data-cat="lashext" onclick="toggleCat(this)">
-        <div class="cat-pill-bg" style="background-image:url('Images/Lash Ext..png')"></div>
-        <div class="cat-pill-overlay"></div>
-        <div class="cat-pill-label" data-en>Lash Ext.</div>
-        <div class="cat-pill-label" data-es>Pestañas</div>
-        <div class="cat-pill-check">✓</div>
-      </div>
-    </div>
-
-    <div class="step1-cta-wrap">
-      <button class="btn-next" id="step1Next" onclick="goToStep2()">
-        <span data-en>Browse Services →</span>
-        <span data-es>Ver Servicios →</span>
-      </button>
-    </div>
-
-  </div>
-
-  <!-- ── STEP 2: SERVICE ACCORDIONS ── -->
-  <div class="funnel-panel" id="panel-step2">
-
-    <button class="step2-back" onclick="goToStep1()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      <span data-en>Change categories</span>
-      <span data-es>Cambiar categorías</span>
-    </button>
-
-    <div class="accordions" id="accordionsContainer"></div>
-
-    <!-- Sticky CTA -->
-    <div class="step2-cta" id="step2Cta">
-      <div class="step2-cta-info">
-        <div class="step2-cta-count" id="step2CtaCount"></div>
-        <div class="step2-cta-total" id="step2CtaTotal"></div>
-      </div>
-      <button class="btn-next enabled" onclick="goToStep3()">
-        <span data-en>Next: Artist →</span>
-        <span data-es>Siguiente: Artista →</span>
-      </button>
-    </div>
-
-  </div>
-
-  <!-- ── STEP 3: CHOOSE YOUR ARTIST ── -->
-  <div class="funnel-panel" id="panel-step3">
-
-    <button class="step-back" onclick="goBackTo(2)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      <span data-en>Back to Services</span><span data-es>Volver a Servicios</span>
-    </button>
-
-    <div class="funnel-header" style="margin-bottom:28px">
-      <div class="eyebrow">✦ <span data-en>Step 3 of 4</span><span data-es>Paso 3 de 4</span></div>
-      <h1><span data-en>Choose Your <em>Artist</em></span><span data-es>Elige tu <em>Artista</em></span></h1>
-      <p data-en>Select the beauty professional you'd like to work with.</p>
-      <p data-es>Selecciona la profesional de belleza con quien deseas trabajar.</p>
-    </div>
-
-    <div class="artist-grid">
-
-      <!-- Liz Wendy Cedeño — Active -->
-      <div class="artist-card" id="artist-liz" onclick="selectArtist('liz')">
-        <div class="artist-selected-check">✓</div>
-        <div class="artist-card-photo">
-          <img src="Images/Wendy.jpeg" alt="Liz Wendy Cedeño" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="artist-card-info">
-          <div class="artist-card-name">Liz Wendy Cedeño</div>
-          <div class="artist-card-title" data-en>Licensed Esthetician · PMU Artist · Owner</div>
-          <div class="artist-card-title" data-es>Esteticista Licenciada · Artista PMU · Dueña</div>
-          <div class="artist-card-tags">
-            <span class="artist-tag">PMU</span>
-            <span class="artist-tag" data-en>Bridal</span><span class="artist-tag" data-es>Novia</span>
-            <span class="artist-tag" data-en>Nails</span><span class="artist-tag" data-es>Uñas</span>
-            <span class="artist-tag" data-en>Waxing</span><span class="artist-tag" data-es>Depilación</span>
-            <span class="artist-tag" data-en>Lash Ext.</span><span class="artist-tag" data-es>Pestañas</span>
-          </div>
-          <div class="artist-select-row">
-            <button class="artist-select-btn" id="artist-liz-btn">
-              <span data-en>Select →</span><span data-es>Seleccionar →</span>
-            </button>
-            <button type="button" class="staff-override-lock" id="staffOverrideLock"
-                    onclick="toggleStaffOverride(event)" aria-label="Staff">🔒</button>
-          </div>
-          <div class="staff-override-panel" id="staffOverridePanel" onclick="event.stopPropagation()">
-            <input type="text" class="staff-override-input" id="staffOverrideInput"
-                   placeholder="PIN" autocomplete="off" maxlength="16"
-                   oninput="syncStaffOverridePin(this)">
-            <button type="button" class="staff-override-apply" onclick="applyStaffOverride(event)">✓</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Johanna — Nail Artist -->
-      <div class="artist-card" id="artist-johanna" data-cats="nails" onclick="selectArtist('johanna')">
-        <div class="artist-selected-check">✓</div>
-        <div class="artist-card-photo">
-          <img src="Images/Johanna.png" alt="Johanna" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="artist-card-info">
-          <div class="artist-card-name">Johanna</div>
-          <div class="artist-card-title" data-en>Nail Artist</div>
-          <div class="artist-card-title" data-es>Artista de Uñas</div>
-          <div class="artist-card-tags">
-            <span class="artist-tag">Manicure</span>
-            <span class="artist-tag">Pedicure</span>
-          </div>
-          <button class="artist-select-btn" id="artist-johanna-btn">
-            <span data-en>Select →</span><span data-es>Seleccionar →</span>
-          </button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- CTA -->
-    <div style="display:flex;justify-content:center;">
-      <button class="btn-next" id="step3Next" onclick="goToStep4()">
-        <span data-en>Next: Date &amp; Time →</span>
-        <span data-es>Siguiente: Fecha y Hora →</span>
-      </button>
-    </div>
-
-  </div>
-
-  <!-- ── STEP 4: DATE & TIME ── -->
-  <div class="funnel-panel" id="panel-step4">
-
-    <button class="step-back" onclick="goBackTo(3)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      <span data-en>Back to Artist</span><span data-es>Volver a Artista</span>
-    </button>
-
-    <div class="funnel-header" style="margin-bottom:28px">
-      <div class="eyebrow">✦ <span data-en>Step 4 of 4</span><span data-es>Paso 4 de 4</span></div>
-      <h1><span data-en>Pick a <em>Date &amp; Time</em></span><span data-es>Elige <em>Fecha y Hora</em></span></h1>
-      <p data-en>Select an available date, then choose your preferred time slot.</p>
-      <p data-es>Selecciona una fecha disponible, luego elige tu horario preferido.</p>
-    </div>
-
-    <!-- Calendar -->
-    <div class="calendar-wrap">
-      <div class="calendar-header-row">
-        <div>
-          <div class="cal-artist-label" id="calArtistLabel"></div>
-          <div class="cal-month-label" id="calMonthLabel"></div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="cal-nav-btn" type="button" onclick="changeMonth(-1)" aria-label="Previous Month">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          </button>
-          <button class="cal-nav-btn" type="button" onclick="changeMonth(1)" aria-label="Next Month">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </button>
-        </div>
-      </div>
-      <div class="cal-grid" id="calGrid">
-        <div class="cal-dow" data-en>Sun</div><div class="cal-dow" data-es>Dom</div>
-        <div class="cal-dow" data-en>Mon</div><div class="cal-dow" data-es>Lun</div>
-        <div class="cal-dow" data-en>Tue</div><div class="cal-dow" data-es>Mar</div>
-        <div class="cal-dow" data-en>Wed</div><div class="cal-dow" data-es>Mié</div>
-        <div class="cal-dow" data-en>Thu</div><div class="cal-dow" data-es>Jue</div>
-        <div class="cal-dow" data-en>Fri</div><div class="cal-dow" data-es>Vie</div>
-        <div class="cal-dow" data-en>Sat</div><div class="cal-dow" data-es>Sáb</div>
-      </div>
-      <!-- Time slots appear here after date selection -->
-      <div class="slots-section" id="slotsSection" style="display:none">
-        <div class="gold-line" style="margin-bottom:20px"></div>
-        <div class="slots-date-label" id="slotsDateLabel"></div>
-        <div id="slotsArea">
-          <div class="slots-placeholder" data-en>Select a date to see available times</div>
-          <div class="slots-placeholder" data-es>Selecciona una fecha para ver horarios</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CTA -->
-    <div style="display:flex;justify-content:center;">
-      <button class="btn-next" id="step4Next" onclick="goToStep5()">
-        <span data-en>Next: Confirm →</span>
-        <span data-es>Siguiente: Confirmar →</span>
-      </button>
-    </div>
-
-  </div>
-
-  <!-- ── STEP 5: CONFIRM + PAYMENT ── -->
-  <div class="funnel-panel" id="panel-step5">
-
-    <button class="step-back" onclick="goBackTo(4)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      <span data-en>Back to Date &amp; Time</span><span data-es>Volver a Fecha y Hora</span>
-    </button>
-
-    <div class="funnel-header" style="margin-bottom:28px">
-      <div class="eyebrow">✦ <span data-en>Final Step</span><span data-es>Paso Final</span></div>
-      <h1><span data-en>Confirm Your <em>Booking</em></span><span data-es>Confirma tu <em>Reserva</em></span></h1>
-      <p data-en>Review your appointment, complete your info, and secure your spot.</p>
-      <p data-es>Revisa tu cita, completa tu información y asegura tu lugar.</p>
-    </div>
-
-    <!-- Booking summary -->
-    <div class="booking-summary-card">
-      <div class="booking-summary-title">✦ <span data-en>Appointment Summary</span><span data-es>Resumen de la Cita</span></div>
-      <div class="booking-summary-rows" id="confirmSummaryRows"></div>
-    </div>
-
-    <!-- Contact info form -->
-    <div class="form-section">
-      <div class="form-section-title">
-        <div class="form-section-icon">✍️</div>
-        <span data-en>Your Information</span><span data-es>Tu Información</span>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label"><span data-en>First Name</span><span data-es>Nombre</span></label>
-          <input class="form-input" type="text" id="firstName" placeholder="Maria" autocomplete="given-name"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label"><span data-en>Last Name</span><span data-es>Apellido</span></label>
-          <input class="form-input" type="text" id="lastName" placeholder="Lopez" autocomplete="family-name"/>
-        </div>
-        <div class="form-group full">
-          <label class="form-label"><span data-en>Email Address</span><span data-es>Correo Electrónico</span><span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"> (<span data-en>optional</span><span data-es>opcional</span>)</span></label>
-          <input class="form-input" type="email" id="emailInput" placeholder="maria@email.com" autocomplete="email"/>
-        </div>
-        <div class="form-group full">
-          <label class="form-label"><span data-en>Phone Number</span><span data-es>Número de Teléfono</span></label>
-          <input class="form-input" type="tel" id="phoneInput" placeholder="(732) 555-0100" autocomplete="tel" oninput="formatPhoneInput(this)"/>
-        </div>
-        <div class="form-group full">
-          <label class="form-label">
-            <span data-en>Notes for your artist</span><span data-es>Notas para tu artista</span>
-            <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"> (<span data-en>optional</span><span data-es>opcional</span>)</span>
-          </label>
-          <textarea class="form-input" id="notesInput" rows="3" placeholder="Allergies, preferences, or anything Wendy should know..."></textarea>
-        </div>
-      </div>
-    </div>
-
-    <!-- Policy gate -->
-    <div class="policy-gate">
-      <div class="form-section-title" style="margin-bottom:16px">
-        <div class="form-section-icon">📋</div>
-        <span data-en>Booking &amp; Cancellation Policy</span><span data-es>Política de Reserva y Cancelación</span>
-      </div>
-      <div class=\"policy-cancel-box\">
-        <div class=\"policy-cancel-label\">✕ <span data-en>Cancellation Policy</span><span data-es>Política de Cancelación</span></div>
-        <p>
-          <span data-en>Appointments must be cancelled or rescheduled at least <strong style="color:var(--text)">24 hours in advance.</strong> No-shows may be required to prepay future appointments in full.</span>
-          <span data-es>Las citas deben cancelarse o reprogramarse con al menos <strong style="color:var(--text)">24 horas de anticipación.</strong> La inasistencia sin aviso puede requerir pago completo en futuras citas.</span>
-        </p>
-      </div>
-      <label class="policy-checkbox-row" id="policyCheckboxRow">
-        <input type="checkbox" id="policyCheckbox" onchange="onPolicyToggle(this)"/>
-        <span>
-          <span data-en>I have read and agree to the <strong style="color:var(--gold)">booking and cancellation policy</strong> above.</span>
-          <span data-es>He leído y acepto la <strong style="color:var(--gold)">política de reserva y cancelación</strong> indicada arriba.</span>
-        </span>
-      </label>
-    </div>
-
-    <!-- Payment gate (locked until policy accepted) -->
-    <div class="payment-gate" id="paymentGate">
-      <div id="depositOnlyBlock">
-        <div class="payment-gate-label">
-          💳 <span data-en>Secure Your Appointment</span><span data-es>Asegura tu Cita</span>
-        </div>
-        <p class="payment-gate-sub">
-          <span data-en>A <strong style="color:var(--text)">$20 deposit</strong> is required to confirm your booking. You'll be redirected to our secure Clover payment page. The deposit is applied to your total balance.</span>
-          <span data-es>Se requiere un <strong style="color:var(--text)">depósito de $20</strong> para confirmar tu reserva. Serás redirigido a nuestra página de pago seguro de Clover. El depósito se aplica a tu balance total.</span>
-        </p>
-
-        <a href="https://link.clover.com/urlshortener/VZSmPk" target="_blank"
-           class="btn-deposit" onclick="onDepositClick()">
-          <span data-en>Pay $20 Deposit to Book ✦</span>
-          <span data-es>Pagar Depósito de $20 para Reservar ✦</span>
-        </a>
-        <p class="deposit-note">
-          <span data-en>Opens securely in a new tab · Powered by Clover</span>
-          <span data-es>Se abre de forma segura en una nueva pestaña · Con tecnología de Clover</span>
-        </p>
-      </div>
-
-      <!-- Shown after deposit button clicked (Liz Wendy) OR shown directly (Johanna, no deposit) -->
-      <div class="deposit-confirm-row" id="depositConfirmRow">
-        <div class="form-error" id="formError"></div>
-        <div class="deposit-auto-status" id="depositAutoStatus">
-          <span class="deposit-auto-status-spinner"></span>
-          <span class="deposit-auto-status-check">✓</span>
-          <span id="depositAutoStatusText">
-            <span data-en>Waiting for your payment to confirm — this only takes a few seconds…</span>
-            <span data-es>Esperando la confirmación de tu pago — solo toma unos segundos…</span>
-          </span>
-        </div>
-        <!-- depositCheckboxRow removed: manual deposit attestation bypass eliminated.
-             Booking only proceeds via auto-detected payment or staff PIN override. -->
-        <label class="policy-checkbox-row" id="depositCheckboxRow" style="display:none!important">
-          <input type="checkbox" id="depositPaidCheck" onchange="onDepositConfirm(this)"/>
-          <span>
-            <span data-en>I have completed my <strong style="color:var(--gold)">$20 deposit payment</strong> via Clover.</span>
-            <span data-es>He completado mi <strong style="color:var(--gold)">pago de depósito de $20</strong> a través de Clover.</span>
-          </span>
-        </label>
-        <button class="btn-confirm-submit" id="submitBtn" onclick="submitBooking()" disabled style="display:none">
-          <span class="btn-text"><span data-en>Confirm Appointment ✦</span><span data-es>Confirmar Cita ✦</span></span>
-          <span class="btn-spinner"></span>
-        </button>
-        <p class="submit-note">
-          <span data-en>By booking you agree to our cancellation policy. A confirmation email will be sent to you and the studio.</span>
-          <span data-es>Al reservar aceptas nuestra política de cancelación. Se enviará un correo de confirmación a ti y al estudio.</span>
-        </p>
-      </div>
-
-    </div>
-
-
-  </div>
-
-</div><!-- /page -->
-</div><!-- /bookingFunnel -->
-
-<!-- ── SUCCESS SCREEN (outside .page, full width) ── -->
-<div class="success-screen" id="successScreen">
-  <div class="success-icon">✦</div>
-  <h2 class="success-title">
-    <span data-en>You're <em>Confirmed</em></span>
-    <span data-es>¡Estás <em>Confirmada!</em></span>
-  </h2>
-  <p class="success-msg">
-    <span data-en>Your appointment has been booked. Check your email for a confirmation — we look forward to seeing you!</span>
-    <span data-es>Tu cita ha sido reservada. Revisa tu correo para la confirmación — ¡esperamos verte pronto!</span>
-  </p>
-  <div class="success-details" id="successDetails"></div>
-  <a href="#" onclick="location.reload()" class="btn-back-home">
-    <span data-en>← Book Another Appointment</span>
-    <span data-es>← Reservar Otra Cita</span>
-  </a>
 </div>
 
-<div class="gold-line"></div>
-
-<!-- ── GALLERY ── -->
-<section class="gallery-section">
-  <div class="gallery-section-header">
-    <div>
-      <p class="section-label" data-en>Portfolio</p>
-      <p class="section-label" data-es>Portafolio</p>
-      <h2 class="section-title" data-en>Our <em>Work</em></h2>
-      <h2 class="section-title" data-es>Nuestro <em>Trabajo</em></h2>
-    </div>
-    <a href="https://www.instagram.com/lizwendybeautystudiollc/" target="_blank" class="btn-ghost-sm">
-      @lizwendybeautystudiollc
-    </a>
+<!-- ── 2. DASHBOARD SCREEN ── -->
+<div id="dashboardView">
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('services')">Services & Pricing</button>
+    <button class="tab-btn" onclick="switchTab('schedules')">Team & Hours</button>
+    <button class="tab-btn" onclick="switchTab('appointments')">Appointments</button>
   </div>
-  <div class="gallery-grid">
-    <!-- Cell 1: Diamond Nails (Tall) -->
-    <div class="gallery-cell gallery-tall" style="background-image:url('Images/nail design at our work.png');background-size:cover;background-position:center center">
-      <div class="gallery-overlay"><span data-en>Nail Design</span><span data-es>Diseño de Uñas</span></div>
+
+  <!-- TAB 1: SERVICES -->
+  <div class="tab-pane active" id="tab-services">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Services Catalog</h2>
+        <p style="font-size:12px; color:var(--muted-lt);">Edit pricing, descriptions, and upload before/after photos.</p>
+      </div>
+      <input type="text" class="search-input" id="serviceSearch" placeholder="Search service..." oninput="filterServices()"/>
     </div>
 
-    <!-- Cell 2: PMU Brow & Lash Close-up -->
-    <div class="gallery-cell" style="background-image:url('Images/Pmu at our brows.png');background-size:cover;background-position:center 30%">
-      <div class="gallery-overlay"><span>PMU Brows</span></div>
-    </div>
-
-    <!-- Cell 3: Pink Flame Nail Art -->
-    <div class="gallery-cell" style="background-image:url('Images/nail art at our work.png');background-size:cover;background-position:center center">
-      <div class="gallery-overlay"><span data-en>Nail Art</span><span data-es>Arte de Uñas</span></div>
-    </div>
-
-    <!-- Cell 4: Glam Makeup Portrait (Tall) -->
-    <div class="gallery-cell gallery-tall" style="background-image:url('Images/glam makeup at our work.png');background-size:cover;background-position:center top">
-      <div class="gallery-overlay"><span data-en>Glam Makeup</span><span data-es>Maquillaje Glam</span></div>
-    </div>
-
-    <!-- Cell 5: Beauty Masterclass (Wide) -->
-<div class="gallery-cell gallery-wide" style="background-image:url('Images/Maybe classes.png');background-size:cover;background-position:center 45%">
-    <!-- Cell 6: Gem Nail Art -->
-    <div class="gallery-cell" style="background-image:url('Images/gem nail art at our work.png');background-size:cover;background-position:center center">
-      <div class="gallery-overlay"><span data-en>Gem Nail Art</span><span data-es>Arte de Uñas con Gemas</span></div>
-    </div>
-
-    <!-- Cell 7: Quinceañera Glam -->
-    <div class="gallery-cell" style="background-image:url('Images/Quinceanera.png');background-size:cover;background-position:center 20%">
-      <div class="gallery-overlay"><span data-en>Quinceañera Glam</span><span data-es>Glamour de Quince</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Category</th>
+            <th>Base Price</th>
+            <th>Label</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="servicesTableBody">
+          <tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading services...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
 
-<!-- ── REVIEWS ── -->
-<section class="reviews-section">
-  <div class="reviews-inner">
-    <div style="text-align:center;margin-bottom:8px">
-      <p class="section-label" data-en>Client Reviews</p>
-      <p class="section-label" data-es>Reseñas de Clientas</p>
-      <h2 class="section-title" data-en>What Our <em>Clients Say</em></h2>
-      <h2 class="section-title" data-es>Lo Que Dicen<br><em>Nuestras Clientas</em></h2>
+  <!-- TAB 2: SCHEDULES -->
+  <div class="tab-pane" id="tab-schedules">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Working Hours & Staff</h2>
+        <p style="font-size:12px; color:var(--muted-lt);">Manage active team members and customize daily availability shifts.</p>
+      </div>
+      <button class="btn-gold" onclick="openAddArtistModal()">+ Add Team Member</button>
     </div>
-    <div class="reviews-grid">
-      <div class="review-card">
-        <div class="review-stars">★★★★★</div>
-        <p class="review-text">"Her manicure work is extraordinary, detailed, and professional."</p>
-        <div class="review-author">
-          <div class="review-avatar">V</div>
-          <div>
-            <div class="review-name">Verified Client</div>
-            <div class="review-loc">Google Business Review · Nail Services</div>
-          </div>
-        </div>
-      </div>
-      <div class="review-card">
-        <div class="review-stars">★★★★★</div>
-        <p class="review-text">"Liz Wendy did my nails so beautifully and professionally."</p>
-        <div class="review-author">
-          <div class="review-avatar">V</div>
-          <div>
-            <div class="review-name">Verified Client</div>
-            <div class="review-loc">Google Business Review · Nail Services</div>
-          </div>
-        </div>
-      </div>
-      <div class="review-card">
-        <div class="review-stars">★★★★★</div>
-        <p class="review-text">"La amo!!! I love Wendy very sweet girl and always does an excellent job with my nails."</p>
-        <div class="review-author">
-          <div class="review-avatar">V</div>
-          <div>
-            <div class="review-name">Verified Client</div>
-            <div class="review-loc">Google Business Review · Nail Services</div>
-          </div>
-        </div>
-      </div>
+    <div class="schedule-grid" id="scheduleCardsWrap">
+      <div style="color:var(--muted); padding:20px;">Loading schedules...</div>
     </div>
   </div>
-</section>
 
-<!-- ── CONTACT ── -->
-<section class="contact-section">
-  <div class="contact-inner">
-    <div>
-      <p class="section-label" data-en>Find Us</p>
-      <p class="section-label" data-es>Encuéntranos</p>
-      <h2 class="section-title" data-en>Visit the <em>Studio</em></h2>
-      <h2 class="section-title" data-es>Visita el <em>Estudio</em></h2>
-      <div class="contact-card" style="margin-top:24px">
-        <div class="contact-card-icon">📍</div>
-        <div class="contact-card-title" data-en>Location &amp; Hours</div>
-        <div class="contact-card-title" data-es>Ubicación y Horarios</div>
-        <div class="contact-list">
-          <div class="contact-list-item">
-            <div class="contact-dot"></div>
-            <a href="https://maps.google.com/?q=76+Livingston+Ave,+New+Brunswick,+NJ+08901" target="_blank" style="color:var(--gold);text-decoration:none;">76 Livingston Ave, New Brunswick, NJ 08901</a>
-          </div>
-          <div class="contact-list-item">
-            <div class="contact-dot"></div>
-            <span data-en>Mon–Sat: 9:00 AM – 7:00 PM</span>
-            <span data-es>Lun–Sáb: 9:00 AM – 7:00 PM</span>
-          </div>
-          <div class="contact-list-item">
-            <div class="contact-dot"></div>
-            <span data-en>Sunday: By appointment only</span>
-            <span data-es>Domingo: Solo con cita previa</span>
-          </div>
-          <div class="contact-list-item">
-            <div class="contact-dot"></div>
-            <a href="https://www.instagram.com/lizwendybeautystudiollc/" target="_blank" style="color:var(--muted-lt);text-decoration:none;">📸 @lizwendybeautystudiollc</a>
-          </div>
-        </div>
-        <a href="https://maps.google.com/?q=76+Livingston+Ave,+New+Brunswick,+NJ+08901" target="_blank" class="contact-directions">
-          <span data-en>Get Directions →</span>
-          <span data-es>Cómo Llegar →</span>
-        </a>
+  <!-- TAB 3: APPOINTMENTS -->
+  <div class="tab-pane" id="tab-appointments">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Bookings Ledger</h2>
+        <p style="font-size:12px; color:var(--muted-lt);">Real-time appointments confirmed through the booking engine.</p>
       </div>
+      <button class="btn-logout" onclick="loadAppointments()">Refresh ⟳</button>
     </div>
-    <div>
-      <p class="section-label" data-en>The Academy</p>
-      <p class="section-label" data-es>La Academia</p>
-      <h2 class="section-title" data-en>Learn from <em>Wendy</em></h2>
-      <h2 class="section-title" data-es>Aprende con <em>Wendy</em></h2>
-      <div class="contact-card" style="margin-top:24px">
-        <div class="contact-card-icon">🎓</div>
-        <div class="contact-card-title" data-en>Professional Courses</div>
-        <div class="contact-card-title" data-es>Cursos Profesionales</div>
-        <div class="contact-list">
-          <div class="contact-list-item"><div class="contact-dot"></div><span data-en>Self-Makeup Class</span><span data-es>Clase de Automaquillaje</span></div>
-          <div class="contact-list-item"><div class="contact-dot"></div><span>PMU Certification</span></div>
-          <div class="contact-list-item"><div class="contact-dot"></div><span data-en>1-on-1 Consultation</span><span data-es>Consulta 1 a 1</span></div>
-        </div>
-        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7" data-en>Pricing varies by class size and availability. Message Wendy on WhatsApp to inquire.</p>
-        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7" data-es>El precio varía según el tamaño del grupo y disponibilidad. Escríbele a Wendy por WhatsApp.</p>
-        <a id="whatsappCoursesLink" href="https://wa.me/18483891934?text=Hi%20Wendy%2C%20I%27m%20interested%20in%20the%20Professional%20Courses%20(Self-Makeup%20Class%2C%20PMU%20Certification%2C%20or%201-on-1%20Consultation).%20Could%20you%20share%20more%20details%3F" target="_blank" class="contact-directions" style="margin-top:12px">
-          💬 <span data-en>WhatsApp →</span><span data-es>WhatsApp →</span>
-        </a>
-      </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Client</th>
+            <th>Phone</th>
+            <th>Artist</th>
+            <th>Services</th>
+            <th>Total</th>
+            <th>Deposit</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentsTableBody">
+          <tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</div>
 
-<footer class="footer">
-  © 2025 Liz Wendy Beauty Studio LLC · 76 Livingston Ave, New Brunswick, NJ 08901
-  <div style="margin-top: 10px;">
-    <a href="/admin.html" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); opacity: 0.7; text-decoration: none; transition: opacity .2s;" onmouseover="this.style.opacity='1'; this.style.color='var(--gold)';" onmouseout="this.style.opacity='0.7'; this.style.color='var(--muted)';">Staff Portal ✦</a>
+<!-- ── EDIT SERVICE MODAL ── -->
+<div class="modal-overlay" id="serviceModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeServiceModal()">&times;</button>
+    <h3 class="modal-title" id="modalServiceTitle">Edit Service</h3>
+
+    <input type="hidden" id="editServiceId"/>
+
+    <div class="form-group">
+      <label class="form-label">Name (English)</label>
+      <input type="text" class="form-input" id="editNameEn"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Name (Spanish)</label>
+      <input type="text" class="form-input" id="editNameEs"/>
+    </div>
+
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Base Price ($)</label>
+        <input type="number" class="form-input" id="editPrice" step="1"/>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Duration (Minutes)</label>
+        <input type="number" class="form-input" id="editDuration" step="15"/>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Price Label (EN)</label>
+        <input type="text" class="form-input" id="editPriceLabelEn" placeholder="$20–$35"/>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Price Label (ES)</label>
+        <input type="text" class="form-input" id="editPriceLabelEs" placeholder="$20–$35"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description (English)</label>
+      <textarea class="form-input" id="editSubEn" rows="2"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Showcase Photo</label>
+      <input type="file" id="editPhotoFile" accept="image/*" class="form-input" style="padding:6px;"/>
+      <div id="currentPhotoPreview" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="editIsActive" style="accent-color:var(--gold); width:16px; height:16px;"/>
+      <label for="editIsActive" style="font-size:12px; color:var(--text); cursor:pointer;">Active on live website</label>
+    </div>
+
+    <button class="btn-gold" id="saveServiceBtn" onclick="saveServiceChanges()" style="width:100%;">Save Changes ✦</button>
   </div>
-</footer>
+</div>
+
+<!-- ── ARTIST MODAL (ADD / EDIT) ── -->
+<div class="modal-overlay" id="artistModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeArtistModal()">&times;</button>
+    <h3 class="modal-title" id="artistModalTitle">Team Member</h3>
+
+    <input type="hidden" id="editArtistId"/>
+
+    <div class="form-group">
+      <label class="form-label">Artist ID (e.g., maria, wendy)</label>
+      <input type="text" class="form-input" id="artistFieldId" placeholder="johanna"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="artistFieldName" placeholder="Johanna"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Professional Title (EN)</label>
+      <input type="text" class="form-input" id="artistFieldTitleEn" placeholder="Nail Artist"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Professional Title (ES)</label>
+      <input type="text" class="form-input" id="artistFieldTitleEs" placeholder="Artista de Uñas"/>
+    </div>
+
+    <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="artistFieldIsActive" checked style="accent-color:var(--gold); width:16px; height:16px;"/>
+      <label for="artistFieldIsActive" style="font-size:12px; color:var(--text); cursor:pointer;">Active (Can be booked by clients)</label>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn-gold" id="saveArtistBtn" onclick="saveArtist()" style="flex:1;">Save Member ✦</button>
+      <button class="btn-logout" id="deleteArtistBtn" onclick="deleteArtist()" style="display:none; color:var(--danger); border-color:var(--danger);">Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE EDITOR MODAL ── -->
+<div class="modal-overlay" id="hoursModal">
+  <div class="modal-card" style="max-width:580px;">
+    <button class="modal-close" onclick="closeHoursModal()">&times;</button>
+    <h3 class="modal-title" id="hoursModalTitle">Edit Working Hours</h3>
+    <input type="hidden" id="hoursArtistId"/>
+
+    <div id="hoursRowsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <!-- Populated via JS -->
+    </div>
+
+    <button class="btn-gold" id="saveHoursBtn" onclick="saveHoursChanges()" style="width:100%;">Save Working Hours ✦</button>
+  </div>
+</div>
 
 <script>
-/* ─── SCROLL TOP HELPER ─────────────────────────────────────────── */
-function scrollTop() {
-  window.scrollTo(0, 0);
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-}
-
-/* ─── LANGUAGE ──────────────────────────────────────────────────── */
-const WHATSAPP_COURSES_MSG = {
-  en: "Hi Wendy, I'm interested in the Professional Courses (Self-Makeup Class, PMU Certification, or 1-on-1 Consultation). Could you share more details?",
-  es: "Hola Wendy, me interesan los Cursos Profesionales (Clase de Automaquillaje, Certificación PMU, o Consulta 1 a 1). ¿Podrías darme más detalles?"
-};
-function updateWhatsAppLink(lang) {
-  const link = document.getElementById('whatsappCoursesLink');
-  if (!link) return;
-  const msg = WHATSAPP_COURSES_MSG[lang] || WHATSAPP_COURSES_MSG.en;
-  link.href = 'https://wa.me/18483891934?text=' + encodeURIComponent(msg);
-}
-
-// Pilot mode: Waxing & Lash Ext. temporarily not bookable through the site.
-const PILOT_PILL_CONTENT = {
-  waxing: {
-    label: { en: 'NOT AVAILABLE', es: 'NO DISPONIBLE' },
-    cta:   { en: '💬 Message us', es: '💬 Escríbenos' },
-    msg:   {
-      en: "Hi! I'd like to book a Waxing appointment. Could you help me schedule one?",
-      es: '¡Hola! Me gustaría reservar una cita de Depilación. ¿Podrías ayudarme a agendarla?',
-    },
-  },
-  lashext: {
-    label: { en: 'NOT AVAILABLE', es: 'NO DISPONIBLE' },
-    cta:   { en: '💬 Message us', es: '💬 Escríbenos' },
-    msg:   {
-      en: "Hi! I'd like to book Lash Extensions. Could you help me schedule an appointment?",
-      es: '¡Hola! Me gustaría reservar Extensiones de Pestañas. ¿Podrías ayudarme a agendar una cita?',
-    },
-  },
-};
-function updatePilotPills(lang) {
-  Object.keys(PILOT_PILL_CONTENT).forEach(key => {
-    const c = PILOT_PILL_CONTENT[key];
-    const labelEl = document.getElementById('pillLabel-' + key);
-    const ctaEl = document.getElementById('pillCta-' + key);
-    if (labelEl) labelEl.textContent = c.label[lang] || c.label.en;
-    if (ctaEl) {
-      ctaEl.textContent = c.cta[lang] || c.cta.en;
-      ctaEl.href = 'https://wa.me/18483891934?text=' + encodeURIComponent(c.msg[lang] || c.msg.en);
-    }
-  });
-}
-
-function setLang(lang) {
-  document.body.classList.remove('lang-en', 'lang-es');
-  document.body.classList.add('lang-' + lang);
-  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-  document.getElementById('btn-es').classList.toggle('active', lang === 'es');
-  try { localStorage.setItem('lw-lang', lang); } catch(e){}
-  updateWhatsAppLink(lang);
-  updatePilotPills(lang);
-
-  // Rebuild dynamic JS-rendered content in new language
-  const step2 = document.getElementById('panel-step2');
-  if (step2 && step2.classList.contains('active')) {
-    buildAccordions();
-    updateStep2Cta();
-  }
-  const step5 = document.getElementById('panel-step5');
-  if (step5 && step5.classList.contains('active')) {
-    buildConfirmSummary();
-  }
-}
-// Init language on load
-(function(){
-  const lang = localStorage.getItem('lw-lang') || 'en';
-  document.body.className = 'lang-' + lang;
-  setTimeout(() => {
-    const enBtn = document.getElementById('btn-en');
-    const esBtn = document.getElementById('btn-es');
-    if (enBtn && esBtn) {
-      enBtn.classList.toggle('active', lang === 'en');
-      esBtn.classList.toggle('active', lang === 'es');
-    }
-    updateWhatsAppLink(lang);
-    updatePilotPills(lang);
-  }, 0);
-})();
-
-/* ─── SUPABASE DYNAMIC INTEGRATION ─────────────────────────────── */
+// ── SUPABASE INITIALIZATION ──
 const SUPABASE_URL = 'https://dayyxufmvxqxobjxdxzv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
 
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Dynamically hydrate services from Supabase
-async function syncServicesFromSupabase() {
-  if (!supabaseClient) return;
+let ALL_SERVICES = [];
+let ALL_ARTISTS = [];
+let ALL_SCHEDS = [];
 
-  try {
-    const { data: dbServices, error } = await supabaseClient
-      .from('services')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    if (error || !dbServices || !dbServices.length) return;
+// ── AUTH CHECK ──
+async function initAuth() {
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (session) showDashboard();
+  else showLogin();
 
-    // Map database rows into SERVICES format
-    dbServices.forEach(item => {
-      const cat = item.category;
-      if (!SERVICES[cat]) return;
+  sbClient.auth.onAuthStateChange((event, session) => {
+    if (session) showDashboard();
+    else showLogin();
+  });
+}
 
-      const existing = SERVICES[cat].items.find(s => s.id === item.id);
-      if (existing) {
-        existing.name = item.name_en;
-        existing.nameEs = item.name_es;
-        existing.sub = item.sub_en || existing.sub;
-        existing.subEs = item.sub_es || existing.subEs;
-        existing.price = Number(item.price);
-        if (item.price_label_en) existing.priceLabel = item.price_label_en;
-        if (item.price_label_es) existing.priceLabelEs = item.price_label_es;
-        if (item.duration_minutes) existing.dur = `${item.duration_minutes} min`;
-        if (item.img_url) existing.img = item.img_url;
-      }
-    });
+function showLogin() {
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+}
 
-    // If customer is already on Step 2, re-render accordions with live DB prices
-    const step2 = document.getElementById('panel-step2');
-    if (step2 && step2.classList.contains('active')) {
-      buildAccordions();
-      updateStep2Cta();
-    }
-  } catch (err) {
-    console.warn('Supabase sync skipped, using local fallback:', err);
+function showDashboard() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashboardView').style.display = 'block';
+  document.getElementById('logoutBtn').style.display = 'block';
+  loadServices();
+  loadSchedules();
+  loadAppointments();
+}
+
+async function handleLogin() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('loginBtn');
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  const { error } = await sbClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign In ✦';
   }
 }
 
-// Run sync in the background on page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', syncServicesFromSupabase);
-} else {
-  syncServicesFromSupabase();
-}
-  
-/* ─── SERVICE DATA ──────────────────────────────────────────────── */
-const SERVICES = {
-makeup: {
-    label: { en: 'Makeup', es: 'Maquillaje' },
-    items: [
-      {
-        id: 'makeup-1',
-        name: 'Occasion Makeup',
-        nameEs: 'Maquillaje de Ocasión',
-        sub: 'Simple look · no lashes · everyday glam',
-        subEs: 'Look simple · sin pestañas · glam diario',
-        price: 95,
-        dur: '45–60 min',
-        img: 'Images/Occasion makeup.png'
-      },
-      {
-        id: 'makeup-2',
-        name: 'Occasion Makeup + Lashes',
-        nameEs: 'Maquillaje de Ocasión + Pestañas',
-        sub: 'Full face with lash application included',
-        subEs: 'Rostro completo con aplicación de pestañas incluida',
-        price: 110,
-        dur: '60–75 min',
-        img: 'Images/Occasion Makeup + Lashes.png'
-      },
-      {
-        id: 'makeup-3',
-        name: 'Bridal Makeup',
-        nameEs: 'Maquillaje de Novia',
-        sub: 'Full glam · touch-up kit · bridal party available',
-        subEs: 'Full glam · kit de retoque · opción para cortejo nupcial',
-        price: 'From $250',
-        dur: 'Consultation',
-        img: 'Images/Bridal Makeup.png'
-      },
-      {
-        id: 'makeup-4',
-        name: 'Elaborate / Complex Look',
-        nameEs: 'Look Elaborado / Complejo',
-        sub: 'Bridal · editorial · advanced techniques',
-        subEs: 'Novia · editorial · técnicas avanzadas',
-        price: '$300–$375',
-        dur: 'Consultation',
-        img: 'Images/Elaborate - Complex Look.png'
-      },
-      {
-        id: 'makeup-5',
-        name: 'Quinceañera',
-        nameEs: 'Quinceañera',
-        sub: 'Glam makeup for your quince celebration',
-        subEs: 'Maquillaje glam para tus quince años',
-        price: '$300–$375',
-        dur: 'Consultation',
-        img: 'Images/Quinceanera.png'
-      }
-    ]
-  },
-
-  nails: {
-    label: { en: 'Nails', es: 'Uñas' },
-    items: [
-      {
-        id: 'nails-1',
-        name: 'Regular Manicure',
-        nameEs: 'Manicura Regular',
-        sub: 'Shape, buff, polish & cuticle care',
-        subEs: 'Forma, limado, esmalte y cuidado de cutículas',
-        priceLabel: '$20–$35',
-        priceLabelEs: '$20–$35',
-        price: 20,
-        dur: '30–45 min',
-        img: 'Images/Regular manicure.jpeg'
-      },
-      {
-        id: 'nails-2',
-        name: 'Gel Manicure',
-        nameEs: 'Manicura Gel',
-        sub: 'Long-lasting gel color · chip-resistant finish',
-        subEs: 'Color en gel de larga duración · acabado resistente',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '45–60 min',
-        img: 'Images/Gel Manicure.png'
-      },
-      {
-        id: 'nails-3',
-        name: 'Acrylic Full Set',
-        nameEs: 'Juego Completo Acrílico',
-        sub: 'Custom length & shape · gel or regular polish',
-        subEs: 'Largo y forma personalizada · esmalte en gel o regular',
-        priceLabel: '$50–$110+',
-        priceLabelEs: '$50–$110+',
-        price: 50,
-        dur: '120 min',
-        img: 'Images/Acrylic full set.png'
-      },
-      {
-        id: 'nails-4',
-        name: 'Acrylic Refill',
-        nameEs: 'Relleno Acrílico',
-        sub: '2–3 week fill · shape correction included',
-        subEs: 'Relleno de 2–3 semanas · corrección de forma incluida',
-        priceLabel: '$55–$65',
-        priceLabelEs: '$55–$65',
-        price: 55,
-        dur: '90 min',
-        img: 'Images/Acrylic refill.png'
-      },
-      {
-        id: 'nails-5',
-        name: 'Gel X / Soft Gel Tips',
-        nameEs: 'Gel X / Tips de Gel Suave',
-        sub: 'Full coverage tips · no drilling · natural finish',
-        subEs: 'Tips de cobertura completa · sin torno · acabado natural',
-        priceLabel: '$70–$100+',
-        priceLabelEs: '$70–$100+',
-        price: 70,
-        dur: '75 min',
-        img: 'Images/Gel X - Soft Gel Tips.png'
-      },
-      {
-        id: 'nails-6',
-        name: 'Dip Powder / SNS',
-        nameEs: 'Dip Powder / SNS',
-        sub: 'Odorless · lightweight · strong & durable',
-        subEs: 'Sin olor · ligero · resistente y duradero',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '60 min',
-        img: 'Images/Dip Powder.png'
-      },
-      {
-        id: 'nails-7',
-        name: 'Regular Pedicure',
-        nameEs: 'Pedicura Regular',
-        sub: 'Soak, trim, shape & polish',
-        subEs: 'Remojo, corte, limado y esmalte',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '45 min',
-        img: 'Images/Regular pedicure.png'
-      },
-      {
-        id: 'nails-7b',
-        name: 'Gel Pedicure',
-        nameEs: 'Pedicura de Gel',
-        sub: 'Long-lasting gel polish · chip-resistant finish',
-        subEs: 'Esmalte en gel de larga duración · acabado resistente',
-        price: 45,
-        dur: '45–60 min',
-        img: 'Images/logo.png'
-      },
-      {
-        id: 'nails-8',
-        name: 'Spa / Deluxe Pedicure',
-        nameEs: 'Pedicura Spa / Deluxe',
-        sub: 'Extended soak, scrub, mask & massage',
-        subEs: 'Remojo prolongado, exfoliación, mascarilla y masaje',
-        priceLabel: '$75–$110',
-        priceLabelEs: '$75–$110',
-        price: 75,
-        dur: '60–75 min',
-        img: 'Images/Spa - Deluxe Pedicure.png'
-      },
-      {
-        id: 'nails-9',
-        name: 'Nail Art / Designs',
-        nameEs: 'Arte de Uñas / Diseños',
-        sub: 'Hand-painted art, gems, chrome, cat eye',
-        subEs: 'Arte a mano alzada, pedrería, efecto cromo, ojo de gato',
-        priceLabel: '+$5–$20/nail',
-        priceLabelEs: '+$5–$20/uña',
-        price: 5,
-        dur: 'Varies',
-        img: 'Images/nail art designs.png'
-      }
-    ]
-  },
-  waxing: {
-    label: { en: 'Waxing', es: 'Depilación' },
-    items: [
-      {
-        id: 'wax-1',
-        name: 'Eyebrows',
-        nameEs: 'Cejas',
-        sub: 'Precise shaping & clean edges',
-        subEs: 'Diseño preciso y bordes limpios',
-        priceLabel: '$10–$25',
-        priceLabelEs: '$10–$25',
-        price: 10,
-        dur: '15 min',
-        img: 'Images/Eyebrows.jpeg'
-      },
-      {
-        id: 'wax-2',
-        name: 'Upper Lip',
-        nameEs: 'Labio Superior',
-        sub: 'Quick & clean removal',
-        subEs: 'Depilación rápida y limpia',
-        priceLabel: '$8–$15',
-        priceLabelEs: '$8–$15',
-        price: 8,
-        dur: '10 min',
-        img: 'Images/Upper lip.jpeg'
-      },
-      {
-        id: 'wax-3',
-        name: 'Underarms',
-        nameEs: 'Axilas',
-        sub: 'Full underarm wax treatment',
-        subEs: 'Tratamiento completo para axilas',
-        priceLabel: '$15–$30',
-        priceLabelEs: '$15–$30',
-        price: 15,
-        dur: '15 min',
-        img: 'Images/Underarms.jpeg'
-      },
-      {
-        id: 'wax-4',
-        name: 'Bikini Line',
-        nameEs: 'Línea de Bikini',
-        sub: 'Clean bikini line shaping',
-        subEs: 'Depilación limpia del área del bikini',
-        priceLabel: '$25–$50',
-        priceLabelEs: '$25–$50',
-        price: 25,
-        dur: '20 min',
-        img: 'Images/Bikini Line.png'
-      },
-      {
-        id: 'wax-5',
-        name: 'Brazilian Wax',
-        nameEs: 'Depilación Brasileña',
-        sub: 'Full removal · gentle formula',
-        subEs: 'Depilación completa · fórmula suave',
-        priceLabel: '$55–$90+',
-        priceLabelEs: '$55–$90+',
-        price: 55,
-        dur: '30 min',
-        img: 'Images/brazilian wax.png'
-      },
-      {
-        id: 'wax-6',
-        name: 'Full Legs',
-        nameEs: 'Piernas Completas',
-        sub: 'Toes to thigh · full leg waxing',
-        subEs: 'Desde los dedos hasta el muslo',
-        priceLabel: '$60–$100',
-        priceLabelEs: '$60–$100',
-        price: 60,
-        dur: '45 min',
-        img: 'Images/full legs.png'
-      },
-      {
-        id: 'wax-7',
-        name: 'Half Legs',
-        nameEs: 'Media Pierna',
-        sub: 'Upper or lower half legs',
-        subEs: 'Parte superior o inferior',
-        priceLabel: '$35–$60',
-        priceLabelEs: '$35–$60',
-        price: 35,
-        dur: '25 min',
-        img: 'Images/half legs.png'
-      },
-      {
-        id: 'wax-8',
-        name: 'Full Arms',
-        nameEs: 'Brazos Completos',
-        sub: 'Wrists to shoulders · full arm wax',
-        subEs: 'De muñecas a hombros',
-        priceLabel: '$35–$60',
-        priceLabelEs: '$35–$60',
-        price: 35,
-        dur: '25 min',
-        img: 'Images/arm wax.png'
-      },
-      {
-        id: 'wax-9',
-        name: 'Back Wax',
-        nameEs: 'Espalda Completa',
-        sub: 'Full back treatment',
-        subEs: 'Tratamiento completo de espalda',
-        priceLabel: '$50–$90',
-        priceLabelEs: '$50–$90',
-        price: 50,
-        dur: '30 min',
-        img: 'Images/back wax.png'
-      },
-      {
-        id: 'wax-10',
-        name: 'Full Face Wax',
-        nameEs: 'Rostro Completo',
-        sub: 'Brows, lip, chin & cheeks',
-        subEs: 'Cejas, labio, mentón y mejillas',
-        priceLabel: '$35–$70',
-        priceLabelEs: '$35–$70',
-        price: 35,
-        dur: '30 min',
-        img: 'Images/full face wax.png'
-      },
-      {
-        id: 'wax-11',
-        name: 'Full Body Wax',
-        nameEs: 'Cuerpo Completo',
-        sub: 'Head to toe · complete treatment',
-        subEs: 'De pies a cabeza · tratamiento completo',
-        priceLabel: '$150–$300+',
-        priceLabelEs: '$150–$300+',
-        price: 150,
-        dur: '90–120 min',
-        img: 'Images/full body wax.png'
-      }
-    ]
-  },
-  pmu: {
-    label: { en: 'PMU', es: 'PMU' },
-    items: [
-      {
-        id: 'pmu-1',
-        name: 'Powder Brows / Ombré',
-        nameEs: 'Cejas en Polvo / Ombré',
-        sub: 'Semi-permanent soft powder pixel effect',
-        subEs: 'Efecto pixelado suave semipermanente',
-        price: 350,
-        dur: '120 min',
-        img: 'Images/powder brows - ombre.png'
-      },
-      {
-        id: 'pmu-2',
-        name: 'Combo Brows',
-        nameEs: 'Cejas Combinadas',
-        sub: 'Microblading strokes + shading definition',
-        subEs: 'Trazos pelo a pelo + sombreado',
-        price: 400,
-        dur: '150 min',
-        img: 'Images/combo brows.png'
-      },
-      {
-        id: 'pmu-3',
-        name: 'Lip Blush PMU',
-        nameEs: 'Micropigmentación de Labios',
-        sub: 'Natural tinted flush · defined shape & color',
-        subEs: 'Tono natural · definición de forma y color',
-        price: 350,
-        dur: '120 min',
-        img: 'Images/lip bluch pmu.png'
-      },
-      {
-        id: 'pmu-4',
-        name: 'Permanent Eyeliner',
-        nameEs: 'Delineado Permanente',
-        sub: 'Lash line enhancement · smudge-free',
-        subEs: 'Realce de línea de pestañas · a prueba de manchas',
-        price: 250,
-        dur: '90 min',
-        img: 'Images/Permanent eyeliner.png'
-      },
-      {
-        id: 'pmu-5',
-        name: '6–8 Week PMU Touch-Up',
-        nameEs: 'Retoque PMU (6–8 Semanas)',
-        sub: 'Perfecting session for new procedures',
-        subEs: 'Sesión de perfeccionamiento',
-        price: 100,
-        dur: '60 min',
-        img: 'Images/6-8 week PMU touch up.png'
-      },
-      {
-        id: 'pmu-6',
-        name: 'Annual PMU Touch-Up',
-        nameEs: 'Retoque Anual de PMU',
-        sub: 'Color boost & shape refresh',
-        subEs: 'Refresco de color y contorno anual',
-        price: 200,
-        dur: '90 min',
-        img: 'Images/annual pmu touch-up.png'
-      }
-    ]
-  },
-  lashext: {
-    label: { en: 'Lash Ext.', es: 'Pestañas' },
-    items: [
-      {
-        id: 'lash-1',
-        name: 'Classic Lash Extensions',
-        nameEs: 'Extensiones Clásicas',
-        sub: '1:1 natural extension application',
-        subEs: 'Aplicación natural 1 a 1',
-        price: 120,
-        dur: '90–120 min',
-        img: 'Images/Classic lash extensions.jpeg'
-      },
-      {
-        id: 'lash-2',
-        name: 'Hybrid Lash Extensions',
-        nameEs: 'Extensiones Híbridas',
-        sub: 'Blend of classic & volume fans',
-        subEs: 'Mezcla de clásicas y abanicos de volumen',
-        price: 140,
-        dur: '120 min',
-        img: 'Images/Hybrid lash extensions.png'
-      },
-      {
-        id: 'lash-3',
-        name: 'Volume Lash Extensions',
-        nameEs: 'Extensiones de Volumen',
-        sub: 'Full, dense, fluffy lash look',
-        subEs: 'Look de pestañas lleno y tupido',
-        price: 160,
-        dur: '120–150 min',
-        img: 'Images/Volume lash exntensions.png'
-      },
-      {
-        id: 'lash-4',
-        name: 'Lash Lift + Tint',
-        nameEs: 'Lifting + Tinte de Pestañas',
-        sub: 'Natural curl enhancement with tint',
-        subEs: 'Rizado y coloración de pestañas naturales',
-        price: 85,  
-        dur: '60 min',
-        img: 'Images/Lash Lift + Tint (Image coming soon).png'
-      },
-      {
-        id: 'lash-5',
-        name: 'Lash Lift + Tint (Image coming soon)',
-        nameEs: 'Lifting + Tinte (Imagen pronto)',
-        sub: 'Lift, curl & darken for added definition',
-        subEs: 'Levanta, riza y oscurece para mayor definición',
-        priceLabel: '$80–$120',
-        priceLabelEs: '$80–$120',
-        price: 80,
-        dur: '60 min',
-        img: 'Images/logo.png'
-      }
-    ]
-  },
- mobile: {
-    label: { en: 'Mobile', es: 'A Domicilio' },
-    items: [
-      { id: 'mob-1', name: 'Mobile Makeup (No Lashes)', nameEs: 'Maquillaje a Domicilio (Sin Pestañas)', sub: 'On-location service · within area', subEs: 'Servicio a domicilio · en el área', price: 125, dur: '60 min', img: 'Images/Occasion makeup.png' },
-      { id: 'mob-2', name: 'Mobile Makeup + Lashes', nameEs: 'Maquillaje a Domicilio + Pestañas', sub: 'On-location · simple lash application', subEs: 'A domicilio · con pestañas', price: 140, dur: '75 min', img: 'Images/Occasion Makeup + Lashes.png' },
-      { id: 'mob-3', name: 'Bridal Party Mobile', nameEs: 'Grupo de Novia a Domicilio', sub: 'Multiple people · on-site at venue', subEs: 'Múltiples personas · en el lugar del evento', price: 'Consultation', dur: 'Consultation', img: 'Images/Bridal Makeup.png' }
-    ]
-  },
-
-  /* ── FACIALS ──
-     Unlike other categories, this one renders in three tiers via
-     buildFacialAccordion() rather than the generic flat list. The
-     `tier` field on each item drives that grouping:
-       1 = Essentials · 2 = Targeted Treatments · 3 = Signature
-     Add-ons (isAddon) are bookable on their own but are hidden from
-     the main tiers and shown in their own group. `pairsWith` only
-     drives the static "Enhance this treatment" text under a Tier 2
-     row — it is a copy nudge, not a data relationship. */
-  facial: {
-    label: { en: 'Facials', es: 'Faciales' },
-    emoji: '✨',
-    items: [
-      /* ── TIER 1 · ESSENTIALS ── */
-      { id:'fac-1', tier:1, name:'Express Facial',              nameEs:'Facial Express',
-        sub:'Quick cleanse + hydration · best for a fast refresh',
-        subEs:'Limpieza rápida + hidratación · ideal para un refresco rápido',
-        price:50,  time:'30 min' },
-      { id:'fac-2', tier:1, name:'Deep Cleansing Facial',       nameEs:'Limpieza Facial Profunda',
-        sub:'Steam, exfoliation & extractions · best for monthly upkeep',
-        subEs:'Vapor, exfoliación y extracciones · ideal para mantenimiento mensual',
-        price:95,  time:'75 min' },
-
-      /* ── TIER 2 · TARGETED TREATMENTS ── */
-      { id:'fac-3', tier:2, name:'Hydrating Facial',            nameEs:'Facial Hidratante',
-        sub:'Deep moisture boost · best for dry, dehydrated skin',
-        subEs:'Hidratación profunda · ideal para piel seca y deshidratada',
-        price:85,  time:'60 min', pairsWith:'collagen' },
-      { id:'fac-4', tier:2, name:'Calming Facial',              nameEs:'Facial Calmante',
-        sub:'Reduces redness & soothes · best for sensitive, reactive skin',
-        subEs:'Reduce el enrojecimiento y calma · ideal para piel sensible y reactiva',
-        price:90,  time:'60 min', pairsWith:'lymphatic' },
-      { id:'fac-5', tier:2, name:'Vitamin C Brightening Facial',nameEs:'Facial Iluminador con Vitamina C',
-        sub:'Evens tone & adds glow · best for dull or uneven skin',
-        subEs:'Unifica el tono y da luminosidad · ideal para piel apagada o despareja',
-        price:95,  time:'60 min', pairsWith:'led' },
-      { id:'fac-6', tier:2, name:'Acne Facial',                 nameEs:'Facial para Acné',
-        sub:'Clears pores & controls oil · best for acne-prone skin',
-        subEs:'Limpia poros y controla la grasa · ideal para piel con acné',
-        price:110, time:'75 min', pairsWith:'highfreq' },
-      { id:'fac-7', tier:2, name:'Anti-Aging Facial',           nameEs:'Facial Antiedad',
-        sub:'Softens fine lines & firms · best for mature skin',
-        subEs:'Suaviza líneas finas y reafirma · ideal para piel madura',
-        price:120, time:'75 min', pairsWith:'eye' },
-      { id:'fac-8', tier:2, name:'Dermaplaning Facial',         nameEs:'Dermaplaning Facial',
-        sub:'Removes peach fuzz & dead skin · best for smooth, luminous skin',
-        subEs:'Elimina vello facial y células muertas · ideal para piel suave y luminosa',
-        price:110, time:'60 min', pairsWith:'collagen' },
-      { id:'fac-9', tier:2, name:'Microdermabrasion',           nameEs:'Microdermoabrasión',
-        sub:'Mechanical resurfacing · best for texture, pores & scarring',
-        subEs:'Exfoliación mecánica · ideal para textura, poros y marcas',
-        price:120, time:'60 min', pairsWith:'led' },
-
-      /* ── TIER 3 · SIGNATURE EXPERIENCES ── */
-      { id:'fac-10', tier:3, name:'Premium Facial',             nameEs:'Facial Premium',
-        sub:'Deep cleanse + dermaplaning + mask + LED therapy',
-        subEs:'Limpieza profunda + dermaplaning + mascarilla + terapia LED',
-        price:165, time:'90 min' },
-      { id:'fac-11', tier:3, name:'Glow Skin Package',          nameEs:'Paquete Glow Skin',
-        sub:'Deep cleanse + dermaplaning + collagen mask · save $20',
-        subEs:'Limpieza profunda + dermaplaning + mascarilla de colágeno · ahorra $20',
-        price:145, time:'90 min' },
-      { id:'fac-12', tier:3, name:'Luxury Facial Package',      nameEs:'Paquete Luxury Facial',
-        sub:'Deep cleanse + microdermabrasion + LED + eye contour',
-        subEs:'Limpieza profunda + microdermoabrasión + LED + contorno de ojos',
-        price:180, time:'105 min' },
-
-      /* ── ADD-ONS · bookable, but grouped separately ── */
-      { id:'fac-add-led',       isAddon:true, key:'led',       name:'LED Light Therapy',        nameEs:'Terapia de Luz LED',
-        sub:'Calms inflammation & boosts renewal',  subEs:'Calma la inflamación y estimula la renovación',
-        price:20, time:'15 min' },
-      { id:'fac-add-eye',       isAddon:true, key:'eye',       name:'Eye Contour Treatment',    nameEs:'Tratamiento Contorno de Ojos',
-        sub:'Targets puffiness & fine lines',       subEs:'Trata la hinchazón y líneas finas',
-        price:20, time:'15 min' },
-      { id:'fac-add-collagen',  isAddon:true, key:'collagen',  name:'Collagen Mask',            nameEs:'Mascarilla de Colágeno',
-        sub:'Intense plumping & firming boost',     subEs:'Efecto reafirmante e hidratante intenso',
-        price:25, time:'15 min' },
-      { id:'fac-add-highfreq',  isAddon:true, key:'highfreq',  name:'High Frequency',           nameEs:'Alta Frecuencia',
-        sub:'Kills bacteria & speeds healing',      subEs:'Elimina bacterias y acelera la cicatrización',
-        price:20, time:'15 min' },
-      { id:'fac-add-lymphatic', isAddon:true, key:'lymphatic', name:'Facial Massage & Lymphatic Drainage', nameEs:'Masaje Facial y Drenaje Linfático',
-        sub:'Releases tension & reduces puffiness',  subEs:'Libera tensión y reduce la hinchazón',
-        price:25, time:'20 min' },
-      { id:'fac-add-neck',      isAddon:true, key:'neck',      name:'Neck & Décolletage Treatment', nameEs:'Tratamiento para Cuello y Escote',
-        sub:'Extends your facial below the jawline', subEs:'Extiende tu facial más allá del mentón',
-        price:30, time:'20 min' },
-    ]
-  },
-};
-
-/* Facial tier headings + the membership block. Kept next to the data
-   (not hardcoded in the render function) so copy can be edited without
-   touching logic. */
-const FACIAL_TIERS = [
-  { id:'essentials', tier:1,
-    title: { en:'The Essentials',           es:'Los Esenciales' },
-    blurb: { en:'Quick refreshes and regular upkeep — perfect if you are short on time, or new to facials and want to start simple.',
-             es:'Refrescos rápidos y mantenimiento regular — perfectos si tienes poco tiempo, o si es tu primera vez y quieres empezar simple.' } },
-  { id:'targeted',   tier:2,
-    title: { en:'Targeted Treatments',      es:'Tratamientos Específicos' },
-    blurb: { en:'Built around one specific concern — dryness, sensitivity, acne, uneven tone or visible signs of aging.',
-             es:'Diseñados para una necesidad específica — sequedad, sensibilidad, acné, tono desigual o signos de la edad.' } },
-  { id:'signature',  tier:3,
-    title: { en:'The Signature Experiences',es:'Las Experiencias Signature' },
-    blurb: { en:'Our most complete treatments and best-value bundles, for when you want the full experience.',
-             es:'Nuestros tratamientos más completos y paquetes de mejor valor, para cuando quieres la experiencia completa.' } },
-  { id:'addons',     tier:'addon',
-    title: { en:'Enhance Your Facial',      es:'Mejora Tu Facial' },
-    blurb: { en:'Optional add-ons — select any alongside the facial above to customize your treatment.',
-             es:'Complementos opcionales — selecciona los que quieras junto a tu facial para personalizar tu tratamiento.' } },
-];
-
-const FACIAL_MEMBERSHIP = {
-  title: { en:'Facial Membership',  es:'Membresía Facial' },
-  text:  { en:'One facial a month for six months — $480 total, about $80 per session. Ask us about it and we will set it up for you.',
-           es:'Un facial al mes durante seis meses — $480 en total, unos $80 por sesión. Pregúntanos y lo preparamos para ti.' },
-  cta:   { en:'💬 Ask about membership', es:'💬 Preguntar por la membresía' },
-  msg:   { en:"Hi! I'd like to know more about the 6-month Facial Membership.",
-           es:'¡Hola! Me gustaría saber más sobre la Membresía Facial de 6 meses.' },
-};
-
-/* ─── STATE ─────────────────────────────────────────────────────── */
-const selectedCats   = new Set();
-const selectedSvcIds = new Set();
-
-/* ─── LANGUAGE HELPER ───────────────────────────────────────────── */
-function isEs() { return document.body.classList.contains('lang-es'); }
-
-/* ─── STEP INDICATOR ────────────────────────────────────────────── */
-/* ─── STEP 1: CATEGORY TOGGLE ───────────────────────────────────── */
-function toggleCat(pill) {
-  const cat = pill.dataset.cat;
-  if (selectedCats.has(cat)) {
-    selectedCats.delete(cat);
-    pill.classList.remove('selected');
-  } else {
-    selectedCats.add(cat);
-    pill.classList.add('selected');
-  }
-  const btn = document.getElementById('step1Next');
-  if (selectedCats.size > 0) btn.classList.add('enabled');
-  else                        btn.classList.remove('enabled');
+async function handleLogout() {
+  await sbClient.auth.signOut();
 }
 
-/* ─── STEP 1 → STEP 2 ───────────────────────────────────────────── */
+// ── TABS NAVIGATION ──
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
 
-// Which artists are bookable and what they cover, used to check whether
-// a selected combination of categories can be handled by one artist.
-// Wendy covers every category, so she satisfies this for any combination.
-const PILOT_ARTIST_CATEGORIES = {
-  liz:      ['makeup', 'nails', 'facial', 'waxing', 'pmu', 'lashext'],
-  johanna:  ['nails'],
-};
-
-function hasSingleArtistCoverage(cats) {
-  return Object.values(PILOT_ARTIST_CATEGORIES).some(artistCats =>
-    [...cats].every(c => artistCats.includes(c))
-  );
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
 }
 
-function showCatConflictModal() {
-  const es = isEs();
-  const catNames = [...selectedCats].map(c => {
-    const labels = { makeup: ['Makeup','Maquillaje'], nails: ['Nails','Uñas'], facial: ['Facials','Faciales'], waxing: ['Waxing','Depilación'], pmu: ['PMU','PMU'], lashext: ['Lash Extensions','Extensiones de Pestañas'] };
-    return labels[c] ? labels[c][es ? 1 : 0] : c;
-  }).join(' + ');
-  const msgEn = `Hi! I'm interested in ${catNames} together — is this available?`;
-  const msgEs = `¡Hola! Me interesan ${catNames} juntos — ¿está disponible?`;
-  const link = document.getElementById('catConflictWhatsapp');
-  link.href = `https://wa.me/18483891934?text=${encodeURIComponent(es ? msgEs : msgEn)}`;
-  document.getElementById('catConflictModal').style.display = 'flex';
-}
+// ── SERVICES TAB ──
+async function loadServices() {
+  const tbody = document.getElementById('servicesTableBody');
+  const { data, error } = await sbClient
+    .from('services')
+    .select('*')
+    .order('category')
+    .order('sort_order');
 
-function closeCatConflictModal() {
-  document.getElementById('catConflictModal').style.display = 'none';
-}
-
-/* ─── NAIL ART / DESIGN ADD-ON POPUP ─────────────────────────────────
-   Shown the moment an Acrylic Refill (nails-4) is selected. "Yes" flags
-   the nail-art add-on (extra 30 min, price confirmed at appointment);
-   "No" leaves the refill on its own. The flag is consumed in goToStep3()
-   and reflected in the sticky CTA total. */
-
-function toggleService(target, cat) {
-  let svcId;
-  let rowEl;
-
-  // Handles being passed an element: onclick="toggleService(this)"
-  if (target instanceof HTMLElement || (target && target.nodeType === 1)) {
-    rowEl = target.closest('.service-row') || target;
-    svcId = rowEl.dataset.id;
-    if (!cat) {
-      const acc = rowEl.closest('.accordion');
-      if (acc) cat = acc.dataset.cat;
-    }
-  } else {
-    // Handles being passed an ID string: toggleService('nails-4')
-    svcId = String(target);
-    rowEl = document.querySelector(`.service-row[data-id="${svcId}"]`);
-  }
-
-  if (!svcId) return;
-
-  // Toggle selection
-  if (selectedSvcIds.has(svcId)) {
-    selectedSvcIds.delete(svcId);
-    
-    if (svcId === 'nails-4' || svcId === 'nail-4') {
-      nailArtSelected = false;
-    }
-    if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) {
-      pmuAreaChosen = null;
-    }
-  } else {
-    selectedSvcIds.add(svcId);
-
-    if (svcId === 'nails-4' || svcId === 'nail-4') {
-      openNailArtPopup();
-    } else if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) {
-      openPmuAreaPopup();
-    }
-  }
-
-  // Update row visual state & checkmark
-  if (rowEl) {
-    rowEl.classList.toggle('selected', selectedSvcIds.has(svcId));
-    const checkEl = rowEl.querySelector('.svc-row-check');
-    if (checkEl) {
-      checkEl.textContent = selectedSvcIds.has(svcId) ? '✓' : '';
-    }
-  }
-
-  // Refresh badges & bottom sticky cart
-  if (cat) {
-    updateAccordionBadge(cat);
-  } else {
-    ['makeup', 'nails', 'facial', 'waxing', 'pmu', 'lashext'].forEach(c => {
-      if (typeof updateAccordionBadge === 'function') updateAccordionBadge(c);
-    });
-  }
-
-  if (typeof updateStep2Cta === 'function') {
-    updateStep2Cta();
-  }
-}
-
-function openNailArtPopup() {
-  document.getElementById('nailArtModal').style.display = 'flex';
-}
-
-function confirmNailArt(yes) {
-  nailArtSelected = !!yes;
-  document.getElementById('nailArtModal').style.display = 'none';
-  updateStep2Cta();
-}
-
-function openPmuAreaPopup() {
-  document.getElementById('pmuAreaModal').style.display = 'flex';
-}
-
-function confirmPmuArea(labelEn, labelEs) {
-  pmuAreaChosen = isEs() ? labelEs : labelEn;
-  document.getElementById('pmuAreaModal').style.display = 'none';
-
-  // Option A: Append selected target area to PMU touch-up items
-  const touchUpIds = ['pmu-5', 'pmu-6'];
-  const catalog = (typeof SERVICES !== 'undefined' && SERVICES) ||
-                  (typeof CATEGORIES !== 'undefined' && CATEGORIES) ||
-                  (typeof MENU !== 'undefined' && MENU) || null;
-
-  if (catalog && catalog.pmu && Array.isArray(catalog.pmu.items)) {
-    catalog.pmu.items.forEach(item => {
-      if (touchUpIds.includes(item.id)) {
-        if (!item._baseName) item._baseName = item.name;
-        if (!item._baseNameEs) item._baseNameEs = item.nameEs;
-
-        item.name = `${item._baseName} (${labelEn})`;
-        item.nameEs = `${item._baseNameEs} (${labelEs})`;
-      }
-    });
-  }
-
-  if (typeof updateStep2Cta === 'function') updateStep2Cta();
-}
-function goToStep2() {
-  if (!selectedCats.size) return;
-  if (!hasSingleArtistCoverage(selectedCats)) {
-    showCatConflictModal();
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
     return;
   }
-  buildAccordions();
-  document.getElementById('panel-step1').classList.remove('active');
-  document.getElementById('panel-step2').classList.add('active');
-  setFunnelStep(1); // still "Services" — category select and service browsing are one step
-  scrollTop();
+
+  ALL_SERVICES = data || [];
+  renderServicesTable(ALL_SERVICES);
 }
 
-/* ─── BUILD ACCORDIONS ──────────────────────────────────────────── */
-function buildAccordions() {
-  const container = document.getElementById('accordionsContainer');
-  container.innerHTML = '';
+function renderServicesTable(list) {
+  const tbody = document.getElementById('servicesTableBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">No services found.</td></tr>`;
+    return;
+  }
 
-  const catOrder = ['makeup','nails','facial','waxing','pmu','lashext'];
-  catOrder.forEach(cat => {
-    if (!selectedCats.has(cat)) return;
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td><strong>${s.name_en}</strong><div style="font-size:11px; color:var(--muted);">${s.name_es}</div></td>
+      <td><span class="badge" style="background:var(--card2); border:1px solid var(--border);">${s.category}</span></td>
+      <td>$${Number(s.price).toFixed(2)}</td>
+      <td style="color:var(--gold);">${s.price_label_en || '—'}</td>
+      <td>${s.duration_minutes}m</td>
+      <td>
+        <span class="badge ${s.is_active ? 'badge-active' : 'badge-hidden'}">
+          ${s.is_active ? 'Active' : 'Hidden'}
+        </span>
+      </td>
+      <td>
+        <span class="action-link" onclick="openEditService('${s.id}')">Edit</span>
+      </td>
+    </tr>
+  `).join('');
+}
 
-    // Facials render as three density tiers instead of one flat list,
-    // so they get their own builder.
-    if (cat === 'facial') { container.appendChild(buildFacialAccordion()); updateAccordionBadge('facial'); return; }
+function filterServices() {
+  const q = document.getElementById('serviceSearch').value.toLowerCase();
+  const filtered = ALL_SERVICES.filter(s => 
+    s.name_en.toLowerCase().includes(q) || 
+    s.name_es.toLowerCase().includes(q) || 
+    s.category.toLowerCase().includes(q)
+  );
+  renderServicesTable(filtered);
+}
 
-    const data = SERVICES[cat];
-    const label = isEs() ? data.label.es : data.label.en;
+function openEditService(id) {
+  const s = ALL_SERVICES.find(item => item.id === id);
+  if (!s) return;
 
-    const acc = document.createElement('div');
-    acc.className = 'accordion open';
-    acc.dataset.cat = cat;
+  document.getElementById('editServiceId').value = s.id;
+  document.getElementById('modalServiceTitle').textContent = `Edit ${s.name_en}`;
+  document.getElementById('editNameEn').value = s.name_en;
+  document.getElementById('editNameEs').value = s.name_es;
+  document.getElementById('editPrice').value = s.price;
+  document.getElementById('editDuration').value = s.duration_minutes;
+  document.getElementById('editPriceLabelEn').value = s.price_label_en || '';
+  document.getElementById('editPriceLabelEs').value = s.price_label_es || '';
+  document.getElementById('editSubEn').value = s.sub_en || '';
+  document.getElementById('editIsActive').checked = s.is_active;
+  document.getElementById('editPhotoFile').value = '';
 
-    // Build service rows HTML
-    const rowsHtml = data.items.map(svc => {
-      const name     = isEs() ? svc.nameEs : svc.name;
-      const sub      = isEs() ? svc.subEs  : svc.sub;
-      const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || (typeof svc.price === 'string' ? svc.price : '$' + svc.price) : (typeof svc.price === 'string' ? svc.price : '$' + svc.price));
-      const selected = selectedSvcIds.has(svc.id);
-      const imgSrc = svc.img || '';
-      const imgHtml = imgSrc
-  ? `<img src="${imgSrc}" alt="${name}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`
-  : '';
+  const preview = document.getElementById('currentPhotoPreview');
+  preview.innerHTML = s.img_url 
+    ? `<img src="${s.img_url}" style="height:60px; border-radius:4px; border:1px solid var(--border); object-fit:cover;"/>`
+    : '<span style="font-size:11px; color:var(--muted);">No custom photo uploaded</span>';
 
-      return `<div class="service-row${selected ? ' selected' : ''}" data-id="${svc.id}" data-price="${svc.price}" data-pricestr="${priceStr}" data-time="${svc.time || svc.dur || ''}" onclick="toggleService(this)">
-        <div class="svc-row-img">${imgHtml}</div>
-        <div class="svc-row-info">
-          <div class="svc-row-name">${name}</div>
-          <div class="svc-row-sub">${sub}</div>
+  document.getElementById('serviceModal').style.display = 'flex';
+}
+
+function closeServiceModal() {
+  document.getElementById('serviceModal').style.display = 'none';
+}
+
+async function saveServiceChanges() {
+  const id = document.getElementById('editServiceId').value;
+  const btn = document.getElementById('saveServiceBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    let img_url = null;
+    const file = document.getElementById('editPhotoFile').files[0];
+
+    if (file) {
+      const ext = file.name.split('.').pop();
+      const path = `${id}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await sbClient.storage
+        .from('service-photos')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: pubData } = sbClient.storage.from('service-photos').getPublicUrl(path);
+      img_url = pubData.publicUrl;
+    }
+
+    const updates = {
+      name_en: document.getElementById('editNameEn').value.trim(),
+      name_es: document.getElementById('editNameEs').value.trim(),
+      price: parseFloat(document.getElementById('editPrice').value) || 0,
+      duration_minutes: parseInt(document.getElementById('editDuration').value, 10) || 60,
+      price_label_en: document.getElementById('editPriceLabelEn').value.trim() || null,
+      price_label_es: document.getElementById('editPriceLabelEs').value.trim() || null,
+      sub_en: document.getElementById('editSubEn').value.trim() || null,
+      is_active: document.getElementById('editIsActive').checked
+    };
+
+    if (img_url) updates.img_url = img_url;
+
+    const { error } = await sbClient.from('services').update(updates).eq('id', id);
+    if (error) throw error;
+
+    closeServiceModal();
+    loadServices();
+  } catch (err) {
+    alert('Error saving service: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Changes ✦';
+  }
+}
+
+// ── SCHEDULES & TEAM TAB ──
+async function loadSchedules() {
+  const wrap = document.getElementById('scheduleCardsWrap');
+
+  const { data: artists } = await sbClient.from('artists').select('*').order('name');
+  const { data: scheds } = await sbClient.from('artist_schedules').select('*');
+
+  ALL_ARTISTS = artists || [];
+  ALL_SCHEDS = scheds || [];
+
+  if (!ALL_ARTISTS.length) {
+    wrap.innerHTML = `<div style="color:var(--muted); padding:20px;">No team members added yet.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = ALL_ARTISTS.map(art => {
+    const artScheds = ALL_SCHEDS.filter(s => s.artist_id === art.id);
+    
+    const rows = [0,1,2,3,4,5,6].map(d => {
+      const entry = artScheds.find(s => s.day_of_week === d);
+      const isWork = entry && entry.is_active;
+      const hoursText = isWork 
+        ? `${entry.start_hour > 12 ? entry.start_hour-12 : entry.start_hour}:00 ${entry.start_hour >= 12 ? 'PM' : 'AM'} – ${entry.end_hour > 12 ? entry.end_hour-12 : entry.end_hour}:00 ${entry.end_hour >= 12 ? 'PM' : 'AM'}`
+        : 'Off';
+
+      return `
+        <div class="day-row">
+          <span style="font-weight:600;">${DOW_NAMES[d]}</span>
+          <span style="color:${isWork ? 'var(--gold)' : 'var(--muted)'}; font-size:12px;">${hoursText}</span>
         </div>
-        <div class="svc-row-right">
-          <div class="svc-row-price">${priceStr}</div>
-          <div class="svc-row-time">${svc.time || svc.dur ? `⏱ ${svc.time || svc.dur}` : ''}</div>
-        </div>
-        <div class="svc-row-check">${selected ? '✓' : ''}</div>
-      </div>`;
+      `;
     }).join('');
 
-    acc.innerHTML = `
-      <div class="accordion-head" onclick="toggleAccordion(this.parentElement)">
-        <span class="accordion-title">${label}</span>
-        <span class="accordion-badge" id="badge-${cat}"></span>
-        <span class="accordion-chevron">▼</span>
-      </div>
-      <div class="accordion-body">
-        <div class="service-rows">${rowsHtml}</div>
-      </div>`;
-
-    container.appendChild(acc);
-    updateAccordionBadge(cat);
-  });
-}
-
-/* ─── FACIAL ACCORDION (three-tier build) ───────────────────────────
-   Facials are the only category without photography, so hierarchy is
-   carried by density instead: Tier 1 is tight and scannable, Tier 2 is
-   standard with a left accent rule, Tier 3 is centered and boxed.
-   Rows are still plain .service-row elements with the same data-* attrs
-   and the same toggleSvc() handler, so selection, the badge, the cart
-   total and the booking payload all keep working exactly as they do for
-   every other category — only the presentation differs. */
-function buildFacialAccordion() {
-  const es    = isEs();
-  const data  = SERVICES.facial;
-  const label = es ? data.label.es : data.label.en;
-
-  const acc = document.createElement('div');
-  acc.className = 'accordion open';
-  acc.dataset.cat = 'facial';
-
-  const row = svc => {
-    const name     = es ? svc.nameEs : svc.name;
-    const sub      = es ? svc.subEs  : svc.sub;
-    const priceStr = svc.priceLabel || (typeof svc.price === 'string' ? svc.price : '$' + svc.price);
-    const selected = selectedSvcIds.has(svc.id);
-    const tierCls  = svc.isAddon ? 'facial-tier1' : 'facial-tier' + svc.tier;
-    const badge    = svc.tier === 3
-      ? `<div class="facial-sig-badge">${es ? '✦ Signature ✦' : '✦ Signature ✦'}</div>` : '';
-
-    // Upsell nudge under Tier 2 rows. Tappable once the parent facial is
-    // selected — reuses the same selection mechanism as every other row,
-    // just triggered from this text instead of a full row.
-    let nudge = '';
-    if (svc.pairsWith) {
-      const addon = data.items.find(a => a.key === svc.pairsWith);
-      if (addon) {
-        const an           = es ? addon.nameEs : addon.name;
-        const addonSelected = selectedSvcIds.has(addon.id);
-        const stateCls = !selected ? 'nudge-disabled' : (addonSelected ? 'nudge-added' : 'nudge-active');
-        const click    = selected ? ` onclick="toggleFacialItem('${addon.id}')"` : '';
-        const icon     = addonSelected ? '✓ ' : '';
-        nudge = `<div class="facial-addon-nudge ${stateCls}"${click}><span>${icon}${es ? 'Mejóralo con' : 'Enhance with'}: <b>${an} (+$${addon.price})</b></span><span class="facial-nudge-check">${addonSelected ? '✓' : ''}</span></div>`;
-      }
-    }
-
     return `
-      <div class="service-row ${tierCls}${selected ? ' selected' : ''}" data-id="${svc.id}" data-price="${svc.price}" data-pricestr="${priceStr}" data-time="${svc.time}" onclick="toggleFacialItem('${svc.id}')">
-        ${badge}
-        <div class="svc-row-info">
-          <div class="svc-row-name">${name}</div>
-          <div class="svc-row-sub">${sub}</div>
+      <div class="schedule-card">
+        <div class="card-header-actions">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="font-family:var(--serif); color:var(--white); font-size:17px;">${art.name}</h3>
+              <span class="badge ${art.is_active ? 'badge-active' : 'badge-hidden'}">${art.is_active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <p style="font-size:11px; color:var(--muted);">${art.title_en || ''}</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <span class="action-link" onclick="openEditArtistModal('${art.id}')">Edit Info</span>
+            <span class="action-link" onclick="openHoursModal('${art.id}')">Edit Hours</span>
+          </div>
         </div>
-        <div class="svc-row-right">
-          <div class="svc-row-price">${priceStr}</div>
-          <div class="svc-row-time">⏱ ${svc.time}</div>
-        </div>
-        <div class="svc-row-check">${selected ? '✓' : ''}</div>
-      </div>${nudge}`;
-  };
-
-  // Jump-nav: gives the "skip the scroll" benefit of a filter with no
-  // tagging logic to maintain.
-  const nav = FACIAL_TIERS
-    .map(t => `<a href="#facial-${t.id}">${es ? t.title.es : t.title.en}</a>`)
-    .join('');
-
-  const sections = FACIAL_TIERS.map(t => {
-    const items = t.tier === 'addon'
-      ? data.items.filter(s => s.isAddon)
-      : data.items.filter(s => !s.isAddon && s.tier === t.tier);
-    if (!items.length) return '';
-
-    const rows = items.map(row).join('');
-    const body = t.tier === 3
-      ? `<div class="facial-signature-wrap">${rows}</div>`
-      : rows;
-
-    return `
-      <div class="facial-tier-head" id="facial-${t.id}">
-        <div class="facial-tier-title">${es ? t.title.es : t.title.en}</div>
-        <div class="facial-tier-blurb">${es ? t.blurb.es : t.blurb.en}</div>
+        <div>${rows}</div>
       </div>
-      ${body}`;
+    `;
   }).join('');
-
-  // Membership is a recurring commitment, not a single dated appointment,
-  // so it deliberately sits outside the bookable list — no price feeds the
-  // cart, no slot is reserved. It's a conversation starter only.
-  const m = FACIAL_MEMBERSHIP;
-  const waLink = `https://wa.me/18483891934?text=${encodeURIComponent(es ? m.msg.es : m.msg.en)}`;
-  const membership = `
-    <div class="facial-membership">
-      <div class="facial-membership-title">${es ? m.title.es : m.title.en}</div>
-      <div class="facial-membership-text">${es ? m.text.es : m.text.en}</div>
-      <a href="${waLink}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${es ? m.cta.es : m.cta.en}</a>
-    </div>`;
-
-  acc.innerHTML = `
-    <div class="accordion-head" onclick="toggleAccordion(this.parentElement)">
-      <span class="accordion-title">${label}</span>
-      <span class="accordion-badge" id="badge-facial"></span>
-      <span class="accordion-chevron">▼</span>
-    </div>
-    <div class="accordion-body">
-      <div class="facial-jumpnav">${nav}</div>
-      <div class="service-rows">${sections}</div>
-      ${membership}
-    </div>`;
-
-  return acc;
 }
 
-/* ─── ACCORDION TOGGLE ──────────────────────────────────────────── */
-function toggleAccordion(acc) {
-  acc.classList.toggle('open');
+// ── ARTIST MODAL LOGIC ──
+function openAddArtistModal() {
+  document.getElementById('editArtistId').value = '';
+  document.getElementById('artistModalTitle').textContent = 'Add Team Member';
+  document.getElementById('artistFieldId').value = '';
+  document.getElementById('artistFieldId').disabled = false;
+  document.getElementById('artistFieldName').value = '';
+  document.getElementById('artistFieldTitleEn').value = '';
+  document.getElementById('artistFieldTitleEs').value = '';
+  document.getElementById('artistFieldIsActive').checked = true;
+  document.getElementById('deleteArtistBtn').style.display = 'none';
+  document.getElementById('artistModal').style.display = 'flex';
 }
 
-/* ─── SERVICE ROW TOGGLE ────────────────────────────────────────── */
-// Services that trigger the "add nail art?" popup when selected.
-// Gel Manicure · Acrylic Full Set · Acrylic Refill · Gel X / Soft Gel Tips.
-// Adding a service here is all that's needed to wire it into the popup flow.
-const NAIL_ART_TRIGGERS = new Set(['nails-2', 'nails-3', 'nails-4', 'nails-5']);
+function openEditArtistModal(artistId) {
+  const art = ALL_ARTISTS.find(a => a.id === artistId);
+  if (!art) return;
 
-// Whether the customer opted to add Nail Art / Design to their appointment.
-// Set true only if they answer "yes" to the popup. Cleared automatically
-// once no trigger service remains in the selection.
-let nailArtSelected = false;
+  document.getElementById('editArtistId').value = art.id;
+  document.getElementById('artistModalTitle').textContent = `Edit ${art.name}`;
+  document.getElementById('artistFieldId').value = art.id;
+  document.getElementById('artistFieldId').disabled = true;
+  document.getElementById('artistFieldName').value = art.name;
+  document.getElementById('artistFieldTitleEn').value = art.title_en || '';
+  document.getElementById('artistFieldTitleEs').value = art.title_es || '';
+  document.getElementById('artistFieldIsActive').checked = art.is_active;
+  document.getElementById('deleteArtistBtn').style.display = 'block';
+  document.getElementById('artistModal').style.display = 'flex';
+}
 
-// Services that trigger the "what are you touching up?" popup when selected.
-// 6–8 Week PMU Touch-up · Annual PMU Touch-up.
-const PMU_AREA_TRIGGERS = new Set(['pmu-10', 'pmu-11']);
+function closeArtistModal() {
+  document.getElementById('artistModal').style.display = 'none';
+}
 
-// The area the customer picked (English label, used to build the display
-// name). null until the popup is answered. Cleared when the last PMU
-// touch-up trigger is deselected, same pattern as nailArtSelected.
-let pmuAreaChosen = null;
+async function saveArtist() {
+  const existingId = document.getElementById('editArtistId').value;
+  const id = existingId || document.getElementById('artistFieldId').value.trim().toLowerCase();
+  const name = document.getElementById('artistFieldName').value.trim();
+  const title_en = document.getElementById('artistFieldTitleEn').value.trim();
+  const title_es = document.getElementById('artistFieldTitleEs').value.trim();
+  const is_active = document.getElementById('artistFieldIsActive').checked;
 
-function toggleSvc(row) {
-  const id = row.dataset.id;
-  if (selectedSvcIds.has(id)) {
-    selectedSvcIds.delete(id);
-    row.classList.remove('selected');
-    row.querySelector('.svc-row-check').textContent = '';
-    if (NAIL_ART_TRIGGERS.has(id) && ![...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
-      nailArtSelected = false;
-    }
-    if (PMU_AREA_TRIGGERS.has(id) && ![...PMU_AREA_TRIGGERS].some(t => selectedSvcIds.has(t))) {
-      pmuAreaChosen = null;
-    }
+  if (!id || !name) {
+    alert('Please provide an Artist ID and Full Name.');
+    return;
+  }
+
+  const payload = { id, name, title_en, title_es, is_active };
+
+  let error;
+  if (existingId) {
+    ({ error } = await sbClient.from('artists').update(payload).eq('id', existingId));
   } else {
-    selectedSvcIds.add(id);
-    row.classList.add('selected');
-    row.querySelector('.svc-row-check').textContent = '✓';
-    if (NAIL_ART_TRIGGERS.has(id) && !nailArtSelected) openNailArtPopup();
-    if (PMU_AREA_TRIGGERS.has(id) && !pmuAreaChosen) openPmuAreaPopup();
+    ({ error } = await sbClient.from('artists').insert([payload]));
+    // Pre-populate standard shifts for the new artist if new
+    if (!error) {
+      const defaultShifts = [
+        { artist_id: id, day_of_week: 1, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 2, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 3, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 4, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 5, start_hour: 9, end_hour: 19, is_active: true },
+        { artist_id: id, day_of_week: 6, start_hour: 8, end_hour: 16, is_active: true },
+        { artist_id: id, day_of_week: 0, start_hour: 0, end_hour: 0, is_active: false }
+      ];
+      await sbClient.from('artist_schedules').insert(defaultShifts);
+    }
   }
 
-  // Find which cat this row belongs to
-  const acc = row.closest('.accordion');
-  if (acc) {
-    const cat = acc.dataset.cat;
-    updateAccordionBadge(cat);
-    if (selectedSvcIds.size > 0) acc.classList.add('has-selection');
-    else acc.classList.remove('has-selection');
-  }
-
-  updateStep2Cta();
-}
-
-/* ─── FACIAL-SPECIFIC TOGGLE ─────────────────────────────────────────
-   Every clickable element inside the facial accordion (service rows AND
-   the "Enhance with" nudges) goes through this instead of toggleSvc().
-   A facial's row and its paired add-on's nudge both need to reflect each
-   other's selection state (nudge lights up once the facial is picked;
-   the facial row doesn't care about the add-on) — the simplest way to
-   keep that always correct, no matter which of the two was clicked, is
-   to rebuild the whole accordion from selectedSvcIds after every toggle,
-   rather than hand-patching two different elements in two different
-   ways. buildFacialAccordion() already renders purely from that state,
-   so this just calls it again and swaps the node in place. */
-function toggleFacialItem(id) {
-  if (selectedSvcIds.has(id)) selectedSvcIds.delete(id);
-  else selectedSvcIds.add(id);
-
-  const oldAcc = document.querySelector('.accordion[data-cat="facial"]');
-  if (oldAcc) {
-    const wasOpen = oldAcc.classList.contains('open');
-    const newAcc  = buildFacialAccordion();
-    if (!wasOpen) newAcc.classList.remove('open'); // preserve collapsed state across rebuild
-    oldAcc.replaceWith(newAcc);
-    if (selectedSvcIds.size > 0) newAcc.classList.add('has-selection');
-    else newAcc.classList.remove('has-selection');
-  }
-
-  updateAccordionBadge('facial');
-  updateStep2Cta();
-}
-
-/* ─── ACCORDION BADGE ───────────────────────────────────────────── */
-function updateAccordionBadge(cat) {
-  const acc   = document.querySelector(`.accordion[data-cat="${cat}"]`);
-  const badge = document.getElementById('badge-' + cat);
-  if (!acc || !badge) return;
-
-  const rows = acc.querySelectorAll('.service-row.selected');
-  badge.textContent = rows.length > 0 ? rows.length : '';
-
-  if (rows.length > 0) acc.classList.add('has-selection');
-  else                 acc.classList.remove('has-selection');
-}
-
-/* ─── STEP 2 STICKY CTA ─────────────────────────────────────────── */
-function updateStep2Cta() {
-  const cta      = document.getElementById('step2Cta');
-  const countEl  = document.getElementById('step2CtaCount');
-  const totalEl  = document.getElementById('step2CtaTotal');
-  const n        = selectedSvcIds.size;
-
-  if (n === 0) {
-    cta.classList.remove('visible');
-    document.body.classList.remove('cart-active');
+  if (error) {
+    alert('Failed to save artist: ' + error.message);
     return;
   }
 
-  cta.classList.add('visible');
-  document.body.classList.add('cart-active');
-
-  const lang = isEs();
-  // Count the nail-art add-on in the visible service count when active.
-  const artOn = nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t));
-  const shownCount = n + (artOn ? 1 : 0);
-  countEl.textContent = shownCount === 1
-    ? (lang ? '1 servicio seleccionado' : '1 service selected')
-    : (lang ? `${shownCount} servicios seleccionados` : `${shownCount} services selected`);
-
-  // Calculate total from selected rows
-  let total = 0;
-  document.querySelectorAll('.service-row.selected').forEach(row => {
-    total += parseInt(row.dataset.price) || 0;
-  });
-
-  totalEl.textContent = total > 0
-    ? (lang ? 'desde $' : 'from $') + total.toLocaleString()
-    : '';
+  closeArtistModal();
+  loadSchedules();
 }
 
-/* ═══════════════════════════════════════════
-   STAGE 2 STATE
-═══════════════════════════════════════════ */
-let selectedArtist = null;
-let selectedDate   = null;
-let selectedTime   = null;
-let takenSlots     = [];
-let calYear, calMonth;
-
-// ── ARTIST SCHEDULES ──
-// Working hours now live in schedules.json (one shared config, edited
-// directly by the studio — no code changes needed to update hours).
-// DEFAULT_SCHEDULE is only a safety fallback in case schedules.json
-// fails to load, so the calendar never breaks entirely.
-const DEFAULT_SCHEDULE = {
-  1: [9, 19], // Mon
-  3: [9, 19], // Wed
-  4: [9, 19], // Thu
-  5: [9, 19], // Fri
-  6: [7, 16], // Sat
-};
-let ARTIST_SCHEDULES = null;
-let schedulesLoadPromise = null;
-
-async function loadArtistSchedules() {
-  try {
-    const res = await fetch('schedules.json');
-    if (res.ok) {
-      const data = await res.json();
-      ARTIST_SCHEDULES = data;
-    }
-  } catch (e) {
-    // Network/file issue — DEFAULT_SCHEDULE fallback below covers this.
-    ARTIST_SCHEDULES = null;
-  }
-}
-schedulesLoadPromise = loadArtistSchedules();
-
-function getArtistSchedule(artistId) {
-  const id = artistId || 'liz';
-  if (ARTIST_SCHEDULES && ARTIST_SCHEDULES[id]) return ARTIST_SCHEDULES[id];
-  return DEFAULT_SCHEDULE;
-}
-
-// Checks an artist's optional "blackout" date ranges from schedules.json
-// (e.g. Wendy unavailable for all of August). dateStr must be YYYY-MM-DD,
-// which compares correctly as a plain string against the range bounds.
-function isDateBlackedOut(schedule, dateStr) {
-  if (!schedule || !Array.isArray(schedule.blackout)) return false;
-  return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
-}
-
-const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-/* ═══════════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════════ */
-function goBackTo(stepNum) {
-  stopDepositPolling();
-  // Hide all panels
-  document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-step' + stepNum).classList.add('active');
-  // The step INDICATOR only has 4 stages (Services / Artist / Date & Time /
-  // Confirm) but there are 5 PANELS, since category-select (panel 1) and
-  // service-browse (panel 2) both belong to the "Services" indicator stage.
-  // So panel 3→indicator 2, panel 4→indicator 3, panel 5→indicator 4.
-  setFunnelStep(Math.max(1, stepNum - 1));
-  scrollTop();
-}
-
-/* ── DURATION PARSING ──
-   Parses the display "time" string (e.g. "45–60 min", "2 hrs", "Consultation")
-   into a number of minutes. For ranges, uses the SMALLER value.
-   Non-numeric labels ("Full Set", "Consultation", "Varies") fall back to
-   sensible defaults since no explicit duration is given. */
-function parseDurationMinutes(timeStr) {
-  if (!timeStr) return 60;
-  const str = timeStr.trim();
-
-  // Non-numeric labels — use defaults
-  if (/full set/i.test(str)) return 120;
-  if (/consultation/i.test(str)) return 60;
-  if (/varies/i.test(str)) return 60;
-
-  // Hours, e.g. "2 hrs" or "2–3 hrs" — take smaller number
-  const hrMatch = str.match(/(\d+)(?:\s*[–-]\s*(\d+))?\s*hr/i);
-  if (hrMatch) {
-    return parseInt(hrMatch[1], 10) * 60;
-  }
-
-  // Minutes, e.g. "45 min" or "45–60 min" — take smaller number
-  const minMatch = str.match(/(\d+)(?:\s*[–-]\s*(\d+))?\s*min/i);
-  if (minMatch) {
-    return parseInt(minMatch[1], 10);
-  }
-
-  // Fallback for anything unrecognized
-  return 60;
-}
-
-function goToStep3() {
-  if (!selectedSvcIds.size) return;
-  // Collect services into global state
-  window.BOOKING_STATE = window.BOOKING_STATE || {};
-  window.BOOKING_STATE.services = [];
-  document.querySelectorAll('.service-row.selected').forEach(row => {
-    window.BOOKING_STATE.services.push({
-      id:       row.dataset.id,
-      name:     row.querySelector('.svc-row-name').textContent,
-      price:    parseInt(row.dataset.price) || 0,
-      priceStr: row.dataset.pricestr,
-      durationMinutes: parseDurationMinutes(row.dataset.time),
-    });
-  });
-  // Append the chosen touch-up area onto the matching PMU service's own
-  // name, so it flows untouched into the calendar event and both emails
-  // via create-booking.js — no backend change needed. Safe to mutate here:
-  // each entry above is a fresh object scraped from the DOM, not a
-  // reference into the SERVICES catalog.
-  if (pmuAreaChosen) {
-    window.BOOKING_STATE.services.forEach(sv => {
-      if (PMU_AREA_TRIGGERS.has(sv.id)) {
-        sv.name = sv.name + ' — ' + pmuAreaChosen;
-      }
-    });
-  }
-  // Nail Art / Design add-on (when chosen alongside any trigger service).
-  // No fixed price — cost depends on design complexity and is confirmed at
-  // the appointment. Adds 30 min to whatever service(s) were selected.
-  if (nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
-    window.BOOKING_STATE.services.push({
-      id:       'nail-art',
-      name:     isEs() ? 'Arte / Diseño de Uñas' : 'Nail Art / Design',
-      price:    0,
-      priceStr: isEs() ? 'Precio en la cita' : 'Priced at appointment',
-      durationMinutes: 30,
-    });
-  }
-  document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-step3').classList.add('active');
-  setFunnelStep(2); // Artist
-  filterArtists();
-  scrollTop();
-}
-
-function filterArtists() {
-  // Show only artists who can cover EVERY selected category — not just
-  // artists with any partial overlap. Liz (no data-cats) always shows
-  // since she covers all categories.
-  document.querySelectorAll('.artist-card').forEach(card => {
-    const cats = card.dataset.cats; // e.g. "pmu" or undefined
-    if (!cats) return; // no filter attr = always visible (Liz)
-    const artistCats = cats.split(',').map(c => c.trim());
-    const visible = [...selectedCats].every(c => artistCats.includes(c));
-    card.style.display = visible ? '' : 'none';
-  });
-}
-
-async function goToStep4() {
-  if (!selectedArtist) return;
-  window.BOOKING_STATE = window.BOOKING_STATE || {};
-  window.BOOKING_STATE.artist   = selectedArtist;
-  window.BOOKING_STATE.artistId = selectedArtist === 'Johanna' ? 'johanna' : selectedArtist === 'Liz Wendy Cedeño' ? 'liz' : selectedArtist;
-  document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-step4').classList.add('active');
-  setFunnelStep(3); // Date & Time
-  await initCalendar();
-  scrollTop();
-}
-
-/* ═══════════════════════════════════════════
-   STEP INDICATOR UPDATE
-═══════════════════════════════════════════ */
-function setFunnelStep(active) {
-  [1,2,3,4].forEach(n => {
-    const el = document.getElementById('fstep' + n);
-    if (!el) return;
-    el.className = 'fstep' + (n < active ? ' done' : n === active ? ' active' : '');
-  });
-}
-
-/* ═══════════════════════════════════════════
-   ARTIST SELECTION
-═══════════════════════════════════════════ */
-function selectArtist(id) {
-  selectedArtist = null;
-  // Deselect all
-  document.querySelectorAll('.artist-card:not(.coming-soon)').forEach(c => c.classList.remove('selected'));
-  // Select clicked
-  const card = document.getElementById('artist-' + id);
-  if (card) {
-    card.classList.add('selected');
-    if (id === 'liz')           selectedArtist = 'Liz Wendy Cedeño';
-    else if (id === 'johanna')  selectedArtist = 'Johanna';
-    else                        selectedArtist = id;
-  }
-  // Enable next button
-  const btn = document.getElementById('step3Next');
-  if (selectedArtist) btn.classList.add('enabled');
-  else                btn.classList.remove('enabled');
-}
-
-/* ═══════════════════════════════════════════
-   STAFF PIN OVERRIDE (Wendy only)
-   Lets Wendy skip the $20 deposit for a trusted client under her
-   discretion. The PIN itself is verified server-side only, inside
-   create-booking.js against the STAFF_OVERRIDE_PIN env var — nothing
-   in this file can confirm a PIN is correct. "Apply" here just stages
-   the value to be sent with the booking; the real check (and the
-   audit-trail logging) happens on submit, on the backend.
-═══════════════════════════════════════════ */
-let staffOverridePin = '';
-
-function toggleStaffOverride(event) {
-  event.stopPropagation(); // don't trigger selectArtist('liz') on the parent card
-  document.getElementById('staffOverridePanel').classList.toggle('open');
-  const panel = document.getElementById('staffOverridePanel');
-  if (panel.classList.contains('open')) {
-    document.getElementById('staffOverrideInput').focus();
-  }
-}
-
-// Fires on every keystroke so the deposit gate reacts correctly even if
-// Wendy types the PIN and moves on without tapping the ✓ button — the
-// checkmark is a visual confirmation, not a required step.
-function syncStaffOverridePin(input) {
-  staffOverridePin = input.value.trim();
-  const lock = document.getElementById('staffOverrideLock');
-  lock.classList.toggle('active', !!staffOverridePin);
-  lock.textContent = staffOverridePin ? '🔓' : '🔒';
-}
-
-function applyStaffOverride(event) {
-  event.stopPropagation();
-  const value = document.getElementById('staffOverrideInput').value.trim();
-  const lock  = document.getElementById('staffOverrideLock');
-  staffOverridePin = value;
-  lock.classList.toggle('active', !!value);
-  lock.textContent = value ? '🔓' : '🔒';
-}
-
-/* ═══════════════════════════════════════════
-   CALENDAR
-═══════════════════════════════════════════ */
-async function initCalendar() {
-  const now = new Date();
-  calYear  = now.getFullYear();
-  calMonth = now.getMonth();
-  selectedDate = null;
-  selectedTime = null;
-  takenSlots   = [];
-
-  // Update artist label
-  const artistLabel = document.getElementById('calArtistLabel');
-  if (artistLabel) artistLabel.textContent = window.BOOKING_STATE?.artist || 'Liz Wendy Cedeño';
-
-  // Hide slots until date chosen
-  const slotsSection = document.getElementById('slotsSection');
-  if (slotsSection) slotsSection.style.display = 'none';
-
-  // Disable next button
-  const btn = document.getElementById('step4Next');
-  if (btn) btn.classList.remove('enabled');
-
-  // Make sure schedules.json has loaded (or failed) before drawing the
-  // calendar, so we never briefly show fallback hours then flicker.
-  if (schedulesLoadPromise) await schedulesLoadPromise;
-
-  renderCalendar();
-}
-
-function changeMonth(dir) {
-  calMonth += dir;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
-  selectedDate = null;
-  selectedTime = null;
-  takenSlots   = [];
-  document.getElementById('slotsSection').style.display = 'none';
-  document.getElementById('step4Next').classList.remove('enabled');
-  renderCalendar();
-}
-
-function renderCalendar() {
-  const es    = isEs();
-  const label = document.getElementById('calMonthLabel');
-  label.textContent = (es ? MONTHS_ES : MONTHS_EN)[calMonth] + ' ' + calYear;
-
-  const grid     = document.getElementById('calGrid');
-  const today    = new Date();
-  today.setHours(0,0,0,0);
-  const artistSchedule = getArtistSchedule(window.BOOKING_STATE && window.BOOKING_STATE.artistId);
-
-  // Keep the day headers (first 7 children)
-  const headers = Array.from(grid.children).slice(0, 14); // 7 EN + 7 ES
-  grid.innerHTML = '';
-  headers.forEach(h => grid.appendChild(h));
-
-  // First day offset
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  for (let i = 0; i < firstDay; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'cal-day cal-empty';
-    grid.appendChild(empty);
-  }
-
-  // Days
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(calYear, calMonth, d);
-    date.setHours(0,0,0,0);
-    const dow  = date.getDay();
-    const cell = document.createElement('div');
-    cell.textContent = d;
-
-    const isPast      = date < today;
-    const blackedOut  = isDateBlackedOut(artistSchedule, formatDateISO(date));
-    const isWorkDay   = !!artistSchedule[dow] && !blackedOut;
-    const isToday     = date.getTime() === today.getTime();
-    const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
-
-    let cls = 'cal-day';
-    if (isPast)       cls += ' cal-past';
-    else if (!isWorkDay) cls += ' cal-disabled';
-    if (isToday)      cls += ' cal-today';
-    if (isSelected)   cls += ' cal-selected';
-
-    cell.className = cls;
-
-    if (!isPast && isWorkDay) {
-      cell.onclick = () => pickDate(date);
-    }
-    grid.appendChild(cell);
-  }
-}
-let currentAvailability = null;
-
-async function pickDate(date) {
-  selectedDate = date;
-  selectedTime = null;
-  currentAvailability = null;
-
-  renderCalendar();
-
-  const slotsSection = document.getElementById('slotsSection');
-  slotsSection.style.display = 'block';
-
-  const es = isEs();
-  const dateStr = date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  document.getElementById('slotsDateLabel').textContent = dateStr;
-
-  document.getElementById('step4Next').classList.remove('enabled');
-
-  document.getElementById('slotsArea').innerHTML = `
-    <div class="slots-loading">
-      <div class="spinner"></div>
-      <span>${es ? 'Cargando horarios...' : 'Loading times...'}</span>
-    </div>`;
-
-  setTimeout(() => {
-    slotsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
-
-  try {
-    const dateISO = formatDateISO(date);
-    const artistId = (window.BOOKING_STATE && window.BOOKING_STATE.artistId) || 'liz';
-    const res = await fetch(`/.netlify/functions/get-availability?date=${dateISO}&artistId=${artistId}`);
-    if (res.ok) {
-      currentAvailability = await res.json();
-    }
-  } catch(e) {
-    currentAvailability = { isFullyBlocked: true, busyIntervals: [] };
-  }
-
-  renderSlots(date);
-}
-
-function renderSlots(date) {
-  const es = isEs();
-
-  if (!currentAvailability || currentAvailability.isFullyBlocked) {
-    document.getElementById('slotsArea').innerHTML = `<div class="slots-placeholder">${es ? 'Sin disponibilidad este día.' : 'No availability on this day.'}</div>`;
-    return;
-  }
-
-  const rawDuration = (window.BOOKING_STATE?.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
-  const reqMinutes = Math.ceil(rawDuration / 15) * 15;
-
-  const stepMinutes = 30;
-
-  const availableSlots = [];
- // Calculate precise DST offset for the requested date
-  function getNYOffset(dStr) {
-    const d = new Date(`${dStr}T12:00:00Z`);
-    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
-    const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-    let diff = nyHour - 12;
-    if (diff > 0) diff -= 24;
-    return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
-  }
-  const offset = getNYOffset(formatDateISO(date));
-
-  const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00${offset}`).getTime();
-  const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00${offset}`).getTime();
-  for (let timeMs = shiftStartMs; timeMs + (reqMinutes * 60000) <= shiftEndMs; timeMs += (stepMinutes * 60000)) {
-    const slotEndMs = timeMs + (reqMinutes * 60000);
-
-    const hasCollision = (currentAvailability.busyIntervals || []).some(busy => {
-      return (timeMs < busy.end && slotEndMs > busy.start);
-    });
-
-    const nowMs = Date.now();
-    const isTooSoon = (timeMs < nowMs + (30 * 60000));
-
-    if (!hasCollision && !isTooSoon) {
-      const d = new Date(timeMs);
-      const slotStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-      availableSlots.push(slotStr);
-    }
-  }
-
-  if (availableSlots.length === 0) {
-    document.getElementById('slotsArea').innerHTML = `<div class="slots-placeholder">${es ? 'No hay suficiente tiempo continuo para estos servicios.' : 'Not enough continuous time for these services.'}</div>`;
-    return;
-  }
-
-  const html = availableSlots.map(slot => {
-    const sel = selectedTime === slot;
-    const label = formatTimeLabel(slot);
-    const cls = 'time-slot' + (sel ? ' slot-selected' : '');
-    return `<div class="${cls}" onclick="pickTime('${slot}')">${label}</div>`;
-  }).join('');
-
-  document.getElementById('slotsArea').innerHTML = `<div class="slots-grid">${html}</div>`;
-}
-
-function pickTime(slot) {
-  selectedTime = slot;
-  renderSlots(selectedDate);
-  document.getElementById('step4Next').classList.add('enabled');
-}
-
-/* ═══════════════════════════════════════════
-   UTILITIES
-═══════════════════════════════════════════ */
-function formatDateISO(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,'0');
-  const d = String(date.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
-
-function formatTimeLabel(slot) {
-  const [h, m = 0] = slot.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour = h % 12 || 12;
-  return `${hour}:${String(m).padStart(2,'0')} ${ampm}`;
-}
-
-/* ═══════════════════════════════════════════
-   STAGE 3: STEP 5 — CONFIRM + PAYMENT
-═══════════════════════════════════════════ */
-
-function goToStep5() {
-  if (!selectedDate || !selectedTime) return;
-  window.BOOKING_STATE = window.BOOKING_STATE || {};
-  window.BOOKING_STATE.date = selectedDate;
-  window.BOOKING_STATE.time = selectedTime;
-
-  // Build confirm summary
-  buildConfirmSummary();
-
-  // Reset gates (clean slate before applying artist-specific state below)
-  stopDepositPolling();
-  document.getElementById('policyCheckbox').checked  = false;
-  document.getElementById('depositPaidCheck').checked = false;
-  document.getElementById('paymentGate').classList.remove('unlocked');
-  document.getElementById('depositConfirmRow').classList.remove('visible');
-  document.getElementById('submitBtn').disabled = true;
-  document.getElementById('formError').classList.remove('visible');
-
-  // Johanna: no deposit required — hide deposit-only elements, show submit button directly.
-  // Same treatment applies when Wendy has staged a staff override PIN on her own card —
-  // she's explicitly waiving the deposit for this client, so the customer should see the
-  // same plain "Confirm Appointment" flow, not the Clover payment box.
-  const depositOnlyBlock = document.getElementById('depositOnlyBlock');
-  const depositCheckboxRow = document.getElementById('depositCheckboxRow');
-  const beforeYouBookBox = document.getElementById('beforeYouBookBox');
-  const submitBtn = document.getElementById('submitBtn');
-  const depositRow = document.getElementById('depositConfirmRow');
-  const staffOverrideStaged = window.BOOKING_STATE.artistId === 'liz' && !!staffOverridePin;
-  if (window.BOOKING_STATE.artistId === 'johanna' || window.BOOKING_STATE.artistId === 'liz' || staffOverrideStaged) {
-    if (depositOnlyBlock)   depositOnlyBlock.style.display = 'none';
-    if (depositCheckboxRow) depositCheckboxRow.style.display = 'none';
-    if (beforeYouBookBox)   beforeYouBookBox.style.display = 'none';
-    if (depositRow) depositRow.classList.add('visible');
-    if (submitBtn)  { submitBtn.style.display = ''; submitBtn.disabled = false; }
-  } else {
-    if (depositOnlyBlock)   depositOnlyBlock.style.display = '';
-    if (depositCheckboxRow) depositCheckboxRow.style.display = 'none';
-    if (beforeYouBookBox)   beforeYouBookBox.style.display = '';
-    if (depositRow) depositRow.classList.remove('visible');
-    if (submitBtn)  { submitBtn.style.display = 'none'; submitBtn.disabled = true; }
-  }
-
-  document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-step5').classList.add('active');
-  setFunnelStep(4); // Step indicator shows step 4 as active (final)
-  scrollTop();
-}
-
-/* ── BUILD CONFIRM SUMMARY ── */
-function buildConfirmSummary() {
-  const s    = window.BOOKING_STATE || {};
-  const es   = isEs();
-  const rows = document.getElementById('confirmSummaryRows');
-  if (!rows) return;
-
-  const dateStr = s.date
-    ? s.date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
-    : '—';
-  const timeStr = s.time ? formatTimeLabel(s.time) : '—';
-  const svcList = (s.services || []).map(sv =>
-    `<div class="svc-pill">· ${es ? (sv.nameEs || sv.name) : sv.name} <span style="color:var(--gold-dim)">${sv.priceStr}</span></div>`
-  ).join('');
-
-  rows.innerHTML = `
-    <div class="booking-summary-row">
-      <span class="booking-summary-icon">👑</span>
-      <div><strong>${s.artist || 'Liz Wendy Cedeño'}</strong></div>
-    </div>
-    <div class="booking-summary-row">
-      <span class="booking-summary-icon">📅</span>
-      <div><strong>${dateStr}</strong> ${es ? 'a las' : 'at'} <strong>${timeStr}</strong></div>
-    </div>
-    <div class="booking-summary-row">
-      <span class="booking-summary-icon">✨</span>
-      <div class="svc-list">${svcList || '—'}</div>
-    </div>
-    <div class="booking-summary-row">
-      <span class="booking-summary-icon">📍</span>
-      <div>76 Livingston Ave, New Brunswick, NJ 08901</div>
-    </div>`;
-}
-
-/* ── POLICY GATE TOGGLE ── */
-function onPolicyToggle(checkbox) {
-  const gate = document.getElementById('paymentGate');
-  if (checkbox.checked) gate.classList.add('unlocked');
+async function deleteArtist() {
+  const id = document.getElementById('editArtistId').value;
+  if (!confirm(`Are you sure you want to toggle deactivation for this artist?`)) return;
+
+  const { error } = await sbClient.from('artists').update({ is_active: false }).eq('id', id);
+  if (error) alert('Error: ' + error.message);
   else {
-    gate.classList.remove('unlocked');
-    document.getElementById('depositPaidCheck').checked = false;
-    document.getElementById('depositConfirmRow').classList.remove('visible');
-    document.getElementById('submitBtn').disabled = true;
+    closeArtistModal();
+    loadSchedules();
   }
 }
 
-/* ── DEPOSIT CLICK → AUTO-DETECT PAYMENT ──
-   Instead of making the customer come back and manually confirm they paid,
-   the original tab quietly polls in the background (Clover opens in a NEW
-   tab, so this tab's JS keeps running the whole time). The moment the
-   webhook-recorded payment shows up, the booking submits itself — payment
-   and confirmation happen in one motion, with no return trip required.
-   The manual "I completed my deposit" checkbox stays as a fallback if
-   detection doesn't land within DEPOSIT_POLL_TIMEOUT_MS. */
-const DEPOSIT_POLL_INTERVAL_MS = 4000;
-const DEPOSIT_POLL_TIMEOUT_MS  = 5 * 60 * 1000; // 5 minutes
-let depositPollIntervalId = null;
-let depositPollTimeoutId  = null;
-let depositPollStartedAt  = 0;
+// ── HOURS EDITOR MODAL ──
+function openHoursModal(artistId) {
+  const art = ALL_ARTISTS.find(a => a.id === artistId);
+  if (!art) return;
 
-function onDepositClick() {
-  // Small delay so the Clover tab opens, then show the auto-detect status row.
-  // Booking only proceeds via confirmed payment detection or staff PIN override.
-  setTimeout(() => {
-    document.getElementById('depositConfirmRow').classList.add('visible');
-  }, 800);
-  startDepositPolling();
+  document.getElementById('hoursArtistId').value = artistId;
+  document.getElementById('hoursModalTitle').textContent = `Hours for ${art.name}`;
+  const container = document.getElementById('hoursRowsContainer');
+
+  const artScheds = ALL_SCHEDS.filter(s => s.artist_id === artistId);
+
+  container.innerHTML = [0,1,2,3,4,5,6].map(d => {
+    const entry = artScheds.find(s => s.day_of_week === d) || { start_hour: 9, end_hour: 19, is_active: false };
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--border); padding:8px 12px; border-radius:4px;" data-dow="${d}">
+        <div style="width:90px; font-weight:600;">${DOW_NAMES[d]}</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" class="day-active-check" ${entry.is_active ? 'checked' : ''} style="accent-color:var(--gold);"/>
+          <span style="font-size:11px; color:var(--muted-lt);">Working</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="number" class="day-start-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="22" value="${entry.start_hour}"/>
+          <span>to</span>
+          <input type="number" class="day-end-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="23" value="${entry.end_hour}"/>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('hoursModal').style.display = 'flex';
 }
 
-function startDepositPolling() {
-  stopDepositPolling(); // clear any stale timers from a previous attempt
-  window.bookingAutoSubmitted = false;
-  depositPollStartedAt = Date.now();
-
-  const statusEl = document.getElementById('depositAutoStatus');
-  statusEl.classList.remove('confirmed');
-  statusEl.classList.add('visible');
-
-  depositPollIntervalId = setInterval(checkDepositStatus, DEPOSIT_POLL_INTERVAL_MS);
-  depositPollTimeoutId  = setTimeout(() => {
-    // Gave it 5 minutes — stop quietly and leave the manual checkbox as the
-    // path forward. Not an error state, just a handoff.
-    stopDepositPolling();
-  }, DEPOSIT_POLL_TIMEOUT_MS);
-
-  // Fire one check right away too, in case the customer already paid fast.
-  checkDepositStatus();
+function closeHoursModal() {
+  document.getElementById('hoursModal').style.display = 'none';
 }
 
-async function checkDepositStatus() {
-  if (window.bookingAutoSubmitted || window.isSubmittingBooking) return;
+async function saveHoursChanges() {
+  const artistId = document.getElementById('hoursArtistId').value;
+  const rows = document.querySelectorAll('#hoursRowsContainer > div');
+  const btn = document.getElementById('saveHoursBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
-  try {
-    const res = await fetch(`/.netlify/functions/check-deposit-status?since=${depositPollStartedAt}`);
-    if (!res.ok) return; // transient error — next poll tick will try again
-    const data = await res.json();
-    if (!data.paid) return;
+  const updates = [];
+  rows.forEach(r => {
+    const dow = parseInt(r.getAttribute('data-dow'), 10);
+    const is_active = r.querySelector('.day-active-check').checked;
+    const start_hour = parseInt(r.querySelector('.day-start-hour').value, 10);
+    const end_hour = parseInt(r.querySelector('.day-end-hour').value, 10);
 
-    // Payment confirmed — stop polling, show the confirmed state, then
-    // submit the booking automatically. A short pause lets the customer
-    // actually see the confirmation instead of the screen jumping straight
-    // to success.
-    window.bookingAutoSubmitted = true;
-    clearInterval(depositPollIntervalId);
-    clearTimeout(depositPollTimeoutId);
-    depositPollIntervalId = null;
-    depositPollTimeoutId  = null;
+    updates.push({
+      artist_id: artistId,
+      day_of_week: dow,
+      start_hour,
+      end_hour,
+      is_active
+    });
+  });
 
-    const statusEl = document.getElementById('depositAutoStatus');
-    statusEl.classList.add('confirmed');
-    document.getElementById('depositAutoStatusText').innerHTML =
-      '<span data-en>Payment confirmed! Booking your appointment…</span>' +
-      '<span data-es>¡Pago confirmado! Reservando tu cita…</span>';
-
-    // Payment confirmed — show, enable, and auto-trigger. Customer never has to touch it.
-    const sBtn = document.getElementById('submitBtn');
-    sBtn.style.display = '';
-    sBtn.disabled = false;
-
-    setTimeout(() => submitBooking(), 600);
-  } catch (e) {
-    // Network hiccup — say nothing, just try again on the next tick.
-    console.warn('check-deposit-status poll failed, will retry:', e);
+  const { error } = await sbClient.from('artist_schedules').upsert(updates, { onConflict: 'artist_id,day_of_week' });
+  if (error) {
+    alert('Error saving hours: ' + error.message);
+  } else {
+    closeHoursModal();
+    loadSchedules();
   }
+  btn.disabled = false;
+  btn.textContent = 'Save Working Hours ✦';
 }
 
-function stopDepositPolling() {
-  if (depositPollIntervalId) clearInterval(depositPollIntervalId);
-  if (depositPollTimeoutId)  clearTimeout(depositPollTimeoutId);
-  depositPollIntervalId = null;
-  depositPollTimeoutId  = null;
-  const statusEl = document.getElementById('depositAutoStatus');
-  if (statusEl && !statusEl.classList.contains('confirmed')) {
-    statusEl.classList.remove('visible');
-  }
-}
+// ── APPOINTMENTS TAB ──
+async function loadAppointments() {
+  const tbody = document.getElementById('appointmentsTableBody');
+  const { data, error } = await sbClient
+    .from('appointments')
+    .select('*')
+    .order('start_time', { ascending: false })
+    .limit(50);
 
-/* ── DEPOSIT CONFIRM TOGGLE ── */
-function onDepositConfirm(checkbox) {
-  // Manual attestation bypass removed. Checkbox is hidden and this function
-  // is intentionally inert — submitBtn is only enabled by auto-detected
-  // payment (checkDepositStatus) or staff PIN override.
-  checkbox.checked = false;
-}
-
-function formatPhoneInput(input) {
-  let digits = input.value.replace(/\D/g, '').slice(0, 10);
-  let formatted = digits;
-  if (digits.length > 6) {
-    formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-  } else if (digits.length > 3) {
-    formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-  } else if (digits.length > 0) {
-    formatted = `(${digits}`;
-  }
-  input.value = formatted;
-}
-
-/* ── SUBMIT BOOKING ── */
-async function submitBooking() {
-  // Guard against rapid double-taps/double-clicks racing past the
-  // disabled-button state, especially on slow connections.
-  if (window.isSubmittingBooking) return;
-  window.isSubmittingBooking = true;
-
-  const es       = isEs();
-  const firstName = document.getElementById('firstName').value.trim();
-  const lastName  = document.getElementById('lastName').value.trim();
-  const email     = document.getElementById('emailInput').value.trim();
-  const phone     = document.getElementById('phoneInput').value.trim();
-  const notes     = document.getElementById('notesInput').value.trim();
-  const errEl     = document.getElementById('formError');
-  const s         = window.BOOKING_STATE || {};
-
-  // Validation
-  const errors = [];
-  if (!firstName) errors.push(es ? 'Por favor ingresa tu nombre.' : 'Please enter your first name.');
-  if (!lastName)  errors.push(es ? 'Por favor ingresa tu apellido.' : 'Please enter your last name.');
-  // Email is optional — customers without email or who don't want to share
-  // it still get a WhatsApp confirmation via their phone number. Only
-  // validate format if they actually typed something.
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    errors.push(es ? 'Por favor ingresa un correo válido, o deja el campo vacío.' : 'Please enter a valid email address, or leave the field empty.');
-  const phoneDigits = phone.replace(/\D/g, '');
-  if (!phone) errors.push(es ? 'Por favor ingresa tu número de teléfono.' : 'Please enter your phone number.');
-  else if (!/^[\d\s()+-]+$/.test(phone) || phoneDigits.length < 10)
-    errors.push(es ? 'Por favor ingresa un número de teléfono válido (mínimo 10 dígitos).' : 'Please enter a valid phone number (at least 10 digits).');
-  if (!s.date)  errors.push(es ? 'Falta la fecha de la cita.' : 'Appointment date is missing.');
-  if (!s.time)  errors.push(es ? 'Falta el horario de la cita.' : 'Appointment time is missing.');
-  if (!(s.services && s.services.length))
-    errors.push(es ? 'No hay servicios seleccionados.' : 'No services selected.');
-
-  if (errors.length) {
-    errEl.textContent = errors[0];
-    errEl.classList.add('visible');
-    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    window.isSubmittingBooking = false;
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
     return;
   }
-  errEl.classList.remove('visible');
 
-  const btn = document.getElementById('submitBtn');
-  btn.classList.add('loading');
-  btn.disabled = true;
-
-  // Sum durations across all selected services, then round up to the
-  // nearest 15 minutes for calendar cleanliness.
-  const rawDuration = (s.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
-  const durationMinutes = Math.ceil(rawDuration / 15) * 15;
-
-const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  const bookingData = {
-      firstName:       formatName(firstName),
-      lastName:        formatName(lastName),
-      email, phone, notes,
-      date:            formatDateISO(s.date),
-      time:            s.time,
-      services:        (s.services || []).map(item => {
-        if ((item.id === 'pmu-5' || item.id === 'pmu-6' || (item.name && item.name.toLowerCase().includes('touch-up'))) && pmuAreaChosen) {
-          const cleanName = item.name.replace(/\s*\([^)]*\)\s*$/, '');
-          return {
-            ...item,
-            name: `${cleanName} (${pmuAreaChosen})`
-          };
-        }
-        return item;
-      }),
-      total:           (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
-      artist:          s.artist || 'Liz Wendy Cedeño',
-      durationMinutes,
-      overridePin:     staffOverridePin || '',
-      lang:            es ? 'es' : 'en',
-    };
-  try {
-    const res = await fetch('/.netlify/functions/create-booking', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(bookingData),
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || (es ? 'Error al reservar. Inténtalo de nuevo.' : 'Booking failed. Please try again.'));
-    }
-
-    showSuccess({ ...bookingData, email });
-
-  } catch(e) {
-    errEl.textContent = e.message || (es ? 'Algo salió mal. Por favor intenta de nuevo.' : 'Something went wrong. Please try again.');
-    errEl.classList.add('visible');
-    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  } finally {
-    window.isSubmittingBooking = false;
+  if (!data || !data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No appointments recorded yet.</td></tr>`;
+    return;
   }
+
+  tbody.innerHTML = data.map(app => {
+    const dateStr = `${app.appointment_date} · ${app.appointment_time}`;
+    const svcNames = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
+
+    return `
+      <tr>
+        <td><strong>${dateStr}</strong></td>
+        <td><strong>${app.customer_name}</strong>${app.notes ? `<div style="font-size:10px; color:var(--muted-lt);">Note: ${app.notes}</div>` : ''}</td>
+        <td><a href="tel:${app.customer_phone}" style="color:var(--text); text-decoration:none;">${app.customer_phone}</a></td>
+        <td><span class="badge" style="background:var(--card2); border:1px solid var(--border);">${app.artist_id}</span></td>
+        <td style="max-width:220px; font-size:12px;">${svcNames}</td>
+        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price).toFixed(2)}</td>
+        <td>
+          <span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">
+            ${app.deposit_paid ? 'Paid' : 'Waived/None'}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-/* ── SUCCESS SCREEN ── */
-function showSuccess(data) {
-  stopDepositPolling();
-  // Hide booking form area
-  document.getElementById('bookingFunnel').style.display = 'none';
-
-  const es      = isEs();
-  const dateStr = new Date(data.date + 'T12:00:00').toLocaleDateString(es ? 'es-ES' : 'en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  const timeStr = formatTimeLabel(data.time);
-  const svcStr  = (data.services || []).map(s => s.name).join(', ');
-
-  document.getElementById('successDetails').innerHTML = `
-    <div class="success-detail-row">
-      <span class="success-detail-icon">📅</span>
-      <div>
-        <div class="success-detail-label">${es ? 'Fecha y Hora' : 'Date &amp; Time'}</div>
-        <div class="success-detail-value">${dateStr} · ${timeStr}</div>
-      </div>
-    </div>
-    <div class="success-detail-row">
-      <span class="success-detail-icon">✨</span>
-      <div>
-        <div class="success-detail-label">${es ? 'Servicios' : 'Services'}</div>
-        <div class="success-detail-value">${svcStr}</div>
-      </div>
-    </div>
-    <div class="success-detail-row">
-      <span class="success-detail-icon">👑</span>
-      <div>
-        <div class="success-detail-label">${es ? 'Artista' : 'Artist'}</div>
-        <div class="success-detail-value">${data.artist}</div>
-      </div>
-    </div>
-    <div class="success-detail-row">
-      <span class="success-detail-icon">📍</span>
-      <div>
-        <div class="success-detail-label">${es ? 'Ubicación' : 'Location'}</div>
-        <div class="success-detail-value">76 Livingston Ave, New Brunswick, NJ 08901</div>
-      </div>
-    </div>
-    <div class="success-detail-row">
-      <span class="success-detail-icon">📧</span>
-      <div>
-        <div class="success-detail-label">${es ? 'Confirmación enviada a' : 'Confirmation sent to'}</div>
-        <div class="success-detail-value">${data.email}</div>
-      </div>
-    </div>`;
-
-  const screen = document.getElementById('successScreen');
-  screen.classList.add('visible');
-  screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ─── STEP 2 → STEP 1 ───────────────────────────────────────────── */
-function goToStep1() {
-  document.getElementById('panel-step2').classList.remove('active');
-  document.getElementById('panel-step1').classList.add('active');
-  setFunnelStep(1);
-
-  // Selections are scoped to whichever categories were active when they
-  // were made. Without this, going back to change categories silently
-  // carried old picks forward — if a category was ever re-checked later,
-  // its previous selections would reappear as checked even though the
-  // customer never re-selected them on this visit.
-  selectedSvcIds.clear();
-  updateStep2Cta();
-
-  scrollTop();
-}
+// Start
+initAuth();
 </script>
 </body>
 </html>
-
