@@ -1,6 +1,7 @@
 
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY,SUPABASE_URL"
+  
 [build]
   functions = "netlify/functions"
 
