@@ -276,8 +276,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 
-
-<!-- TAB 3: APPOINTMENTS -->
+  <!-- TAB 3: APPOINTMENTS -->
   <div class="tab-pane" id="tab-appointments">
     <div class="panel-header">
       <div>
@@ -295,7 +294,9 @@ tr:hover td { background: rgba(255,255,255,.015); }
       </div>
     </div>
 
-  <thead>
+    <div class="table-wrap">
+      <table>
+        <thead>
           <tr>
             <th onclick="toggleSort('start_time')" style="cursor:pointer; user-select:none;">Date & Time <span id="sort-start_time">▼</span></th>
             <th onclick="toggleSort('customer_name')" style="cursor:pointer; user-select:none;">Client <span id="sort-customer_name"></span></th>
@@ -312,6 +313,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
       </table>
     </div>
   </div>
+</div>
 
 <!-- ── EDIT SERVICE MODAL ── -->
 <div class="modal-overlay" id="serviceModal">
@@ -722,7 +724,6 @@ function openAddArtistModal() {
   document.getElementById('artistFieldIsActive').checked = true;
   document.getElementById('deleteArtistBtn').style.display = 'none';
   document.getElementById('artistModal').style.display = 'flex';
-  
 }
 
 function openEditArtistModal(artistId) {
@@ -736,7 +737,7 @@ function openEditArtistModal(artistId) {
   document.getElementById('artistFieldName').value = art.name;
   document.getElementById('artistFieldTitleEn').value = art.title_en || '';
   document.getElementById('artistFieldTitleEs').value = art.title_es || '';
-const cats = art.categories || [];
+  const cats = art.categories || [];
   document.querySelectorAll('.artist-cat-check').forEach(c => {
     c.checked = cats.includes(c.value);
   });
@@ -759,7 +760,6 @@ async function saveArtist() {
   const is_active = document.getElementById('artistFieldIsActive').checked;
   const selectedCats = Array.from(document.querySelectorAll('.artist-cat-check:checked')).map(c => c.value);
 
-
   if (!id || !name) {
     alert('Please provide an Artist ID and Full Name.');
     return;
@@ -772,7 +772,6 @@ async function saveArtist() {
     ({ error } = await sbClient.from('artists').update(payload).eq('id', existingId));
   } else {
     ({ error } = await sbClient.from('artists').insert([payload]));
-    // Pre-populate standard shifts for the new artist if new
     if (!error) {
       const defaultShifts = [
         { artist_id: id, day_of_week: 1, start_hour: 9, end_hour: 19, is_active: true },
@@ -878,17 +877,16 @@ async function saveHoursChanges() {
   btn.textContent = 'Save Working Hours ✦';
 }
 
-
 // ── APPOINTMENTS TAB ──
 let ALL_APPOINTMENTS = [];
 let CURRENT_SORT_COL = 'start_time';
-let CURRENT_SORT_ASC = true; // true = earliest / A-Z first
+let CURRENT_SORT_ASC = true;
 
 async function loadAppointments() {
   const tbody = document.getElementById('appointmentsTableBody');
+  if (!tbody) return;
   tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>`;
 
-  // Fetch using the raw ISO start_time timestamp so order is mathematically exact
   const { data, error } = await sbClient
     .from('appointments')
     .select('*')
@@ -916,7 +914,7 @@ function cleanClientName(rawName) {
 
 function toggleSort(col) {
   if (CURRENT_SORT_COL === col) {
-    CURRENT_SORT_ASC = !CURRENT_SORT_ASC; // Flip between Ascending and Descending
+    CURRENT_SORT_ASC = !CURRENT_SORT_ASC;
   } else {
     CURRENT_SORT_COL = col;
     CURRENT_SORT_ASC = true;
@@ -957,14 +955,13 @@ function filterAppointments() {
     return true;
   });
 
-  // Sort logic
   filtered.sort((a, b) => {
     let valA = a[CURRENT_SORT_COL];
     let valB = b[CURRENT_SORT_COL];
 
     if (CURRENT_SORT_COL === 'start_time') {
-      valA = new Date(valA || a.appointment_date + ' ' + a.appointment_time).getTime() || 0;
-      valB = new Date(valB || b.appointment_date + ' ' + b.appointment_time).getTime() || 0;
+      valA = new Date(valA || (a.appointment_date + ' ' + a.appointment_time)).getTime() || 0;
+      valB = new Date(valB || (b.appointment_date + ' ' + b.appointment_time)).getTime() || 0;
     } else if (CURRENT_SORT_COL === 'total_price') {
       valA = Number(valA) || 0;
       valB = Number(valB) || 0;
@@ -972,7 +969,7 @@ function filterAppointments() {
       valA = cleanClientName(valA).toLowerCase();
       valB = cleanClientName(valB).toLowerCase();
     } else if (typeof valA === 'string') {
-      valA = valA.toLowerCase();
+      valA = (valA || '').toLowerCase();
       valB = (valB || '').toLowerCase();
     }
 
@@ -986,6 +983,7 @@ function filterAppointments() {
 
 function renderAppointmentsTable(list) {
   const tbody = document.getElementById('appointmentsTableBody');
+  if (!tbody) return;
 
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No matching appointments found.</td></tr>`;
@@ -1023,6 +1021,7 @@ function renderAppointmentsTable(list) {
     `;
   }).join('');
 }
+
 // Start
 initAuth();
 </script>
