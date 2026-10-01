@@ -1078,6 +1078,8 @@ body.cart-active .page { padding-bottom: 80px; }
 body.lang-es [data-en] { display: none !important; }
 body.lang-en [data-es] { display: none !important; }
 </style>
+  <!-- Supabase Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="lang-en">
 <script>
@@ -1746,9 +1748,11 @@ body.lang-en [data-es] { display: none !important; }
   </div>
 </section>
 
-<div class="gold-line"></div>
 <footer class="footer">
   © 2025 Liz Wendy Beauty Studio LLC · 76 Livingston Ave, New Brunswick, NJ 08901
+  <div style="margin-top: 10px;">
+    <a href="/admin.html" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); opacity: 0.7; text-decoration: none; transition: opacity .2s;" onmouseover="this.style.opacity='1'; this.style.color='var(--gold)';" onmouseout="this.style.opacity='0.7'; this.style.color='var(--muted)';">Staff Portal ✦</a>
+  </div>
 </footer>
 
 <script>
@@ -1839,6 +1843,62 @@ function setLang(lang) {
   }, 0);
 })();
 
+/* ─── SUPABASE DYNAMIC INTEGRATION ─────────────────────────────── */
+const SUPABASE_URL = 'https://dayyxufmvxqxobjxdxzv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
+
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// Dynamically hydrate services from Supabase
+async function syncServicesFromSupabase() {
+  if (!supabaseClient) return;
+
+  try {
+    const { data: dbServices, error } = await supabaseClient
+      .from('services')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (error || !dbServices || !dbServices.length) return;
+
+    // Map database rows into SERVICES format
+    dbServices.forEach(item => {
+      const cat = item.category;
+      if (!SERVICES[cat]) return;
+
+      const existing = SERVICES[cat].items.find(s => s.id === item.id);
+      if (existing) {
+        existing.name = item.name_en;
+        existing.nameEs = item.name_es;
+        existing.sub = item.sub_en || existing.sub;
+        existing.subEs = item.sub_es || existing.subEs;
+        existing.price = Number(item.price);
+        if (item.price_label_en) existing.priceLabel = item.price_label_en;
+        if (item.price_label_es) existing.priceLabelEs = item.price_label_es;
+        if (item.duration_minutes) existing.dur = `${item.duration_minutes} min`;
+        if (item.img_url) existing.img = item.img_url;
+      }
+    });
+
+    // If customer is already on Step 2, re-render accordions with live DB prices
+    const step2 = document.getElementById('panel-step2');
+    if (step2 && step2.classList.contains('active')) {
+      buildAccordions();
+      updateStep2Cta();
+    }
+  } catch (err) {
+    console.warn('Supabase sync skipped, using local fallback:', err);
+  }
+}
+
+// Run sync in the background on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', syncServicesFromSupabase);
+} else {
+  syncServicesFromSupabase();
+}
+  
 /* ─── SERVICE DATA ──────────────────────────────────────────────── */
 const SERVICES = {
 makeup: {
