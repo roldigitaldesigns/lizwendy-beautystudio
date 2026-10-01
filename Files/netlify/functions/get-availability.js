@@ -3,65 +3,96 @@
  */
 
 const { google } = require('googleapis');
-const { createClient } = require('@supabase/supabase-js');
-
-// ── SUPABASE CONFIG ──
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const CALENDAR_IDS = {
-  liz:     process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID,
-  johanna: process.env.JOHANNA_CALENDAR_ID || process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID,
-};
-
-const DEFAULT_HOURS = {
-  liz: { 1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [8, 16], 0: null },
-  johanna: { 1: [9, 19], 2: [10, 18], 3: [10, 18], 4: [10, 18], 5: [10, 18], 6: [10, 18], 0: null }
-};
-
-const BUFFER_MIN = 0;
-
-async function getDynamicArtistAvailability(artistId, dateStr, dow) {
-  try {
-    const { data: blackouts } = await supabase.from('artist_blackouts').select('id').eq('artist_id', artistId).lte('start_date', dateStr).gte('end_date', dateStr);
-    if (blackouts && blackouts.length > 0) return { isBlackedOut: true, shift: null };
-
-    const { data: schedules } = await supabase.from('artist_schedules').select('start_hour, end_hour, is_active').eq('artist_id', artistId).eq('day_of_week', dow).maybeSingle();
-    if (schedules && schedules.is_active) return { isBlackedOut: false, shift: [schedules.start_hour, schedules.end_hour] };
-    if (schedules && !schedules.is_active) return { isBlackedOut: false, shift: null };
-
-    return { isBlackedOut: false, shift: DEFAULT_HOURS[artistId]?.[dow] || DEFAULT_HOURS.liz[dow] || null };
-  } catch (err) {
-    return { isBlackedOut: false, shift: DEFAULT_HOURS[artistId]?.[dow] || DEFAULT_HOURS.liz[dow] || null };
-  }
-}
 
 exports.handler = async (event) => {
-  const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
+  const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
   try {
+    // 1. SUPABASE CONFIG
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
+
+    // 2. PARSE REQUEST
     const dateStr  = event.queryStringParameters && event.queryStringParameters.date;
     const artistId = (event.queryStringParameters && event.queryStringParameters.artistId) || 'liz';
 
     if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid date' }) };
+      return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Invalid date' }) };
     }
 
-    const CALENDAR_ID = CALENDAR_IDS[artistId] || process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID;
+    // 3. CALENDAR ROUTING
+    let CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || process.env.CALENDAR_ID;
+    if (artistId === 'johanna' && process.env.JOHANNA_CALENDAR_ID) {
+      CALENDAR_ID = process.env.JOHANNA_CALENDAR_ID;
+    }
+
     if (!CALENDAR_ID) {
-      return { statusCode: 200, headers, body: JSON.stringify({ isFullyBlocked: false, busyIntervals: [], shiftStart: 9, shiftEnd: 19 }) };
+      return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ isFullyBlocked: false, busyIntervals: [], shiftStart: 9, shiftEnd: 19 }) };
     }
 
-    // ── GOOGLE CREDENTIALS PARSER (Safely inside try/catch) ──
+    // 4. GET TARGET DATE DAY OF WEEK
+    const partsDate = dateStr.split('-');
+    const y = parseInt(partsDate[0], 10);
+    const m = parseInt(partsDate[1], 10);
+    const d = parseInt(partsDate[2], 10);
+    const targetDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    const dow = targetDate.getUTCDay();
+
+    // 5. FETCH SUPABASE HOURS (Using native fetch to bypass WebSocket crash)
+    let isBlackedOut = false;
+    let shift = null;
+
+    const DEFAULT_HOURS = {
+      liz: { 1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [8, 16], 0: null },
+      johanna: { 1: [9, 19], 2: [10, 18], 3: [10, 18], 4: [10, 18], 5: [10, 18], 6: [10, 18], 0: null }
+    };
+
+    let fallbackHours = DEFAULT_HOURS[artistId] ? DEFAULT_HOURS[artistId][dow] : DEFAULT_HOURS.liz[dow];
+
+    try {
+      const sbHeaders = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Check Blackouts via raw fetch
+      const boRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_blackouts?artist_id=eq.${artistId}&start_date=lte.${dateStr}&end_date=gte.${dateStr}&select=id`, { headers: sbHeaders });
+      const blackouts = await boRes.json();
+
+      if (blackouts && blackouts.length > 0) {
+        isBlackedOut = true;
+      } else {
+        // Check Schedules via raw fetch
+        const scRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_schedules?artist_id=eq.${artistId}&day_of_week=eq.${dow}&select=start_hour,end_hour,is_active`, { headers: sbHeaders });
+        const schedulesData = await scRes.json();
+        const schedules = schedulesData.length > 0 ? schedulesData[0] : null;
+
+        if (schedules && schedules.is_active) {
+          shift = [schedules.start_hour, schedules.end_hour];
+        } else if (schedules && !schedules.is_active) {
+          shift = null;
+        } else {
+          shift = fallbackHours || null;
+        }
+      }
+    } catch (dbErr) {
+      shift = fallbackHours || null;
+    }
+
+    if (isBlackedOut || !shift) {
+      return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }) };
+    }
+
+    // 6. GOOGLE AUTH
     let credentials = {};
     const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_CREDENTIALS || process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-    
+
     if (rawJson) {
-      try { credentials = JSON.parse(rawJson); } 
-      catch (e) {
-        try { credentials = JSON.parse(Buffer.from(rawJson, 'base64').toString('utf8')); } 
-        catch (e2) { console.warn("JSON Parse failed"); }
+      try {
+        credentials = JSON.parse(rawJson);
+      } catch (e) {
+        credentials = JSON.parse(Buffer.from(rawJson, 'base64').toString('utf8'));
       }
     } else {
       credentials = {
@@ -77,32 +108,23 @@ exports.handler = async (event) => {
     });
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // ── SHIFT LOGIC ──
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const targetDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-    const dow = targetDate.getUTCDay();
-
-    const { isBlackedOut, shift } = await getDynamicArtistAvailability(artistId, dateStr, dow);
-
-    if (isBlackedOut || !shift) {
-      return { statusCode: 200, headers, body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }) };
-    }
-
+    // 7. TIMEZONE OFFSET
     function getNYOffset(dStr) {
-      const dt = new Date(`${dStr}T12:00:00Z`);
-      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(dt);
-      const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      const dt = new Date(dStr + 'T12:00:00Z');
+      const partsTz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(dt);
+      const nyHour = parseInt(partsTz.find(p => p.type === 'hour').value, 10);
       let diff = nyHour - 12;
       if (diff > 0) diff -= 24;
-      return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
+      return (diff < 0 ? '-' : '+') + String(Math.abs(diff)).padStart(2, '0') + ':00';
     }
     const offset = getNYOffset(dateStr);
 
-    const dayBefore = new Date(`${dateStr}T00:00:00${offset}`);
+    const dayBefore = new Date(dateStr + 'T00:00:00' + offset);
     dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
-    const dayAfter = new Date(`${dateStr}T23:59:59${offset}`);
+    const dayAfter = new Date(dateStr + 'T23:59:59' + offset);
     dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
 
+    // 8. FETCH EVENTS
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
       timeMin: dayBefore.toISOString(),
@@ -112,31 +134,27 @@ exports.handler = async (event) => {
     });
 
     const events = res.data.items || [];
-
-    function isAllDayEventOnDate(ev) {
-      if (!ev.start || !ev.start.date || ev.start.dateTime) return false;
-      const summary = (ev.summary || '').toLowerCase();
-      const isClosure = summary.includes('closed') || summary.includes('off') || summary.includes('vacation') || summary.includes('holiday') || summary.includes('cerrado');
-      if (!isClosure) return false;
-
-      const startDate = ev.start.date;
-      const endDate = (ev.end && ev.end.date) || startDate;
-      return dateStr >= startDate && dateStr < endDate;
-    }
-
     let isFullyBlocked = false;
     const busyIntervals = [];
 
     events.forEach(ev => {
       if (!ev.start) return;
       if (ev.start.date && !ev.start.dateTime) {
-        if (isAllDayEventOnDate(ev)) isFullyBlocked = true;
+        const summary = (ev.summary || '').toLowerCase();
+        const isClosure = summary.includes('closed') || summary.includes('off') || summary.includes('vacation') || summary.includes('holiday') || summary.includes('cerrado');
+        if (isClosure) {
+          const startDate = ev.start.date;
+          const endDate = (ev.end && ev.end.date) || startDate;
+          if (dateStr >= startDate && dateStr < endDate) {
+            isFullyBlocked = true;
+          }
+        }
       } else {
         const evStart = new Date(ev.start.dateTime);
-        const evEnd   = new Date(new Date(ev.end.dateTime).getTime() + BUFFER_MIN * 60 * 1000);
-        const targetDayStart = new Date(`${dateStr}T00:00:00${offset}`);
-        const targetDayEnd   = new Date(`${dateStr}T23:59:59${offset}`);
-        
+        const evEnd   = new Date(new Date(ev.end.dateTime).getTime());
+        const targetDayStart = new Date(dateStr + 'T00:00:00' + offset);
+        const targetDayEnd   = new Date(dateStr + 'T23:59:59' + offset);
+
         if (evEnd > targetDayStart && evStart < targetDayEnd) {
           busyIntervals.push({
             start: Math.max(evStart.getTime(), targetDayStart.getTime()),
@@ -152,19 +170,27 @@ exports.handler = async (event) => {
       let current = busyIntervals[0];
       for (let i = 1; i < busyIntervals.length; i++) {
         const next = busyIntervals[i];
-        if (next.start <= current.end) current.end = Math.max(current.end, next.end);
-        else { mergedIntervals.push(current); current = next; }
+        if (next.start <= current.end) {
+          current.end = Math.max(current.end, next.end);
+        } else {
+          mergedIntervals.push(current);
+          current = next;
+        }
       }
       mergedIntervals.push(current);
     }
 
     return {
       statusCode: 200,
-      headers,
+      headers: corsHeaders,
       body: JSON.stringify({ isFullyBlocked, busyIntervals: mergedIntervals, shiftStart: shift[0], shiftEnd: shift[1] }),
     };
 
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message, busyIntervals: [], isFullyBlocked: true }) };
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: err.message, stack: err.stack, isFullyBlocked: true, busyIntervals: [] })
+    };
   }
 };
