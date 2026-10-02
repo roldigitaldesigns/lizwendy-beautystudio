@@ -262,15 +262,25 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 
-  <!-- TAB 2: SCHEDULES -->
+<!-- TAB 2: SCHEDULES -->
   <div class="tab-pane" id="tab-schedules">
     <div class="panel-header">
       <div>
         <h2 class="panel-title">Working Hours & Staff</h2>
         <p style="font-size:12px; color:var(--muted-lt);">Manage active team members and customize daily availability shifts.</p>
       </div>
-      <button class="btn-gold" onclick="openAddArtistModal()">+ Add Team Member</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-logout" onclick="openTimeOffModal()" style="border-color:var(--gold); color:var(--gold);">+ Schedule Time Off / Block</button>
+        <button class="btn-gold" onclick="openAddArtistModal()">+ Add Team Member</button>
+      </div>
     </div>
+    
+    <!-- Active Time-Off Quick Bar -->
+    <div id="activeBlackoutsWrap" style="margin-bottom:24px; display:none;">
+      <h3 style="font-family:var(--serif); color:var(--white); font-size:16px; margin-bottom:10px;">Scheduled Time Off & Overrides</h3>
+      <div id="blackoutsList" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+    </div>
+
     <div class="schedule-grid" id="scheduleCardsWrap">
       <div style="color:var(--muted); padding:20px;">Loading schedules...</div>
     </div>
@@ -438,7 +448,55 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 </div>
+<!-- ── TIME OFF / BLACKOUT MODAL ── -->
+<div class="modal-overlay" id="timeOffModal">
+  <div class="modal-card" style="max-width:540px;">
+    <button class="modal-close" onclick="closeTimeOffModal()">&times;</button>
+    <h3 class="modal-title">Schedule Time Off / Block Hours</h3>
 
+    <div class="form-group">
+      <label class="form-label">Team Member</label>
+      <select class="form-input" id="timeOffArtistId">
+        <option value="liz">Liz Wendy</option>
+        <option value="johanna">Johanna</option>
+      </select>
+    </div>
+
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="timeOffDate"/>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Reason / Note</label>
+        <input type="text" class="form-input" id="timeOffReason" placeholder="Personal, Doctor, Lunch..."/>
+      </div>
+    </div>
+
+    <div class="form-group" style="display:flex; align-items:center; gap:8px; margin: 10px 0;">
+      <input type="checkbox" id="timeOffAllDay" checked onchange="toggleTimeOffHourly(this)" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer;"/>
+      <label for="timeOffAllDay" style="font-size:12px; color:var(--text); cursor:pointer;">All-Day Block (Completely unavailable)</label>
+    </div>
+
+    <div id="timeOffHourlyContainer" style="display:none; gap:12px; margin-bottom:16px; background:var(--card2); border:1px solid var(--border); padding:12px; border-radius:4px;">
+      <div style="flex:1;">
+        <label class="form-label">Block From</label>
+        <select class="form-input" id="timeOffStartHour">
+          <!-- Filled via JS -->
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label class="form-label">Block Until</label>
+        <select class="form-input" id="timeOffEndHour">
+          <!-- Filled via JS -->
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-gold" id="saveTimeOffBtn" onclick="saveTimeOff()" style="width:100%;">Save Blockout ✦</button>
+  </div>
+</div>
+  
 <!-- ── SCHEDULE EDITOR MODAL ── -->
 <div class="modal-overlay" id="hoursModal">
   <div class="modal-card" style="max-width:620px;">
@@ -491,6 +549,7 @@ function showDashboard() {
   document.getElementById('logoutBtn').style.display = 'block';
   loadServices();
   loadSchedules();
+  loadBlackouts();
   loadAppointments();
 }
 
@@ -806,6 +865,120 @@ async function deleteArtist() {
     closeArtistModal();
     loadSchedules();
   }
+}
+
+  // ── TIME OFF & BLACKOUTS LOGIC ──
+function toggleTimeOffHourly(check) {
+  const container = document.getElementById('timeOffHourlyContainer');
+  container.style.display = check.checked ? 'none' : 'flex';
+}
+
+function openTimeOffModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('timeOffDate').value = today;
+  document.getElementById('timeOffReason').value = '';
+  document.getElementById('timeOffAllDay').checked = true;
+  document.getElementById('timeOffHourlyContainer').style.display = 'none';
+
+  // Dynamically populate artist dropdown from database roster
+  const artistSelect = document.getElementById('timeOffArtistId');
+  if (ALL_ARTISTS.length) {
+    artistSelect.innerHTML = ALL_ARTISTS
+      .filter(a => a.is_active)
+      .map(a => `<option value="${a.id}">${a.name}</option>`)
+      .join('');
+  }
+
+  document.getElementById('timeOffStartHour').innerHTML = buildHourOptions(9);
+  document.getElementById('timeOffEndHour').innerHTML = buildHourOptions(17);
+
+  document.getElementById('timeOffModal').style.display = 'flex';
+}
+
+function closeTimeOffModal() {
+  document.getElementById('timeOffModal').style.display = 'none';
+}
+
+async function loadBlackouts() {
+  const listEl = document.getElementById('blackoutsList');
+  const wrapEl = document.getElementById('activeBlackoutsWrap');
+  if (!listEl) return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await sbClient
+    .from('artist_blackouts')
+    .select('*')
+    .gte('end_date', today)
+    .order('start_date', { ascending: true });
+
+  if (error || !data || !data.length) {
+    wrapEl.style.display = 'none';
+    return;
+  }
+
+  wrapEl.style.display = 'block';
+  listEl.innerHTML = data.map(b => {
+    const isAllDay = !b.start_time;
+    const timeLabel = isAllDay 
+      ? 'All Day' 
+      : `${formatHour12(parseInt(b.start_time.split(':')[0], 10))} – ${formatHour12(parseInt(b.end_time.split(':')[0], 10))}`;
+
+    return `
+      <div style="background:var(--card2); border:1px solid var(--border); padding:8px 14px; border-radius:4px; display:flex; align-items:center; gap:12px; font-size:12px;">
+        <div>
+          <span style="font-weight:700; color:var(--gold); text-transform:capitalize;">${b.artist_id}</span>
+          <span style="color:var(--white); margin:0 4px;">·</span>
+          <span>${b.start_date}</span>
+          <span style="color:var(--muted-lt);">(${timeLabel})</span>
+          <span style="color:var(--muted); font-size:11px; margin-left:4px;">"${b.reason || 'Off'}"</span>
+        </div>
+        <span onclick="deleteBlackout('${b.id}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:14px;" title="Remove Block">✕</span>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveTimeOff() {
+  const artistId = document.getElementById('timeOffArtistId').value;
+  const date = document.getElementById('timeOffDate').value;
+  const reason = document.getElementById('timeOffReason').value.trim() || 'Personal / Off';
+  const isAllDay = document.getElementById('timeOffAllDay').checked;
+  const btn = document.getElementById('saveTimeOffBtn');
+
+  if (!date) {
+    alert('Please choose a date.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const payload = {
+    artist_id: artistId,
+    start_date: date,
+    end_date: date,
+    reason: reason,
+    start_time: isAllDay ? null : `${String(document.getElementById('timeOffStartHour').value).padStart(2, '0')}:00:00`,
+    end_time: isAllDay ? null : `${String(document.getElementById('timeOffEndHour').value).padStart(2, '0')}:00:00`
+  };
+
+  const { error } = await sbClient.from('artist_blackouts').insert([payload]);
+
+  if (error) {
+    alert('Failed to save blackout: ' + error.message);
+  } else {
+    closeTimeOffModal();
+    loadBlackouts();
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save Blockout ✦';
+}
+
+async function deleteBlackout(id) {
+  if (!confirm('Remove this time-off block?')) return;
+  const { error } = await sbClient.from('artist_blackouts').delete().eq('id', id);
+  if (error) alert('Error: ' + error.message);
+  else loadBlackouts();
 }
 
 // ── HOURS EDITOR MODAL ──
