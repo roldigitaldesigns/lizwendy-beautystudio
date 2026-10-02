@@ -1521,10 +1521,10 @@ async function renderCalendarTimeline() {
           m = stDate.getMinutes();
         }
 // 2. Accurate Duration Calculation
-        let dur = Number(a.duration_minutes) || 0;
+        let dur = 0;
 
-        // A. Timestamps difference
-        if (!dur && a.start_time && a.end_time) {
+        // A. If an explicit custom duration (other than default 60) was saved, check timestamps first
+        if (a.start_time && a.end_time) {
           const st = new Date(a.start_time).getTime();
           const et = new Date(a.end_time).getTime();
           if (!isNaN(st) && !isNaN(et) && et > st) {
@@ -1532,7 +1532,7 @@ async function renderCalendarTimeline() {
           }
         }
 
-        // B. Match against ALL_SERVICES
+        // B. Match service names against ALL_SERVICES catalogue
         if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
           dur = a.services.reduce((total, s) => {
             if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
@@ -1540,55 +1540,57 @@ async function renderCalendarTimeline() {
             }
             const rawName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
             const match = window.ALL_SERVICES.find(m => {
-              const mName = (m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-              return mName && (mName === rawName || rawName.includes(mName) || mName.includes(rawName));
+              const mEn = (m.name_en || m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+              const mEs = (m.name_es || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+              return (mEn && (rawName.includes(mEn) || mEn.includes(rawName))) ||
+                     (mEs && (rawName.includes(mEs) || mEs.includes(rawName)));
             });
-            return total + (match ? Number(match.duration || match.duration_minutes || 0) : 0);
+            return total + (match ? Number(match.duration_minutes || match.duration || 0) : 0);
           }, 0);
         }
 
-        // C. Comprehensive Studio Keyword Rules (Accents normalized, searches EVERYTHING)
-        if (!dur || dur <= 0) {
-          // Flatten all appointment text into one searchable, accent-free string
+        // C. Studio Keyword Rules (Matches services, customer name, and notes)
+        if (!dur) {
           const rawBlob = [
             a.customer_name || '',
             a.notes || '',
             Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : (s.name || '')).join(' ') : String(a.services || '')
           ].join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-          if (rawBlob.includes('retoque') && rawBlob.includes('pmu')) {
-            dur = 90; // Retoque PMU
-          } else if (rawBlob.includes('pmu') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || rawBlob.includes('cejas') || rawBlob.includes('lip blush') || rawBlob.includes('labios')) {
-            dur = 120; // Full PMU sessions
+          if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
+            dur = 180; // 3 hours
+          } else if (rawBlob.includes('cejas combo') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || (rawBlob.includes('colorete') && rawBlob.includes('labios'))) {
+            dur = 150; // 2.5 hours for Combos
+          } else if (rawBlob.includes('pmu') || rawBlob.includes('brows') || rawBlob.includes('cejas') || rawBlob.includes('labios')) {
+            dur = 120; // 2 hours
           } else if (rawBlob.includes('acrilic') || rawBlob.includes('acrylic') || rawBlob.includes('full set') || rawBlob.includes('juego completo')) {
-            dur = 90; // Acrylics
-          } else if (rawBlob.includes('pedicur') || rawBlob.includes('manicur') || rawBlob.includes('gel') || rawBlob.includes('unas') || rawBlob.includes('nail')) {
-            dur = 60; // Standard Mani / Pedi
-          } else if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
-            dur = 180; // Classes
-          } else {
-            dur = 60; // General fallback
+            dur = 90;  // 1.5 hours
+          } else if ((rawBlob.includes('mani') && rawBlob.includes('pedi')) || (rawBlob.includes('gel') && rawBlob.includes('pedicure'))) {
+            dur = 90;  // Mani + Pedi combo
           }
         }
 
-       // 3. Dynamic Positioning & Visible Box Expansion
+        // D. Fallback to existing duration_minutes or default 60
+        if (!dur) {
+          dur = Number(a.duration_minutes) || 60;
+        }
+
+        // 3. Dynamic Positioning & Visible Box Expansion
         const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-        // Expands strictly by minutes (e.g. 90m = 90px - 2px = 88px)
         const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
         
-        // Ensure perfect 12-hour formatting for future native web bookings
         const ampm = h >= 12 ? 'PM' : 'AM';
         const dispH = h % 12 || 12;
         const dispM = m < 10 ? '0' + m : m;
         const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
 
-       itemsHtml += `
+        itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs || 'Appointment'}</div>
             <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
-          </div>`;
+          </div>`;    
       });
     }
 
