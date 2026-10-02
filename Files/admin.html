@@ -1583,19 +1583,20 @@ async function renderCalendarTimeline() {
         const dispM = m < 10 ? '0' + m : m;
         const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
 
-        itemsHtml += `
+       itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs || 'Appointment'}</div>
             <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
           </div>`;
+      });
+    }
 
     return `
       <div class="cal-artist-col">
         <div class="cal-artist-header">${art.name}</div>
         <div class="cal-canvas">
-          ${gridLinesHtml}
-          ${itemsHtml}
+          ${gridLinesHtml}${itemsHtml}
         </div>
       </div>
     `;
@@ -1603,7 +1604,6 @@ async function renderCalendarTimeline() {
 
   container.innerHTML = timeColHtml + artistColsHtml;
 }
-
 // Start
 initAuth();
 </script>
