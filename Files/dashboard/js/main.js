@@ -220,6 +220,23 @@ function paintChurnPanel(monthsRange) {
   q('upcoming-note').textContent = `${int(upcomingCount)} appointment${upcomingCount === 1 ? '' : 's'} still to come`;
   q('rescued').textContent = money(rescued, cur());
   q('lost').textContent = money(lost, cur());
+  const rescuedEl = q('rescued');
+  const lostEl = q('lost');
+
+  const rescuedCard = rescuedEl ? (rescuedEl.closest('.stat') || rescuedEl.parentElement) : null;
+  const lostCard = lostEl ? (lostEl.closest('.stat') || lostEl.parentElement) : null;
+
+  if (rescuedCard) {
+    rescuedCard.classList.add('churn-clickable');
+    rescuedCard.style.cursor = 'pointer';
+    rescuedCard.onclick = () => openChurnDrawer('rescued', m);
+  }
+
+  if (lostCard) {
+    lostCard.classList.add('churn-clickable');
+    lostCard.style.cursor = 'pointer';
+    lostCard.onclick = () => openChurnDrawer('lost', m);
+  }
   q('rescued-note').textContent = `${int(kept)} appointment${kept === 1 ? '' : 's'} moved instead of cancelled`;
   q('lost-note').textContent = `${int(cancelled)} cancellation${cancelled === 1 ? '' : 's'}`;
 
@@ -1237,12 +1254,14 @@ function closeChurnDrawer() {
 }
 
 // Global Drawer Close Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  const closeBtn = document.getElementById('drawer-close');
-  const backdrop = document.getElementById('drilldown-backdrop');
-  if (closeBtn) closeBtn.addEventListener('click', closeChurnDrawer);
-  if (backdrop) backdrop.addEventListener('click', closeChurnDrawer);
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') closeChurnDrawer();
-  });
+const closeBtn = document.getElementById('drawer-close');
+const backdrop = document.getElementById('drilldown-backdrop');
+if (closeBtn) closeBtn.addEventListener('click', closeChurnDrawer);
+if (backdrop) backdrop.addEventListener('click', closeChurnDrawer);
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') closeChurnDrawer();
 });
+
+window.openChurnDrawer = openChurnDrawer;
+window.closeChurnDrawer = closeChurnDrawer;
+
