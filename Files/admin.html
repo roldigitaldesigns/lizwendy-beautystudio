@@ -1390,28 +1390,48 @@ async function renderCalendarTimeline() {
   const container = document.getElementById('calendarColumnsContainer');
   if (!container) return;
 
-  // 1. Fetch Day's Appointments & Blackouts from Supabase
+  // 1. Ensure Artists and Schedules are loaded
+  if (!window.ALL_ARTISTS || window.ALL_ARTISTS.length === 0) {
+    const { data: arts } = await sbClient.from('artists').select('*').order('name');
+    window.ALL_ARTISTS = arts || [];
+  }
+  if (!window.ALL_SCHEDS || window.ALL_SCHEDS.length === 0) {
+    const { data: scs } = await sbClient.from('artist_schedules').select('*');
+    window.ALL_SCHEDS = scs || [];
+  }
+
+  // 2. Filter Active Artists by Role (Staff vs Admin)
+  let visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
+  if (typeof CURRENT_USER_ROLE !== 'undefined' && CURRENT_USER_ROLE === 'staff' && CURRENT_ARTIST_ID) {
+    visibleArtists = visibleArtists.filter(a => a.id === CURRENT_ARTIST_ID);
+  }
+
+  // Fallback: If no artists found or filtered out, show all active
+  if (visibleArtists.length === 0) {
+    visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
+  }
+
+  // Set CSS Grid template columns
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = `80px repeat(${Math.max(1, visibleArtists.length)}, minmax(280px, 1fr))`;
+  container.style.gap = '16px';
+
+  // 3. Fetch Day's Appointments & Blackouts from Supabase
   const [{ data: dayAppts }, { data: dayBlackouts }] = await Promise.all([
     sbClient.from('appointments').select('*').eq('appointment_date', dateStr),
     sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
   ]);
 
-let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
-  if (CURRENT_USER_ROLE === 'staff' && CURRENT_ARTIST_ID) {
-    activeArtists = activeArtists.filter(a => a.id === CURRENT_ARTIST_ID);
-  }
-  container.style.gridTemplateColumns = `80px repeat(${activeArtists.length}, minmax(260px, 1fr))`;
-
-  // 2. Build Time Labels
-  let timeColHtml = '<div class="cal-time-col"><div style="height:45px;"></div>';
+  // 4. Build Left Time Labels Column (6 AM to 9 PM)
+  let timeColHtml = '<div class="cal-time-col">';
   for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
     timeColHtml += `<div class="cal-time-slot">${formatHour12(h)}</div>`;
   }
   timeColHtml += '</div>';
 
-  // 3. Build Column for Each Active Artist
-  const artistColsHtml = activeArtists.map(art => {
-    const artSched = ALL_SCHEDS.find(s => s.artist_id === art.id && s.day_of_week === dow);
+  // 5. Build Column for Each Visible Artist
+  const artistColsHtml = visibleArtists.map(art => {
+    const artSched = (window.ALL_SCHEDS || []).find(s => s.artist_id === art.id && s.day_of_week === dow);
     const isWorkingToday = artSched && artSched.is_active;
 
     let gridLinesHtml = '';
@@ -1427,14 +1447,15 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
       const shiftStart = artSched.start_hour;
       const shiftEnd = artSched.end_hour;
 
+      // Dim off-hours
       if (shiftStart > CAL_START_HOUR) {
         const topH = (shiftStart - CAL_START_HOUR) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.4); z-index:1;"></div>`;
+        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.5); z-index:2;"></div>`;
       }
       if (shiftEnd < CAL_END_HOUR) {
         const botTop = (shiftEnd - CAL_START_HOUR) * SLOT_HEIGHT;
         const botH = (CAL_END_HOUR - shiftEnd) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.4); z-index:1;"></div>`;
+        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.5); z-index:2;"></div>`;
       }
 
       // Render Blackouts
@@ -1456,7 +1477,7 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
       });
 
       // Render Confirmed Appointments
-    const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
+      const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
       myAppts.forEach(a => {
         if (!a.appointment_time) return;
         let [hourStr, minStr] = a.appointment_time.split(':');
@@ -1469,11 +1490,11 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
         const height = Math.max(38, (dur / 60) * SLOT_HEIGHT);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
 
-       itemsHtml += `
+        itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs}</div>
-            <div class="card-meta">✦ ${a.appointment_time} ·$${Number(a.total_price || 0).toFixed(2)}</div>
+            <div class="card-meta">✦ ${a.appointment_time} · $${Number(a.total_price || 0).toFixed(2)}</div>
           </div>`;
       });
     }
@@ -1490,6 +1511,7 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
   }).join('');
 
   container.innerHTML = timeColHtml + artistColsHtml;
+}
 }
 // Start
 initAuth();
