@@ -441,7 +441,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
 
 <!-- ── SCHEDULE EDITOR MODAL ── -->
 <div class="modal-overlay" id="hoursModal">
-  <div class="modal-card" style="max-width:580px;">
+  <div class="modal-card" style="max-width:620px;">
     <button class="modal-close" onclick="closeHoursModal()">&times;</button>
     <h3 class="modal-title" id="hoursModalTitle">Edit Working Hours</h3>
     <input type="hidden" id="hoursArtistId"/>
@@ -808,6 +808,32 @@ async function deleteArtist() {
 }
 
 // ── HOURS EDITOR MODAL ──
+function formatHour12(h) {
+  const hour = Number(h);
+  if (hour === 0) return '12:00 AM';
+  if (hour === 12) return '12:00 PM';
+  if (hour > 12) return `${hour - 12}:00 PM`;
+  return `${hour}:00 AM`;
+}
+
+function buildHourOptions(selectedHour) {
+  let html = '';
+  for (let h = 7; h <= 22; h++) {
+    const isSel = Number(selectedHour) === h ? 'selected' : '';
+    html += `<option value="${h}" ${isSel}>${formatHour12(h)}</option>`;
+  }
+  return html;
+}
+
+function toggleDayInputs(checkbox) {
+  const row = checkbox.closest('[data-dow]');
+  const selects = row.querySelectorAll('select');
+  selects.forEach(s => {
+    s.disabled = !checkbox.checked;
+    s.style.opacity = checkbox.checked ? '1' : '0.4';
+  });
+}
+
 function openHoursModal(artistId) {
   const art = ALL_ARTISTS.find(a => a.id === artistId);
   if (!art) return;
@@ -820,17 +846,23 @@ function openHoursModal(artistId) {
 
   container.innerHTML = [0,1,2,3,4,5,6].map(d => {
     const entry = artScheds.find(s => s.day_of_week === d) || { start_hour: 9, end_hour: 19, is_active: false };
+    const isActive = entry.is_active;
+
     return `
-      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--border); padding:8px 12px; border-radius:4px;" data-dow="${d}">
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--border); padding:10px 14px; border-radius:4px;" data-dow="${d}">
         <div style="width:90px; font-weight:600;">${DOW_NAMES[d]}</div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" class="day-active-check" ${entry.is_active ? 'checked' : ''} style="accent-color:var(--gold);"/>
+          <input type="checkbox" class="day-active-check" ${isActive ? 'checked' : ''} onchange="toggleDayInputs(this)" style="accent-color:var(--gold); width:15px; height:15px; cursor:pointer;"/>
           <span style="font-size:11px; color:var(--muted-lt);">Working</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <input type="number" class="day-start-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="22" value="${entry.start_hour}"/>
-          <span>to</span>
-          <input type="number" class="day-end-hour form-input" style="width:65px; padding:4px 8px;" min="6" max="23" value="${entry.end_hour}"/>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <select class="day-start-hour form-input" style="width:110px; padding:5px 8px; font-size:12px; ${!isActive ? 'opacity:0.4;' : ''}" ${!isActive ? 'disabled' : ''}>
+            ${buildHourOptions(entry.start_hour)}
+          </select>
+          <span style="color:var(--muted); font-size:11px;">to</span>
+          <select class="day-end-hour form-input" style="width:110px; padding:5px 8px; font-size:12px; ${!isActive ? 'opacity:0.4;' : ''}" ${!isActive ? 'disabled' : ''}>
+            ${buildHourOptions(entry.end_hour)}
+          </select>
         </div>
       </div>
     `;
@@ -875,6 +907,7 @@ async function saveHoursChanges() {
   }
   btn.disabled = false;
   btn.textContent = 'Save Working Hours ✦';
+}
 }
 
 // ── APPOINTMENTS TAB ──
