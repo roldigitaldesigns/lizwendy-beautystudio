@@ -1523,7 +1523,7 @@ async function renderCalendarTimeline() {
 // 2. Accurate Duration Calculation
         let dur = Number(a.duration_minutes) || 0;
 
-        // A. If start_time & end_time timestamps exist
+        // A. Timestamps difference
         if (!dur && a.start_time && a.end_time) {
           const st = new Date(a.start_time).getTime();
           const et = new Date(a.end_time).getTime();
@@ -1532,50 +1532,63 @@ async function renderCalendarTimeline() {
           }
         }
 
-        // B. Match service names from the appointment against the master services menu
-        if (!dur && Array.isArray(a.services) && a.services.length > 0) {
-          const masterList = window.ALL_SERVICES || [];
+        // B. Match against ALL_SERVICES
+        if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
           dur = a.services.reduce((total, s) => {
             if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
               return total + Number(s.duration || s.duration_minutes || 0);
             }
-            const sName = (typeof s === 'string' ? s : (s.name || '')).trim().toLowerCase();
-            const match = masterList.find(m => {
-              const mName = (m.name || '').trim().toLowerCase();
-              return mName && (mName === sName || sName.includes(mName) || mName.includes(sName));
+            const rawName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            const match = window.ALL_SERVICES.find(m => {
+              const mName = (m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+              return mName && (mName === rawName || rawName.includes(mName) || mName.includes(rawName));
             });
             return total + (match ? Number(match.duration || match.duration_minutes || 0) : 0);
           }, 0);
         }
 
-// C. Fallback: Search BOTH service names and customer name for keywords
-        if (!dur) {
-          const searchString = (
-            (Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : s.name).join(' ') : String(a.services || '')) + 
-            ' ' + String(a.customer_name || '')
-          ).toLowerCase();
+        // C. Comprehensive Studio Keyword Rules (Accents normalized, searches EVERYTHING)
+        if (!dur || dur <= 0) {
+          // Flatten all appointment text into one searchable, accent-free string
+          const rawBlob = [
+            a.customer_name || '',
+            a.notes || '',
+            Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : (s.name || '')).join(' ') : String(a.services || '')
+          ].join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-          if (searchString.includes('acrílico') || searchString.includes('acrylic') || searchString.includes('full set')) dur = 90;
-          else if (searchString.includes('pmu') || searchString.includes('brows') || searchString.includes('cejas') || searchString.includes('microblading')) dur = 120;
-          else if (searchString.includes('pedicura') || searchString.includes('pedicure') || searchString.includes('manicura') || searchString.includes('gel')) dur = 60;
+          if (rawBlob.includes('retoque') && rawBlob.includes('pmu')) {
+            dur = 90; // Retoque PMU
+          } else if (rawBlob.includes('pmu') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || rawBlob.includes('cejas') || rawBlob.includes('lip blush') || rawBlob.includes('labios')) {
+            dur = 120; // Full PMU sessions
+          } else if (rawBlob.includes('acrilic') || rawBlob.includes('acrylic') || rawBlob.includes('full set') || rawBlob.includes('juego completo')) {
+            dur = 90; // Acrylics
+          } else if (rawBlob.includes('pedicur') || rawBlob.includes('manicur') || rawBlob.includes('gel') || rawBlob.includes('unas') || rawBlob.includes('nail')) {
+            dur = 60; // Standard Mani / Pedi
+          } else if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
+            dur = 180; // Classes
+          } else {
+            dur = 60; // General fallback
+          }
         }
 
-        if (!dur || dur <= 0) dur = 60;
-
-        // 3. Dynamic Box Positioning & Visual Expansion
+       // 3. Dynamic Positioning & Visible Box Expansion
         const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-        // 58px minimum height ensures all 3 lines fit; 90m & 120m stretch visibly down the grid
-        const height = Math.max(58, ((dur / 60) * SLOT_HEIGHT) - 2);
+        // Expands strictly by minutes (e.g. 90m = 90px - 2px = 88px)
+        const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
+        
+        // Ensure perfect 12-hour formatting for future native web bookings
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const dispH = h % 12 || 12;
+        const dispM = m < 10 ? '0' + m : m;
+        const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
 
         itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs || 'Appointment'}</div>
-            <div class="card-meta">✦ ${a.appointment_time || (formatHour12(h) + (m ? ':' + (m < 10 ? '0' : '') + m : ':00'))} (${dur}m)</div>
+            <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
           </div>`;
-      });
-    }
 
     return `
       <div class="cal-artist-col">
