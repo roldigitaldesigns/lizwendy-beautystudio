@@ -1520,28 +1520,56 @@ async function renderCalendarTimeline() {
           h = stDate.getHours();
           m = stDate.getMinutes();
         }
+// 2. Accurate Duration Calculation
+        let dur = Number(a.duration_minutes) || 0;
 
-        // 2. Accurate Duration Calculation
-        let dur = a.duration_minutes;
+        // A. If start_time & end_time timestamps exist
         if (!dur && a.start_time && a.end_time) {
-          const diffMs = new Date(a.end_time).getTime() - new Date(a.start_time).getTime();
-          dur = Math.round(diffMs / (1000 * 60));
+          const st = new Date(a.start_time).getTime();
+          const et = new Date(a.end_time).getTime();
+          if (!isNaN(st) && !isNaN(et) && et > st) {
+            dur = Math.round((et - st) / 60000);
+          }
         }
-        if (!dur && Array.isArray(a.services)) {
-          dur = a.services.reduce((total, s) => total + (s.duration || s.duration_minutes || 0), 0);
+
+        // B. Match service names from the appointment against the master services menu
+        if (!dur && Array.isArray(a.services) && a.services.length > 0) {
+          const masterList = window.ALL_SERVICES || [];
+          dur = a.services.reduce((total, s) => {
+            if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
+              return total + Number(s.duration || s.duration_minutes || 0);
+            }
+            const sName = (typeof s === 'string' ? s : (s.name || '')).trim().toLowerCase();
+            const match = masterList.find(m => {
+              const mName = (m.name || '').trim().toLowerCase();
+              return mName && (mName === sName || sName.includes(mName) || mName.includes(sName));
+            });
+            return total + (match ? Number(match.duration || match.duration_minutes || 0) : 0);
+          }, 0);
         }
+
+        // C. Common fallback by keywords if duration is still 0
+        if (!dur && a.services) {
+          const joinedSvcs = (Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : s.name).join(' ') : String(a.services)).toLowerCase();
+          if (joinedSvcs.includes('acrílico') || joinedSvcs.includes('acrylic') || joinedSvcs.includes('full set')) dur = 90;
+          else if (joinedSvcs.includes('pmu') || joinedSvcs.includes('brows') || joinedSvcs.includes('cejas') || joinedSvcs.includes('microblading')) dur = 120;
+          else if (joinedSvcs.includes('pedicura') || joinedSvcs.includes('pedicure') || joinedSvcs.includes('manicura') || joinedSvcs.includes('gel')) dur = 60;
+        }
+
         if (!dur || dur <= 0) dur = 60;
 
-        // 3. Coordinate Positioning
+        // 3. Dynamic Box Positioning & Visual Expansion
+        // SLOT_HEIGHT = 60px per hour (1px per minute)
         const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-        const height = Math.max(48, (dur / 60) * SLOT_HEIGHT);
+        // Subtract 4px so adjacent bookings have a clean separator gap between them
+        const height = Math.max(50, ((dur / 60) * SLOT_HEIGHT) - 4);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
 
         itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs || 'Appointment'}</div>
-            <div class="card-meta">✦ ${a.appointment_time || (formatHour12(h) + (m ? ':' + (m < 10 ? '0' : '') + m : ':00'))} · ${dur} min</div>
+            <div class="card-meta">✦ ${a.appointment_time || (formatHour12(h) + (m ? ':' + (m < 10 ? '0' : '') + m : ':00'))} (${dur}m)</div>
           </div>`;
       });
     }
