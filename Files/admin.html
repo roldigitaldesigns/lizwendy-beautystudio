@@ -1521,6 +1521,7 @@ async function renderCalendarTimeline() {
             <div class="card-meta">✦ ${a.appointment_time || (h + ':' + (m < 10 ? '0' : '') + m)} · ${dur} min · $${Number(a.total_price || 0).toFixed(2)}</div>
           </div>`;
       });
+    }
 
     return `
       <div class="cal-artist-col">
