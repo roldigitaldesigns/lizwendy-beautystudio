@@ -184,36 +184,59 @@ tr:hover td { background: rgba(255,255,255,.015); }
 .day-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
 .day-row:last-child { border-bottom: none; }
 
-  /* ── CALENDAR TIMELINE ── */
-.cal-time-col { display: flex; flex-direction: column; }
-.cal-time-slot { height: 50px; font-size: 10px; font-weight: 600; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 4px; }
+/* ── CALENDAR TIMELINE ── */
+.cal-time-col { display: flex; flex-direction: column; padding-top: 50px; }
+.cal-time-slot { 
+  height: 60px; font-size: 11px; font-weight: 600; color: var(--muted-lt); 
+  border-top: 1px dashed var(--border); padding-top: 4px; text-align: right; padding-right: 10px;
+}
 .cal-artist-col {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); position: relative;
-  min-height: 700px; display: flex; flex-direction: column;
+  display: flex; flex-direction: column; overflow: hidden;
 }
 .cal-artist-header {
-  padding: 12px; border-bottom: 1px solid var(--border);
-  background: var(--card2); text-align: center;
-  font-family: var(--serif); font-size: 15px; color: var(--gold);
+  height: 50px; display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border); background: var(--card2);
+  font-family: var(--serif); font-size: 16px; color: var(--gold);
+  position: sticky; top: 0; z-index: 10;
 }
-.cal-canvas { position: relative; flex: 1; }
-.cal-slot-grid-line { height: 50px; border-top: 1px dashed rgba(255,255,255,0.04); }
+.cal-canvas { position: relative; height: 960px; /* 16 hours * 60px */ background: rgba(0,0,0,0.2); }
+.cal-slot-grid-line { height: 60px; border-top: 1px dashed rgba(255,255,255,0.06); }
+
+/* High-Contrast, Readable Appointment Cards */
 .cal-event-card {
-  position: absolute; left: 6px; right: 6px; border-radius: 4px;
-  padding: 8px 10px; font-size: 11px; overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5); z-index: 5;
+  position: absolute; left: 8px; right: 8px; border-radius: 6px;
+  padding: 8px 12px; font-size: 11px; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6); z-index: 5;
+  transition: transform 0.15s ease;
 }
+.cal-event-card:hover { transform: translateY(-1px); z-index: 8; }
 .cal-event-booking {
-  background: rgba(212,175,55,0.18); border-left: 3px solid var(--gold); color: var(--text);
+  background: #231E12; 
+  border: 1px solid var(--gold); 
+  border-left: 4px solid var(--gold); 
+  color: var(--white);
 }
+.cal-event-booking .card-title {
+  font-size: 12px; font-weight: 700; color: #FFE382; margin-bottom: 2px;
+}
+.cal-event-booking .card-svc {
+  font-size: 11px; color: #EDE8DF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-event-booking .card-meta {
+  font-size: 10px; color: var(--muted-lt); margin-top: 3px; font-weight: 600;
+}
+
 .cal-event-blackout {
-  background: rgba(192,57,43,0.22); border-left: 3px solid var(--danger); color: #ff7675;
+  background: #2A1414; border: 1px solid rgba(220, 53, 69, 0.4);
+  border-left: 4px solid #E74C3C; color: #FFA8A8;
 }
 .cal-shift-off-overlay {
-  position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3) 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 20px);
-  z-index: 2; display: flex; align-items: center; justify-content: center;
-  color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase;
+  position: absolute; inset: 0; 
+  background: repeating-linear-gradient(45deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4) 10px, rgba(0,0,0,0.6) 10px, rgba(0,0,0,0.6) 20px);
+  z-index: 3; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
 }
   
 </style>
@@ -583,15 +606,62 @@ let ALL_SCHEDS = [];
 
 const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// ── ROLE-BASED ACCESS CONTROL ──
+let CURRENT_USER_EMAIL = '';
+let CURRENT_USER_ROLE = 'admin'; // 'admin' or 'staff'
+let CURRENT_ARTIST_ID = null;    // null for admin, or 'johanna'
+
+function applyUserRole(email) {
+  CURRENT_USER_EMAIL = (email || '').toLowerCase();
+  
+  if (CURRENT_USER_EMAIL.includes('johanna')) {
+    CURRENT_USER_ROLE = 'staff';
+    CURRENT_ARTIST_ID = 'johanna';
+  } else {
+    CURRENT_USER_ROLE = 'admin';
+    CURRENT_ARTIST_ID = null;
+  }
+
+  // Adjust Tab Visibility
+  const svcTabBtn = document.querySelector('[onclick="switchTab(\'services\')"]');
+  const schedTabBtn = document.querySelector('[onclick="switchTab(\'schedules\')"]');
+  const apptFilter = document.getElementById('apptArtistFilter');
+
+  if (CURRENT_USER_ROLE === 'staff') {
+    if (svcTabBtn) svcTabBtn.style.display = 'none';
+    if (schedTabBtn) schedTabBtn.style.display = 'none';
+    if (apptFilter) {
+      apptFilter.value = CURRENT_ARTIST_ID;
+      apptFilter.disabled = true;
+    }
+    // Default staff straight to Studio Calendar
+    switchTab('calendar');
+  } else {
+    if (svcTabBtn) svcTabBtn.style.display = 'inline-block';
+    if (schedTabBtn) schedTabBtn.style.display = 'inline-block';
+    if (apptFilter) {
+      apptFilter.disabled = false;
+    }
+  }
+}
+  
 // ── AUTH CHECK ──
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
-  if (session) showDashboard();
-  else showLogin();
+  if (session) {
+    applyUserRole(session.user.email);
+    showDashboard();
+  } else {
+    showLogin();
+  }
 
   sbClient.auth.onAuthStateChange((event, session) => {
-    if (session) showDashboard();
-    else showLogin();
+    if (session) {
+      applyUserRole(session.user.email);
+      showDashboard();
+    } else {
+      showLogin();
+    }
   });
 }
 
@@ -1287,9 +1357,9 @@ function renderAppointmentsTable(list) {
   }).join('');
 }
 // ── STUDIO CALENDAR TIMELINE ──
-const CAL_START_HOUR = 8;  // 8:00 AM
+const CAL_START_HOUR = 6;  // 6:00 AM covers earliest opening/early slots
 const CAL_END_HOUR = 21;   // 9:00 PM
-const SLOT_HEIGHT = 50;    // 50px per hour
+const SLOT_HEIGHT = 60;    // 60px per hour = exactly 1px per minute
 
 function setCalendarToday() {
   const today = new Date().toISOString().split('T')[0];
@@ -1326,7 +1396,10 @@ async function renderCalendarTimeline() {
     sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
   ]);
 
-  const activeArtists = ALL_ARTISTS.filter(a => a.is_active);
+let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
+  if (CURRENT_USER_ROLE === 'staff' && CURRENT_ARTIST_ID) {
+    activeArtists = activeArtists.filter(a => a.id === CURRENT_ARTIST_ID);
+  }
   container.style.gridTemplateColumns = `80px repeat(${activeArtists.length}, minmax(260px, 1fr))`;
 
   // 2. Build Time Labels
@@ -1397,10 +1470,11 @@ async function renderCalendarTimeline() {
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
 
         itemsHtml += `
+         itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
-            <div style="font-weight:700; color:var(--gold);">${cleanClientName(a.customer_name)}</div>
-            <div style="font-size:10px; color:var(--text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${svcs}</div>
-            <div style="font-size:9px; color:var(--muted-lt);">${a.appointment_time} · $${a.total_price || 0}</div>
+            <div class="card-title">${cleanClientName(a.customer_name)}</div>
+            <div class="card-svc">${svcs}</div>
+            <div class="card-meta">✦ ${a.appointment_time} · $${Number(a.total_price || 0).toFixed(2)}</div>
           </div>`;
       });
     }
