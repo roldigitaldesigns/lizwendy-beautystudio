@@ -57,28 +57,40 @@ exports.handler = async (event) => {
       };
 
       // Check Blackouts via raw fetch
-      const boRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_blackouts?artist_id=eq.${artistId}&start_date=lte.${dateStr}&end_date=gte.${dateStr}&select=id`, { headers: sbHeaders });
-      const blackouts = await boRes.json();
+      const boRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_blackouts?artist_id=eq.${artistId}&start_date=lte.${dateStr}&end_date=gte.${dateStr}&select=id,start_time,end_time`, { headers: sbHeaders });
+    const blackouts = await boRes.json();
 
-      if (blackouts && blackouts.length > 0) {
-        isBlackedOut = true;
-      } else {
-        // Check Schedules via raw fetch
-        const scRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_schedules?artist_id=eq.${artistId}&day_of_week=eq.${dow}&select=start_hour,end_hour,is_active`, { headers: sbHeaders });
-        const schedulesData = await scRes.json();
-        const schedules = schedulesData.length > 0 ? schedulesData[0] : null;
-
-        if (schedules && schedules.is_active) {
-          shift = [schedules.start_hour, schedules.end_hour];
-        } else if (schedules && !schedules.is_active) {
-          shift = null;
+   if (blackouts && blackouts.length > 0) {
+      for (const b of blackouts) {
+        if (!b.start_time || !b.end_time) {
+          isBlackedOut = true;
+          break;
         } else {
-          shift = fallbackHours || null;
+          const [sh, sm] = b.start_time.split(':').map(Number);
+          const [eh, em] = b.end_time.split(':').map(Number);
+          // America/New_York EDT = UTC-4 (add 4 to hour to get UTC)
+          const bStart = new Date(Date.UTC(y, m - 1, d, sh + 4, sm || 0)).getTime();
+          const bEnd = new Date(Date.UTC(y, m - 1, d, eh + 4, em || 0)).getTime();
+          busyIntervals.push({ start: bStart, end: bEnd });
         }
       }
-    } catch (dbErr) {
+    }
+
+    // Check Schedules via raw fetch
+    const scRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_schedules?artist_id=eq.${artistId}&day_of_week=eq.${dow}&select=start_hour,end_hour,is_active`, { headers: sbHeaders });
+    const schedulesData = await scRes.json();
+    const schedules = schedulesData.length > 0 ? schedulesData[0] : null;
+
+    if (schedules && schedules.is_active) {
+      shift = [schedules.start_hour, schedules.end_hour];
+    } else if (schedules && !schedules.is_active) {
+      shift = null;
+    } else {
       shift = fallbackHours || null;
     }
+  } catch (dbErr) {
+    shift = fallbackHours || null;
+  }
 
     if (isBlackedOut || !shift) {
       return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], blackout: isBlackedOut }) };
