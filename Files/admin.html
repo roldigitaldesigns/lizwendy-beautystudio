@@ -210,7 +210,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
   left: 6px; 
   right: 6px; 
   border-radius: 6px;
-  padding: 6px 10px; 
+  padding: 5px 8px; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.6); 
   z-index: 5;
   display: flex; 
@@ -232,7 +232,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
   font-weight: 700; 
   color: #FFE382; 
   line-height: 1.25; 
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .cal-event-booking .card-svc {
@@ -242,7 +242,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
   white-space: nowrap; 
   overflow: hidden; 
   text-overflow: ellipsis; 
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .cal-event-booking .card-meta {
@@ -1548,21 +1548,24 @@ async function renderCalendarTimeline() {
           }, 0);
         }
 
-        // C. Common fallback by keywords if duration is still 0
-        if (!dur && a.services) {
-          const joinedSvcs = (Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : s.name).join(' ') : String(a.services)).toLowerCase();
-          if (joinedSvcs.includes('acrílico') || joinedSvcs.includes('acrylic') || joinedSvcs.includes('full set')) dur = 90;
-          else if (joinedSvcs.includes('pmu') || joinedSvcs.includes('brows') || joinedSvcs.includes('cejas') || joinedSvcs.includes('microblading')) dur = 120;
-          else if (joinedSvcs.includes('pedicura') || joinedSvcs.includes('pedicure') || joinedSvcs.includes('manicura') || joinedSvcs.includes('gel')) dur = 60;
+// C. Fallback: Search BOTH service names and customer name for keywords
+        if (!dur) {
+          const searchString = (
+            (Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : s.name).join(' ') : String(a.services || '')) + 
+            ' ' + String(a.customer_name || '')
+          ).toLowerCase();
+
+          if (searchString.includes('acrílico') || searchString.includes('acrylic') || searchString.includes('full set')) dur = 90;
+          else if (searchString.includes('pmu') || searchString.includes('brows') || searchString.includes('cejas') || searchString.includes('microblading')) dur = 120;
+          else if (searchString.includes('pedicura') || searchString.includes('pedicure') || searchString.includes('manicura') || searchString.includes('gel')) dur = 60;
         }
 
         if (!dur || dur <= 0) dur = 60;
 
         // 3. Dynamic Box Positioning & Visual Expansion
-        // SLOT_HEIGHT = 60px per hour (1px per minute)
         const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-        // Subtract 4px so adjacent bookings have a clean separator gap between them
-        const height = Math.max(50, ((dur / 60) * SLOT_HEIGHT) - 4);
+        // 58px minimum height ensures all 3 lines fit; 90m & 120m stretch visibly down the grid
+        const height = Math.max(58, ((dur / 60) * SLOT_HEIGHT) - 2);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
 
         itemsHtml += `
