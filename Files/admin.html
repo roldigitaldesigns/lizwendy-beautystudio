@@ -1518,7 +1518,7 @@ async function renderCalendarTimeline() {
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs || 'Appointment'}</div>
-            <div class="card-meta">✦ ${a.appointment_time || (h + ':' + (m < 10 ? '0' : '') + m)} · ${dur} min · $${Number(a.total_price || 0).toFixed(2)}</div>
+            <div class="card-meta">✦ ${a.appointment_time || (formatHour12(h) + (m ? ':' + (m < 10 ? '0' : '') + m : ':00'))} · ${dur} min</div>
           </div>`;
       });
     }
