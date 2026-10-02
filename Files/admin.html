@@ -657,6 +657,137 @@ async function saveServiceChanges() {
   }
 }
 
+  // ── SERVICES TAB ──
+async function loadServices() {
+  const tbody = document.getElementById('servicesTableBody');
+  const { data, error } = await sbClient
+    .from('services')
+    .select('*')
+    .order('category')
+    .order('sort_order');
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
+    return;
+  }
+
+  ALL_SERVICES = data || [];
+  renderServicesTable(ALL_SERVICES);
+}
+
+function renderServicesTable(list) {
+  const tbody = document.getElementById('servicesTableBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">No services found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td><strong>${s.name_en}</strong><div style="font-size:11px; color:var(--muted);">${s.name_es}</div></td>
+      <td><span class="badge" style="background:var(--card2); border:1px solid var(--border);">${s.category}</span></td>
+      <td>$${Number(s.price).toFixed(2)}</td>
+      <td style="color:var(--gold);">${s.price_label_en || '—'}</td>
+      <td>${s.duration_minutes}m</td>
+      <td>
+        <span class="badge ${s.is_active ? 'badge-active' : 'badge-hidden'}">
+          ${s.is_active ? 'Active' : 'Hidden'}
+        </span>
+      </td>
+      <td>
+        <span class="action-link" onclick="openEditService('${s.id}')">Edit</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterServices() {
+  const q = document.getElementById('serviceSearch').value.toLowerCase();
+  const filtered = ALL_SERVICES.filter(s => 
+    s.name_en.toLowerCase().includes(q) || 
+    s.name_es.toLowerCase().includes(q) || 
+    s.category.toLowerCase().includes(q)
+  );
+  renderServicesTable(filtered);
+}
+
+function openEditService(id) {
+  const s = ALL_SERVICES.find(item => item.id === id);
+  if (!s) return;
+
+  document.getElementById('editServiceId').value = s.id;
+  document.getElementById('modalServiceTitle').textContent = `Edit ${s.name_en}`;
+  document.getElementById('editNameEn').value = s.name_en;
+  document.getElementById('editNameEs').value = s.name_es;
+  document.getElementById('editPrice').value = s.price;
+  document.getElementById('editDuration').value = s.duration_minutes;
+  document.getElementById('editPriceLabelEn').value = s.price_label_en || '';
+  document.getElementById('editPriceLabelEs').value = s.price_label_es || '';
+  document.getElementById('editSubEn').value = s.sub_en || '';
+  document.getElementById('editIsActive').checked = s.is_active;
+  document.getElementById('editPhotoFile').value = '';
+
+  const preview = document.getElementById('currentPhotoPreview');
+  preview.innerHTML = s.img_url 
+    ? `<img src="${s.img_url}" style="height:60px; border-radius:4px; border:1px solid var(--border); object-fit:cover;"/>`
+    : '<span style="font-size:11px; color:var(--muted);">No custom photo uploaded</span>';
+
+  document.getElementById('serviceModal').style.display = 'flex';
+}
+
+function closeServiceModal() {
+  document.getElementById('serviceModal').style.display = 'none';
+}
+
+async function saveServiceChanges() {
+  const id = document.getElementById('editServiceId').value;
+  const btn = document.getElementById('saveServiceBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    let img_url = null;
+    const file = document.getElementById('editPhotoFile').files[0];
+
+    if (file) {
+      const ext = file.name.split('.').pop();
+      const path = `${id}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await sbClient.storage
+        .from('service-photos')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: pubData } = sbClient.storage.from('service-photos').getPublicUrl(path);
+      img_url = pubData.publicUrl;
+    }
+
+    const updates = {
+      name_en: document.getElementById('editNameEn').value.trim(),
+      name_es: document.getElementById('editNameEs').value.trim(),
+      price: parseFloat(document.getElementById('editPrice').value) || 0,
+      duration_minutes: parseInt(document.getElementById('editDuration').value, 10) || 60,
+      price_label_en: document.getElementById('editPriceLabelEn').value.trim() || null,
+      price_label_es: document.getElementById('editPriceLabelEs').value.trim() || null,
+      sub_en: document.getElementById('editSubEn').value.trim() || null,
+      is_active: document.getElementById('editIsActive').checked
+    };
+
+    if (img_url) updates.img_url = img_url;
+
+    const { error } = await sbClient.from('services').update(updates).eq('id', id);
+    if (error) throw error;
+
+    closeServiceModal();
+    loadServices();
+  } catch (err) {
+    alert('Error saving service: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Changes ✦';
+  }
+}
+
 // ── SCHEDULES & TEAM TAB ──
 async function loadSchedules() {
   const wrap = document.getElementById('scheduleCardsWrap');
