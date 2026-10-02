@@ -1452,7 +1452,7 @@ async function renderCalendarTimeline() {
   }
   timeColHtml += '</div>';
 
-  // 5. Build Column for Each Visible Artist
+// 5. Build Column for Each Visible Artist
   const artistColsHtml = visibleArtists.map(art => {
     const artSched = (window.ALL_SCHEDS || []).find(s => s.artist_id === art.id && s.day_of_week === dow);
     const isWorkingToday = artSched && artSched.is_active;
@@ -1464,7 +1464,7 @@ async function renderCalendarTimeline() {
 
     let itemsHtml = '';
 
-    // If not scheduled, tint column slightly but STILL render all appointments & blackouts
+    // If not scheduled, subtle tint, but still allow appointments to render
     if (!isWorkingToday) {
       itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.02); pointer-events:none; z-index:1;"></div>`;
     } else {
@@ -1483,123 +1483,130 @@ async function renderCalendarTimeline() {
       }
     }
 
-      // Render Blackouts
-      const myBlackouts = (dayBlackouts || []).filter(b => b.artist_id === art.id);
-      myBlackouts.forEach(b => {
-        if (!b.start_time || !b.end_time) {
-          itemsHtml += `<div class="cal-event-card cal-event-blackout" style="top:10px; bottom:10px;"><strong>TIME OFF: ${b.reason || 'Unavailable'}</strong><br/>All Day</div>`;
-        } else {
-          const [sh, sm] = b.start_time.split(':').map(Number);
-          const [eh, em] = b.end_time.split(':').map(Number);
-          const top = ((sh - CAL_START_HOUR) + (sm / 60)) * SLOT_HEIGHT;
-          const height = Math.max(35, (((eh - CAL_START_HOUR) + (em / 60)) * SLOT_HEIGHT) - top);
-          itemsHtml += `
-            <div class="cal-event-card cal-event-blackout" style="top:${top}px; height:${height}px;">
-              <strong>${b.reason || 'Blocked'}</strong>
-              <div>${formatHour12(sh)} – ${formatHour12(eh)}</div>
-            </div>`;
-        }
-      });
-
-    // Render Confirmed Appointments
-      const myAppts = (dayAppts || []).filter(a => 
-      String(a.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
-      );
-        // 1. Calculate Start Time (Hour & Minute)
-        let h = 0, m = 0;
-        if (a.appointment_time) {
-          const match = a.appointment_time.match(/(\d+):(\d+)\s*(am|pm)?/i);
-          if (match) {
-            h = parseInt(match[1], 10);
-            m = parseInt(match[2], 10);
-            const period = (match[3] || '').toLowerCase();
-            if (period === 'pm' && h < 12) h += 12;
-            if (period === 'am' && h === 12) h = 0;
-          }
-        } else if (a.start_time) {
-          const stDate = new Date(a.start_time);
-          h = stDate.getHours();
-          m = stDate.getMinutes();
-        }
-// 2. Accurate Duration Calculation
-        let dur = 0;
-
-        // A. If an explicit custom duration (other than default 60) was saved, check timestamps first
-        if (a.start_time && a.end_time) {
-          const st = new Date(a.start_time).getTime();
-          const et = new Date(a.end_time).getTime();
-          if (!isNaN(st) && !isNaN(et) && et > st) {
-            dur = Math.round((et - st) / 60000);
-          }
-        }
-
-        // B. Match service names against ALL_SERVICES catalogue
-        if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
-          dur = a.services.reduce((total, s) => {
-            if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
-              return total + Number(s.duration || s.duration_minutes || 0);
-            }
-            const rawName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            const match = window.ALL_SERVICES.find(m => {
-              const mEn = (m.name_en || m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-              const mEs = (m.name_es || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-              return (mEn && (rawName.includes(mEn) || mEn.includes(rawName))) ||
-                     (mEs && (rawName.includes(mEs) || mEs.includes(rawName)));
-            });
-            return total + (match ? Number(match.duration_minutes || match.duration || 0) : 0);
-          }, 0);
-        }
-
-        // C. Studio Keyword Rules (Matches services, customer name, and notes)
-        if (!dur) {
-          const rawBlob = [
-            a.customer_name || '',
-            a.notes || '',
-            Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : (s.name || '')).join(' ') : String(a.services || '')
-          ].join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-          if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
-            dur = 180; // 3 hours
-          } else if (rawBlob.includes('cejas combo') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || (rawBlob.includes('colorete') && rawBlob.includes('labios'))) {
-            dur = 150; // 2.5 hours for Combos
-          } else if (rawBlob.includes('pmu') || rawBlob.includes('brows') || rawBlob.includes('cejas') || rawBlob.includes('labios')) {
-            dur = 120; // 2 hours
-          } else if (rawBlob.includes('acrilic') || rawBlob.includes('acrylic') || rawBlob.includes('full set') || rawBlob.includes('juego completo')) {
-            dur = 90;  // 1.5 hours
-          } else if ((rawBlob.includes('mani') && rawBlob.includes('pedi')) || (rawBlob.includes('gel') && rawBlob.includes('pedicure'))) {
-            dur = 90;  // Mani + Pedi combo
-          }
-        }
-
-        // D. Fallback to existing duration_minutes or default 60
-        if (!dur) {
-          dur = Number(a.duration_minutes) || 60;
-        }
-
-        // 3. Dynamic Positioning & Visible Box Expansion
-        const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-        const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
-        const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
-        
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const dispH = h % 12 || 12;
-        const dispM = m < 10 ? '0' + m : m;
-        const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
-
+    // Render Blackouts
+    const myBlackouts = (dayBlackouts || []).filter(b => 
+      String(b.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
+    );
+    myBlackouts.forEach(b => {
+      if (!b.start_time || !b.end_time) {
+        itemsHtml += `<div class="cal-event-card cal-event-blackout" style="top:10px; bottom:10px;"><strong>TIME OFF: ${b.reason || 'Unavailable'}</strong><br/>All Day</div>`;
+      } else {
+        const [sh, sm] = b.start_time.split(':').map(Number);
+        const [eh, em] = b.end_time.split(':').map(Number);
+        const top = ((sh - CAL_START_HOUR) + (sm / 60)) * SLOT_HEIGHT;
+        const height = Math.max(35, (((eh - CAL_START_HOUR) + (em / 60)) * SLOT_HEIGHT) - top);
         itemsHtml += `
-          <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
-            <div class="card-title">${cleanClientName(a.customer_name)}</div>
-            <div class="card-svc">${svcs || 'Appointment'}</div>
-            <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
-          </div>`;    
-      });
-    }
+          <div class="cal-event-card cal-event-blackout" style="top:${top}px; height:${height}px;">
+            <strong>${b.reason || 'Blocked'}</strong>
+            <div>${formatHour12(sh)} – ${formatHour12(eh)}</div>
+          </div>`;
+      }
+    });
+
+    // Render Confirmed Appointments (runs for every artist unconditionally)
+    const myAppts = (dayAppts || []).filter(a => 
+      String(a.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
+    );
+
+    myAppts.forEach(a => {
+      if (!a.appointment_time && !a.start_time) return;
+
+      // 1. Calculate Start Time (Hour & Minute)
+      let h = 0, m = 0;
+      if (a.appointment_time) {
+        const match = a.appointment_time.match(/(\d+):(\d+)\s*(am|pm)?/i);
+        if (match) {
+          h = parseInt(match[1], 10);
+          m = parseInt(match[2], 10);
+          const period = (match[3] || '').toLowerCase();
+          if (period === 'pm' && h < 12) h += 12;
+          if (period === 'am' && h === 12) h = 0;
+        }
+      } else if (a.start_time) {
+        const stDate = new Date(a.start_time);
+        h = stDate.getHours();
+        m = stDate.getMinutes();
+      }
+
+      // 2. Accurate Duration Calculation
+      let dur = 0;
+
+      // A. Timestamps difference
+      if (a.start_time && a.end_time) {
+        const st = new Date(a.start_time).getTime();
+        const et = new Date(a.end_time).getTime();
+        if (!isNaN(st) && !isNaN(et) && et > st) {
+          dur = Math.round((et - st) / 60000);
+        }
+      }
+
+      // B. Match against ALL_SERVICES
+      if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
+        dur = a.services.reduce((total, s) => {
+          if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
+            return total + Number(s.duration || s.duration_minutes || 0);
+          }
+          const rawName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+          const match = window.ALL_SERVICES.find(m => {
+            const mEn = (m.name_en || m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            const mEs = (m.name_es || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            return (mEn && (rawName.includes(mEn) || mEn.includes(rawName))) ||
+                   (mEs && (rawName.includes(mEs) || mEs.includes(rawName)));
+          });
+          return total + (match ? Number(match.duration_minutes || match.duration || 0) : 0);
+        }, 0);
+      }
+
+      // C. Studio Keyword Rules
+      if (!dur) {
+        const rawBlob = [
+          a.customer_name || '',
+          a.notes || '',
+          Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : (s.name || '')).join(' ') : String(a.services || '')
+        ].join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
+          dur = 180;
+        } else if (rawBlob.includes('cejas combo') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || (rawBlob.includes('colorete') && rawBlob.includes('labios'))) {
+          dur = 150;
+        } else if (rawBlob.includes('pmu') || rawBlob.includes('brows') || rawBlob.includes('cejas') || rawBlob.includes('labios')) {
+          dur = 120;
+        } else if (rawBlob.includes('acrilic') || rawBlob.includes('acrylic') || rawBlob.includes('full set') || rawBlob.includes('juego completo')) {
+          dur = 90;
+        } else if ((rawBlob.includes('mani') && rawBlob.includes('pedi')) || (rawBlob.includes('gel') && rawBlob.includes('pedicure'))) {
+          dur = 90;
+        }
+      }
+
+      // D. Fallback to existing duration_minutes or default 60
+      if (!dur) {
+        dur = Number(a.duration_minutes) || 60;
+      }
+
+      // 3. Dynamic Positioning & Visible Box Expansion
+      const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
+      const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
+      const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
+
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const dispH = h % 12 || 12;
+      const dispM = m < 10 ? '0' + m : m;
+      const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
+
+      itemsHtml += `
+        <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
+          <div class="card-title">${cleanClientName(a.customer_name)}</div>
+          <div class="card-svc">${svcs || 'Appointment'}</div>
+          <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
+        </div>`;
+    });
 
     return `
       <div class="cal-artist-col">
         <div class="cal-artist-header">${art.name}</div>
         <div class="cal-canvas">
-          ${gridLinesHtml}${itemsHtml}
+          ${gridLinesHtml}
+          ${itemsHtml}
         </div>
       </div>
     `;
