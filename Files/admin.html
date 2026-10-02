@@ -1456,7 +1456,7 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
       });
 
       // Render Confirmed Appointments
-      const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
+    const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
       myAppts.forEach(a => {
         if (!a.appointment_time) return;
         let [hourStr, minStr] = a.appointment_time.split(':');
@@ -1469,12 +1469,11 @@ let activeArtists = ALL_ARTISTS.filter(a => a.is_active);
         const height = Math.max(38, (dur / 60) * SLOT_HEIGHT);
         const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
 
-        itemsHtml += `
-         itemsHtml += `
+       itemsHtml += `
           <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
             <div class="card-title">${cleanClientName(a.customer_name)}</div>
             <div class="card-svc">${svcs}</div>
-            <div class="card-meta">✦ ${a.appointment_time} · $${Number(a.total_price || 0).toFixed(2)}</div>
+            <div class="card-meta">✦ ${a.appointment_time} ·$${Number(a.total_price || 0).toFixed(2)}</div>
           </div>`;
       });
     }
