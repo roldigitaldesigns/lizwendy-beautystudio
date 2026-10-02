@@ -666,8 +666,9 @@ function applyUserRole(email) {
       apptFilter.disabled = false;
     }
   }
-} // <--- ADD THIS CLOSING BRACE HERE
+} // <- THIS BRACE FIXED THE SYNTAX ERROR
 
+  
 // ── AUTH CHECK ──
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -1379,6 +1380,7 @@ function renderAppointmentsTable(list) {
     `;
   }).join('');
 }
+
 // ── STUDIO CALENDAR TIMELINE ──
 const CAL_START_HOUR = 6;  // 6:00 AM covers earliest opening/early slots
 const CAL_END_HOUR = 21;   // 9:00 PM
@@ -1452,7 +1454,7 @@ async function renderCalendarTimeline() {
   }
   timeColHtml += '</div>';
 
-// 5. Build Column for Each Visible Artist
+  // 5. Build Column for Each Visible Artist
   const artistColsHtml = visibleArtists.map(art => {
     const artSched = (window.ALL_SCHEDS || []).find(s => s.artist_id === art.id && s.day_of_week === dow);
     const isWorkingToday = artSched && artSched.is_active;
@@ -1484,6 +1486,7 @@ async function renderCalendarTimeline() {
     const myBlackouts = (dayBlackouts || []).filter(b => 
       String(b.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
     );
+    
     myBlackouts.forEach(b => {
       if (!b.start_time || !b.end_time) {
         itemsHtml += `<div class="cal-event-card cal-event-blackout" style="top:10px; bottom:10px;"><strong>TIME OFF: ${b.reason || 'Unavailable'}</strong><br/>All Day</div>`;
@@ -1602,6 +1605,7 @@ async function renderCalendarTimeline() {
 
   container.innerHTML = timeColHtml + artistColsHtml;
 }
+
 // Start
 initAuth();
 </script>
