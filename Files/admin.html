@@ -183,6 +183,39 @@ tr:hover td { background: rgba(255,255,255,.015); }
 .card-header-actions { display: flex; justify-content: space-between; align-items: flex-start; }
 .day-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
 .day-row:last-child { border-bottom: none; }
+
+  /* ── CALENDAR TIMELINE ── */
+.cal-time-col { display: flex; flex-direction: column; }
+.cal-time-slot { height: 50px; font-size: 10px; font-weight: 600; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 4px; }
+.cal-artist-col {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); position: relative;
+  min-height: 700px; display: flex; flex-direction: column;
+}
+.cal-artist-header {
+  padding: 12px; border-bottom: 1px solid var(--border);
+  background: var(--card2); text-align: center;
+  font-family: var(--serif); font-size: 15px; color: var(--gold);
+}
+.cal-canvas { position: relative; flex: 1; }
+.cal-slot-grid-line { height: 50px; border-top: 1px dashed rgba(255,255,255,0.04); }
+.cal-event-card {
+  position: absolute; left: 6px; right: 6px; border-radius: 4px;
+  padding: 8px 10px; font-size: 11px; overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5); z-index: 5;
+}
+.cal-event-booking {
+  background: rgba(212,175,55,0.18); border-left: 3px solid var(--gold); color: var(--text);
+}
+.cal-event-blackout {
+  background: rgba(192,57,43,0.22); border-left: 3px solid var(--danger); color: #ff7675;
+}
+.cal-shift-off-overlay {
+  position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3) 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 20px);
+  z-index: 2; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase;
+}
+  
 </style>
 </head>
 <body>
@@ -229,6 +262,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
   <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('services')">Services & Pricing</button>
     <button class="tab-btn" onclick="switchTab('schedules')">Team & Hours</button>
+    <button class="tab-btn" onclick="switchTab('calendar')">Studio Calendar</button>
     <button class="tab-btn" onclick="switchTab('appointments')">Appointments</button>
   </div>
 
@@ -285,6 +319,30 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <div style="color:var(--muted); padding:20px;">Loading schedules...</div>
     </div>
   </div>
+
+  <!-- TAB: STUDIO CALENDAR -->
+  <div class="tab-pane" id="tab-calendar">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Daily Schedule & Appointments</h2>
+        <p style="font-size:12px; color:var(--muted-lt);">Live visual timeline of team shifts, bookings, and time-off blocks.</p>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <input type="date" class="form-input" id="calendarViewDate" onchange="renderCalendarTimeline()" style="width:150px; padding:7px 10px; font-size:12px;"/>
+        <button class="btn-logout" onclick="shiftCalendarDay(-1)">‹ Previous Day</button>
+        <button class="btn-logout" onclick="setCalendarToday()">Today</button>
+        <button class="btn-logout" onclick="shiftCalendarDay(1)">Next Day ›</button>
+      </div>
+    </div>
+
+    <!-- Calendar Timeline Board -->
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; padding:20px;">
+      <div id="calendarColumnsContainer" style="display:grid; grid-template-columns: 80px repeat(2, minmax(260px, 1fr)); gap:16px; min-width:620px;">
+        <!-- Filled dynamically: Time labels column + Artist columns -->
+      </div>
+    </div>
+  </div>
+  
 
   <!-- TAB 3: APPOINTMENTS -->
   <div class="tab-pane" id="tab-appointments">
@@ -551,6 +609,7 @@ function showDashboard() {
   loadSchedules();
   loadBlackouts();
   loadAppointments();
+  setCalendarToday();
 }
 
 async function handleLogin() {
@@ -1227,7 +1286,138 @@ function renderAppointmentsTable(list) {
     `;
   }).join('');
 }
+// ── STUDIO CALENDAR TIMELINE ──
+const CAL_START_HOUR = 8;  // 8:00 AM
+const CAL_END_HOUR = 21;   // 9:00 PM
+const SLOT_HEIGHT = 50;    // 50px per hour
 
+function setCalendarToday() {
+  const today = new Date().toISOString().split('T')[0];
+  const input = document.getElementById('calendarViewDate');
+  if (input) input.value = today;
+  renderCalendarTimeline();
+}
+
+function shiftCalendarDay(offset) {
+  const input = document.getElementById('calendarViewDate');
+  if (!input) return;
+  const cur = input.value || new Date().toISOString().split('T')[0];
+  const d = new Date(cur + 'T00:00:00');
+  d.setDate(d.getDate() + offset);
+  input.value = d.toISOString().split('T')[0];
+  renderCalendarTimeline();
+}
+
+async function renderCalendarTimeline() {
+  const dateInput = document.getElementById('calendarViewDate');
+  if (!dateInput) return;
+  const dateStr = dateInput.value;
+  if (!dateStr) return;
+
+  const dt = new Date(dateStr + 'T00:00:00');
+  const dow = dt.getDay();
+
+  const container = document.getElementById('calendarColumnsContainer');
+  if (!container) return;
+
+  // 1. Fetch Day's Appointments & Blackouts from Supabase
+  const [{ data: dayAppts }, { data: dayBlackouts }] = await Promise.all([
+    sbClient.from('appointments').select('*').eq('appointment_date', dateStr),
+    sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
+  ]);
+
+  const activeArtists = ALL_ARTISTS.filter(a => a.is_active);
+  container.style.gridTemplateColumns = `80px repeat(${activeArtists.length}, minmax(260px, 1fr))`;
+
+  // 2. Build Time Labels
+  let timeColHtml = '<div class="cal-time-col"><div style="height:45px;"></div>';
+  for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
+    timeColHtml += `<div class="cal-time-slot">${formatHour12(h)}</div>`;
+  }
+  timeColHtml += '</div>';
+
+  // 3. Build Column for Each Active Artist
+  const artistColsHtml = activeArtists.map(art => {
+    const artSched = ALL_SCHEDS.find(s => s.artist_id === art.id && s.day_of_week === dow);
+    const isWorkingToday = artSched && artSched.is_active;
+
+    let gridLinesHtml = '';
+    for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
+      gridLinesHtml += `<div class="cal-slot-grid-line"></div>`;
+    }
+
+    let itemsHtml = '';
+
+    if (!isWorkingToday) {
+      itemsHtml += `<div class="cal-shift-off-overlay">Day Off</div>`;
+    } else {
+      const shiftStart = artSched.start_hour;
+      const shiftEnd = artSched.end_hour;
+
+      if (shiftStart > CAL_START_HOUR) {
+        const topH = (shiftStart - CAL_START_HOUR) * SLOT_HEIGHT;
+        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.4); z-index:1;"></div>`;
+      }
+      if (shiftEnd < CAL_END_HOUR) {
+        const botTop = (shiftEnd - CAL_START_HOUR) * SLOT_HEIGHT;
+        const botH = (CAL_END_HOUR - shiftEnd) * SLOT_HEIGHT;
+        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.4); z-index:1;"></div>`;
+      }
+
+      // Render Blackouts
+      const myBlackouts = (dayBlackouts || []).filter(b => b.artist_id === art.id);
+      myBlackouts.forEach(b => {
+        if (!b.start_time || !b.end_time) {
+          itemsHtml += `<div class="cal-event-card cal-event-blackout" style="top:10px; bottom:10px;"><strong>TIME OFF: ${b.reason || 'Unavailable'}</strong><br/>All Day</div>`;
+        } else {
+          const [sh, sm] = b.start_time.split(':').map(Number);
+          const [eh, em] = b.end_time.split(':').map(Number);
+          const top = ((sh - CAL_START_HOUR) + (sm / 60)) * SLOT_HEIGHT;
+          const height = Math.max(35, (((eh - CAL_START_HOUR) + (em / 60)) * SLOT_HEIGHT) - top);
+          itemsHtml += `
+            <div class="cal-event-card cal-event-blackout" style="top:${top}px; height:${height}px;">
+              <strong>${b.reason || 'Blocked'}</strong>
+              <div>${formatHour12(sh)} – ${formatHour12(eh)}</div>
+            </div>`;
+        }
+      });
+
+      // Render Confirmed Appointments
+      const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
+      myAppts.forEach(a => {
+        if (!a.appointment_time) return;
+        let [hourStr, minStr] = a.appointment_time.split(':');
+        let h = parseInt(hourStr, 10);
+        let m = parseInt(minStr, 10) || 0;
+        if (a.appointment_time.toLowerCase().includes('pm') && h < 12) h += 12;
+
+        const dur = a.duration_minutes || 60;
+        const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
+        const height = Math.max(38, (dur / 60) * SLOT_HEIGHT);
+        const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
+
+        itemsHtml += `
+          <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
+            <div style="font-weight:700; color:var(--gold);">${cleanClientName(a.customer_name)}</div>
+            <div style="font-size:10px; color:var(--text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${svcs}</div>
+            <div style="font-size:9px; color:var(--muted-lt);">${a.appointment_time} · $${a.total_price || 0}</div>
+          </div>`;
+      });
+    }
+
+    return `
+      <div class="cal-artist-col">
+        <div class="cal-artist-header">${art.name}</div>
+        <div class="cal-canvas">
+          ${gridLinesHtml}
+          ${itemsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = timeColHtml + artistColsHtml;
+}
 // Start
 initAuth();
 </script>
