@@ -666,7 +666,7 @@ function applyUserRole(email) {
       apptFilter.disabled = false;
     }
   }
-}
+
   
 // ── AUTH CHECK ──
 async function initAuth() {
@@ -1464,22 +1464,24 @@ async function renderCalendarTimeline() {
 
     let itemsHtml = '';
 
+    // If not scheduled, tint column slightly but STILL render all appointments & blackouts
     if (!isWorkingToday) {
-      itemsHtml += `<div class="cal-shift-off-overlay">Day Off</div>`;
+      itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.02); pointer-events:none; z-index:1;"></div>`;
     } else {
       const shiftStart = artSched.start_hour;
       const shiftEnd = artSched.end_hour;
 
-      // Dim off-hours
+      // Dim off-hours outside shift
       if (shiftStart > CAL_START_HOUR) {
         const topH = (shiftStart - CAL_START_HOUR) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.5); z-index:2;"></div>`;
+        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.45); pointer-events:none; z-index:1;"></div>`;
       }
       if (shiftEnd < CAL_END_HOUR) {
         const botTop = (shiftEnd - CAL_START_HOUR) * SLOT_HEIGHT;
         const botH = (CAL_END_HOUR - shiftEnd) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.5); z-index:2;"></div>`;
+        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.45); pointer-events:none; z-index:1;"></div>`;
       }
+    }
 
       // Render Blackouts
       const myBlackouts = (dayBlackouts || []).filter(b => b.artist_id === art.id);
@@ -1500,10 +1502,9 @@ async function renderCalendarTimeline() {
       });
 
     // Render Confirmed Appointments
-      const myAppts = (dayAppts || []).filter(a => a.artist_id === art.id);
-      myAppts.forEach(a => {
-        if (!a.appointment_time && !a.start_time) return;
-
+      const myAppts = (dayAppts || []).filter(a => 
+      String(a.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
+      );
         // 1. Calculate Start Time (Hour & Minute)
         let h = 0, m = 0;
         if (a.appointment_time) {
