@@ -666,8 +666,8 @@ function applyUserRole(email) {
       apptFilter.disabled = false;
     }
   }
+} // <--- ADD THIS CLOSING BRACE HERE
 
-  
 // ── AUTH CHECK ──
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -1601,7 +1601,6 @@ async function renderCalendarTimeline() {
   }).join('');
 
   container.innerHTML = timeColHtml + artistColsHtml;
-}
 }
 // Start
 initAuth();
