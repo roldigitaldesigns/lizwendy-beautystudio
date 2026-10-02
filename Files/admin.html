@@ -1464,14 +1464,12 @@ async function renderCalendarTimeline() {
 
     let itemsHtml = '';
 
-    // If not scheduled, subtle tint, but still allow appointments to render
     if (!isWorkingToday) {
       itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.02); pointer-events:none; z-index:1;"></div>`;
     } else {
       const shiftStart = artSched.start_hour;
       const shiftEnd = artSched.end_hour;
 
-      // Dim off-hours outside shift
       if (shiftStart > CAL_START_HOUR) {
         const topH = (shiftStart - CAL_START_HOUR) * SLOT_HEIGHT;
         itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.45); pointer-events:none; z-index:1;"></div>`;
@@ -1483,7 +1481,6 @@ async function renderCalendarTimeline() {
       }
     }
 
-    // Render Blackouts
     const myBlackouts = (dayBlackouts || []).filter(b => 
       String(b.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
     );
@@ -1503,7 +1500,6 @@ async function renderCalendarTimeline() {
       }
     });
 
-    // Render Confirmed Appointments (runs for every artist unconditionally)
     const myAppts = (dayAppts || []).filter(a => 
       String(a.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
     );
@@ -1511,7 +1507,6 @@ async function renderCalendarTimeline() {
     myAppts.forEach(a => {
       if (!a.appointment_time && !a.start_time) return;
 
-      // 1. Calculate Start Time (Hour & Minute)
       let h = 0, m = 0;
       if (a.appointment_time) {
         const match = a.appointment_time.match(/(\d+):(\d+)\s*(am|pm)?/i);
@@ -1528,10 +1523,7 @@ async function renderCalendarTimeline() {
         m = stDate.getMinutes();
       }
 
-      // 2. Accurate Duration Calculation
       let dur = 0;
-
-      // A. Timestamps difference
       if (a.start_time && a.end_time) {
         const st = new Date(a.start_time).getTime();
         const et = new Date(a.end_time).getTime();
@@ -1540,7 +1532,6 @@ async function renderCalendarTimeline() {
         }
       }
 
-      // B. Match against ALL_SERVICES
       if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
         dur = a.services.reduce((total, s) => {
           if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
@@ -1557,7 +1548,6 @@ async function renderCalendarTimeline() {
         }, 0);
       }
 
-      // C. Studio Keyword Rules
       if (!dur) {
         const rawBlob = [
           a.customer_name || '',
@@ -1578,12 +1568,10 @@ async function renderCalendarTimeline() {
         }
       }
 
-      // D. Fallback to existing duration_minutes or default 60
       if (!dur) {
         dur = Number(a.duration_minutes) || 60;
       }
 
-      // 3. Dynamic Positioning & Visible Box Expansion
       const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
       const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
       const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
@@ -1614,6 +1602,7 @@ async function renderCalendarTimeline() {
 
   container.innerHTML = timeColHtml + artistColsHtml;
 }
+
 // Start
 initAuth();
 </script>
