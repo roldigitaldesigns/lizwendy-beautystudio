@@ -734,11 +734,23 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
 
-  const clickedBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+  const clickedBtn = document.querySelector(`[onclick*="switchTab('${tabId}')"]`);
   if (clickedBtn) clickedBtn.classList.add('active');
-  document.getElementById('tab-' + tabId).classList.add('active');
-}
 
+  const targetPane = document.getElementById('tab-' + tabId);
+  if (targetPane) targetPane.classList.add('active');
+
+  // If switching to calendar, preserve the selected date (only set today if blank)
+  if (tabId === 'calendar') {
+    const calInput = document.getElementById('calendarViewDate');
+    if (calInput && !calInput.value) {
+      calInput.value = new Date().toISOString().split('T')[0];
+    }
+    if (typeof renderCalendarTimeline === 'function') {
+      renderCalendarTimeline();
+    }
+  }
+}
 // ── SERVICES TAB ──
 async function loadServices() {
   const tbody = document.getElementById('servicesTableBody');
@@ -1407,7 +1419,6 @@ function getEndTimeString(timeStr, durationMin) {
   if (!timeStr) return '';
   const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return '';
-
   let hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
   const isPM = match[3].toUpperCase() === 'PM';
