@@ -1403,6 +1403,28 @@ function shiftCalendarDay(offset) {
   renderCalendarTimeline();
 }
 
+function getEndTimeString(timeStr, durationMin) {
+  if (!timeStr) return '';
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return '';
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toUpperCase() === 'PM';
+
+  if (isPM && hours !== 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+
+  const totalMinutes = hours * 60 + minutes + (parseInt(durationMin, 10) || 60);
+  let endHour24 = Math.floor(totalMinutes / 60) % 24;
+  const endMin = String(totalMinutes % 60).padStart(2, '0');
+
+  const endAmpm = endHour24 >= 12 ? 'PM' : 'AM';
+  const endDisplayHour = endHour24 % 12 || 12;
+
+  return `${endDisplayHour}:${endMin} ${endAmpm}`;
+}
+  
 async function renderCalendarTimeline() {
   const dateInput = document.getElementById('calendarViewDate');
   if (!dateInput) return;
@@ -1584,11 +1606,14 @@ async function renderCalendarTimeline() {
       const dispM = m < 10 ? '0' + m : m;
       const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
 
+      const finishTime = getEndTimeString(cleanTime, dur);
+      const timeRangeDisplay = `${cleanTime} – ${finishTime}`;
+
       itemsHtml += `
-        <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;">
+          <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;" onclick="openAppointmentModal('${a.id}')">
           <div class="card-title">${cleanClientName(a.customer_name)}</div>
           <div class="card-svc">${svcs || 'Appointment'}</div>
-          <div class="card-meta">✦ ${cleanTime} (${dur}m)</div>
+          <div class="card-meta">✦ ${timeRangeDisplay}</div>
         </div>`;
     });
 
@@ -1604,6 +1629,120 @@ async function renderCalendarTimeline() {
   }).join('');
 
   container.innerHTML = timeColHtml + artistColsHtml;
+}
+</script>
+
+<!-- Interactive Edit / Reschedule Modal (Phase 2) -->
+<div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--card, #1a1a1a); border:1px solid var(--border, #333); border-radius:12px; width:100%; max-width:440px; padding:24px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+    
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+      <div>
+        <h3 id="modalApptClient" style="margin:0; font-size:18px; font-weight:600;">Client Name</h3>
+        <p id="modalApptTimeSpan" style="margin:4px 0 0; font-size:13px; color:var(--gold, #d4af37);">8:00 AM – 10:30 AM</p>
+      </div>
+      <button onclick="closeAppointmentModal()" style="background:none; border:none; color:#888; font-size:20px; cursor:pointer;">&times;</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+      <div>
+        <label style="display:block; margin-bottom:4px; color:#aaa;">Date</label>
+        <input type="date" id="modalApptDate" class="form-input" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;" />
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="display:block; margin-bottom:4px; color:#aaa;">Start Time</label>
+          <input type="text" id="modalApptTime" class="form-input" placeholder="e.g. 5:00 PM" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;" />
+        </div>
+        <div>
+          <label style="display:block; margin-bottom:4px; color:#aaa;">Artist</label>
+          <select id="modalApptArtist" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
+            <option value="wendy">Liz Wendy</option>
+            <option value="johanna">Johanna</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block; margin-bottom:4px; color:#aaa;">Notes</label>
+        <textarea id="modalApptNotes" rows="3" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px; resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+      <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:8px 14px; cursor:pointer;">Cancel</button>
+      <button onclick="saveAppointmentChanges()" style="padding:8px 16px; background:var(--gold, #d4af37); color:#000; font-weight:600; border:none; border-radius:6px; cursor:pointer;">Save Changes</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// --- Interactive Appointment Modal (Phase 2) ---
+let currentModalAppt = null;
+
+async function openAppointmentModal(apptId) {
+  if (!apptId) return;
+
+  const { data: appt, error } = await sbClient
+    .from('appointments')
+    .select('*')
+    .eq('id', apptId)
+    .single();
+
+  if (error || !appt) {
+    alert("Could not load appointment details.");
+    return;
+  }
+
+  currentModalAppt = appt;
+
+  const finishTime = getEndTimeString(appt.appointment_time, appt.duration_minutes);
+  document.getElementById('modalApptClient').textContent = cleanClientName(appt.customer_name);
+  document.getElementById('modalApptTimeSpan').textContent = `${appt.appointment_time} – ${finishTime}`;
+  document.getElementById('modalApptDate').value = appt.appointment_date || '';
+  document.getElementById('modalApptTime').value = appt.appointment_time || '';
+  document.getElementById('modalApptArtist').value = (appt.artist_id || 'wendy').toLowerCase();
+  document.getElementById('modalApptNotes').value = appt.notes || '';
+
+  const modalEl = document.getElementById('appointmentDetailModal');
+  if (modalEl) modalEl.style.display = 'flex';
+}
+
+function closeAppointmentModal() {
+  const modalEl = document.getElementById('appointmentDetailModal');
+  if (modalEl) modalEl.style.display = 'none';
+  currentModalAppt = null;
+}
+
+async function saveAppointmentChanges() {
+  if (!currentModalAppt) return;
+
+  const updatedDate = document.getElementById('modalApptDate').value;
+  const updatedTime = document.getElementById('modalApptTime').value;
+  const updatedArtist = document.getElementById('modalApptArtist').value;
+  const updatedNotes = document.getElementById('modalApptNotes').value;
+
+  const { error } = await sbClient
+    .from('appointments')
+    .update({
+      appointment_date: updatedDate,
+      appointment_time: updatedTime,
+      artist_id: updatedArtist,
+      notes: updatedNotes
+    })
+    .eq('id', currentModalAppt.id);
+
+  if (error) {
+    alert("Failed to save changes: " + error.message);
+    return;
+  }
+
+  closeAppointmentModal();
+  if (typeof renderCalendarTimeline === 'function') {
+    await renderCalendarTimeline();
+  }
 }
 
 // Start
