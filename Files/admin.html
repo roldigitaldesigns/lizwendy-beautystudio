@@ -1634,7 +1634,7 @@ async function renderCalendarTimeline() {
 
 <!-- Interactive Edit / Reschedule Modal (Phase 2) -->
 <div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:var(--card, #1a1a1a); border:1px solid var(--border, #333); border-radius:12px; width:100%; max-width:440px; padding:24px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+  <div style="background:var(--card, #1a1a1a); border:1px solid var(--border, #333); border-radius:12px; width:100%; max-width:460px; padding:24px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
     
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
       <div>
@@ -1645,6 +1645,14 @@ async function renderCalendarTimeline() {
     </div>
 
     <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+      <!-- Service Dropdown -->
+      <div>
+        <label style="display:block; margin-bottom:4px; color:#aaa;">Service</label>
+        <select id="modalApptService" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
+          <!-- Dynamically populated -->
+        </select>
+      </div>
+
       <div>
         <label style="display:block; margin-bottom:4px; color:#aaa;">Date</label>
         <input type="date" id="modalApptDate" class="form-input" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;" />
@@ -1658,8 +1666,7 @@ async function renderCalendarTimeline() {
         <div>
           <label style="display:block; margin-bottom:4px; color:#aaa;">Artist</label>
           <select id="modalApptArtist" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-            <option value="wendy">Liz Wendy</option>
-            <option value="johanna">Johanna</option>
+            <!-- Dynamically populated -->
           </select>
         </div>
       </div>
@@ -1670,14 +1677,18 @@ async function renderCalendarTimeline() {
       </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-      <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:8px 14px; cursor:pointer;">Cancel</button>
-      <button onclick="saveAppointmentChanges()" style="padding:8px 16px; background:var(--gold, #d4af37); color:#000; font-weight:600; border:none; border-radius:6px; cursor:pointer;">Save Changes</button>
+    <!-- Modal Actions -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+      <button onclick="cancelCurrentAppointment()" style="padding:8px 14px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; font-weight:600; cursor:pointer;">Cancel Booking</button>
+      
+      <div style="display:flex; gap:10px;">
+        <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:8px 14px; cursor:pointer;">Close</button>
+        <button onclick="saveAppointmentChanges()" style="padding:8px 16px; background:var(--gold, #d4af37); color:#000; font-weight:600; border:none; border-radius:6px; cursor:pointer;">Save Changes</button>
+      </div>
     </div>
 
   </div>
 </div>
-
 <script>
 // --- Interactive Appointment Modal (Phase 2) ---
 let currentModalAppt = null;
@@ -1698,31 +1709,45 @@ async function openAppointmentModal(apptId) {
 
   currentModalAppt = appt;
 
-  // 1. Populate the artist dropdown using exact database IDs
+  // 1. Populate the artist dropdown using live database IDs
   const artistSelect = document.getElementById('modalApptArtist');
   if (artistSelect && window.ALL_ARTISTS && window.ALL_ARTISTS.length > 0) {
     artistSelect.innerHTML = window.ALL_ARTISTS
       .filter(art => art.is_active !== false)
       .map(art => `<option value="${art.id}">${art.name}</option>`)
       .join('');
+    artistSelect.value = appt.artist_id;
   }
 
-  // 2. Populate modal inputs
+  // 2. Populate the services dropdown
+  const serviceSelect = document.getElementById('modalApptService');
+  if (serviceSelect && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
+    serviceSelect.innerHTML = window.ALL_SERVICES
+      .map(s => `<option value="${s.id || s.name_en}">${s.name_en || s.name} (${s.duration_minutes || s.duration || 60}m)</option>`)
+      .join('');
+
+    // Pre-select current service if matched
+    const currentSvc = Array.isArray(appt.services) && appt.services[0] 
+      ? (typeof appt.services[0] === 'object' ? (appt.services[0].id || appt.services[0].name) : appt.services[0])
+      : '';
+    if (currentSvc) {
+      const matchOpt = Array.from(serviceSelect.options).find(opt => opt.value === currentSvc || opt.text.includes(currentSvc));
+      if (matchOpt) serviceSelect.value = matchOpt.value;
+    }
+  }
+
+  // 3. Populate modal inputs
   const finishTime = getEndTimeString(appt.appointment_time, appt.duration_minutes);
   document.getElementById('modalApptClient').textContent = cleanClientName(appt.customer_name);
   document.getElementById('modalApptTimeSpan').textContent = `${appt.appointment_time} – ${finishTime}`;
   document.getElementById('modalApptDate').value = appt.appointment_date || '';
   document.getElementById('modalApptTime').value = appt.appointment_time || '';
-
-  if (artistSelect) {
-    artistSelect.value = appt.artist_id;
-  }
-
   document.getElementById('modalApptNotes').value = appt.notes || '';
 
   const modalEl = document.getElementById('appointmentDetailModal');
   if (modalEl) modalEl.style.display = 'flex';
 }
+
 function closeAppointmentModal() {
   const modalEl = document.getElementById('appointmentDetailModal');
   if (modalEl) modalEl.style.display = 'none';
@@ -1736,6 +1761,19 @@ async function saveAppointmentChanges() {
   const updatedTime = document.getElementById('modalApptTime').value;
   const updatedArtist = document.getElementById('modalApptArtist').value;
   const updatedNotes = document.getElementById('modalApptNotes').value;
+  const selectedSvcVal = document.getElementById('modalApptService').value;
+
+  // Derive updated service object & duration
+  let updatedServices = currentModalAppt.services;
+  let updatedDuration = currentModalAppt.duration_minutes;
+
+  if (window.ALL_SERVICES) {
+    const foundSvc = window.ALL_SERVICES.find(s => (s.id && s.id === selectedSvcVal) || s.name_en === selectedSvcVal || s.name === selectedSvcVal);
+    if (foundSvc) {
+      updatedServices = [{ name: foundSvc.name_en || foundSvc.name, duration: foundSvc.duration_minutes || foundSvc.duration || 60 }];
+      updatedDuration = foundSvc.duration_minutes || foundSvc.duration || 60;
+    }
+  }
 
   const { error } = await sbClient
     .from('appointments')
@@ -1743,12 +1781,37 @@ async function saveAppointmentChanges() {
       appointment_date: updatedDate,
       appointment_time: updatedTime,
       artist_id: updatedArtist,
-      notes: updatedNotes
+      notes: updatedNotes,
+      services: updatedServices,
+      duration_minutes: updatedDuration
     })
     .eq('id', currentModalAppt.id);
 
   if (error) {
     alert("Failed to save changes: " + error.message);
+    return;
+  }
+
+  closeAppointmentModal();
+  if (typeof renderCalendarTimeline === 'function') {
+    await renderCalendarTimeline();
+  }
+}
+
+async function cancelCurrentAppointment() {
+  if (!currentModalAppt) return;
+
+  const clientName = cleanClientName(currentModalAppt.customer_name);
+  const confirmCancel = confirm(`Are you sure you want to cancel the appointment for ${clientName}?`);
+  if (!confirmCancel) return;
+
+  const { error } = await sbClient
+    .from('appointments')
+    .update({ status: 'cancelled' })
+    .eq('id', currentModalAppt.id);
+
+  if (error) {
+    alert("Failed to cancel appointment: " + error.message);
     return;
   }
 
