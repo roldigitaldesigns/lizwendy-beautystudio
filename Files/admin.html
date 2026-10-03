@@ -1692,24 +1692,37 @@ async function openAppointmentModal(apptId) {
     .single();
 
   if (error || !appt) {
-    alert("Could not load appointment details.");
+    alert("Could not load appointment details: " + (error ? error.message : 'Not found'));
     return;
   }
 
   currentModalAppt = appt;
 
+  // 1. Populate the artist dropdown using exact database IDs
+  const artistSelect = document.getElementById('modalApptArtist');
+  if (artistSelect && window.ALL_ARTISTS && window.ALL_ARTISTS.length > 0) {
+    artistSelect.innerHTML = window.ALL_ARTISTS
+      .filter(art => art.is_active !== false)
+      .map(art => `<option value="${art.id}">${art.name}</option>`)
+      .join('');
+  }
+
+  // 2. Populate modal inputs
   const finishTime = getEndTimeString(appt.appointment_time, appt.duration_minutes);
   document.getElementById('modalApptClient').textContent = cleanClientName(appt.customer_name);
   document.getElementById('modalApptTimeSpan').textContent = `${appt.appointment_time} – ${finishTime}`;
   document.getElementById('modalApptDate').value = appt.appointment_date || '';
   document.getElementById('modalApptTime').value = appt.appointment_time || '';
-  document.getElementById('modalApptArtist').value = (appt.artist_id || 'wendy').toLowerCase();
+
+  if (artistSelect) {
+    artistSelect.value = appt.artist_id;
+  }
+
   document.getElementById('modalApptNotes').value = appt.notes || '';
 
   const modalEl = document.getElementById('appointmentDetailModal');
   if (modalEl) modalEl.style.display = 'flex';
 }
-
 function closeAppointmentModal() {
   const modalEl = document.getElementById('appointmentDetailModal');
   if (modalEl) modalEl.style.display = 'none';
