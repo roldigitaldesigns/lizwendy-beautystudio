@@ -23,10 +23,18 @@ const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const { recordLedgerEvent, toE164, toCents } = require('./_lib/ledger');
 
-// ── SUPABASE CONFIG ──
+// — SUPABASE CONFIG —
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+  realtime: {
+    enabled: false,
+  },
+});
 
 // ── SERVICE DURATIONS (server-side fallback for voice bookings) ──
 const SERVICE_DURATIONS = {
