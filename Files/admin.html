@@ -1584,7 +1584,10 @@ async function renderCalendarTimeline() {
         }, 0);
       }
 
-      if (!dur) {
+      // Check database duration first if valid
+      dur = Number(a.duration_minutes);
+
+      if (!dur || isNaN(dur) || dur <= 0) {
         const rawBlob = [
           a.customer_name || '',
           a.notes || '',
@@ -1601,13 +1604,12 @@ async function renderCalendarTimeline() {
           dur = 90;
         } else if ((rawBlob.includes('mani') && rawBlob.includes('pedi')) || (rawBlob.includes('gel') && rawBlob.includes('pedicure'))) {
           dur = 90;
+        } else if (rawBlob.includes('manicure') || rawBlob.includes('mani')) {
+          dur = 30;
+        } else {
+          dur = 60; // Absolute fallback default
         }
       }
-
-      if (!dur) {
-        dur = Number(a.duration_minutes) || 60;
-      }
-
       const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
       const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
       const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
