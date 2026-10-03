@@ -24,6 +24,14 @@
  * database involved. Looking up by token uses Google Calendar's
  * privateExtendedProperty search, which matches at most one event.
  */
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+
 
 const { google } = require('googleapis');
 const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
@@ -181,6 +189,18 @@ exports.handler = async (event) => {
     if (action === 'cancel') {
       await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: booking.id });
       console.log(`cancel-booking: deleted event ${booking.id} (${details.services} / ${details.date})`);
+
+      if (supabase) {
+  try {
+    await supabase
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('cancel_token', token);
+  } catch (sbErr) {
+    console.error('cancel-booking: failed to update supabase status:', sbErr);
+  }
+}
+      
 
       // ── LEDGER (Command Center) ──
       // The cancellation is real (event deleted), so record it. Runs in
