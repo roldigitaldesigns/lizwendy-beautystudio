@@ -41,6 +41,18 @@
  * payment through the site anymore (matches create-booking.js).
  */
 
+const { createClient } = require('@supabase/supabase-js');
+
+// Supabase config (matching create-booking.js)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      realtime: { enabled: false },
+    })
+  : null;
+
 const { google } = require('googleapis');
 const crypto = require('crypto');
 const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
@@ -291,6 +303,33 @@ exports.handler = async (event) => {
       console.log(`reschedule-booking: deleted old event ${oldEvent.id}`);
     } catch (delErr) {
       console.error('reschedule-booking: OLD event delete failed (new event already created):', delErr);
+    }
+
+    // ── 2b. UPDATE SUPABASE APPOINTMENTS TABLE ──
+    if (supabase) {
+      try {
+        const { data: updatedAppt, error: sbErr } = await supabase
+          .from('appointments')
+          .update({
+            appointment_date: newDate,
+            appointment_time: newTime,
+            start_time: newStart.toISOString(),
+            cancel_token: newToken, // keep token synced with the new Google Calendar event
+            updated_at: new Date().toISOString()
+          })
+          .eq('cancel_token', token)
+          .select();
+
+        if (sbErr) {
+          console.error('reschedule-booking: Supabase update error:', sbErr.message);
+        } else {
+          console.log(`reschedule-booking: Supabase appointment updated successfully:`, updatedAppt);
+        }
+      } catch (sbEx) {
+        console.error('reschedule-booking: Supabase exception:', sbEx);
+      }
+    } else {
+      console.warn('reschedule-booking: Supabase client not initialized (missing keys)');
     }
 
     // ── LEDGER (Command Center) ──
