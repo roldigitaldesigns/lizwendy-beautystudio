@@ -1367,6 +1367,9 @@ function renderAppointmentsTable(list) {
     const svcNames = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
     const artistBadgeColor = app.artist_id === 'johanna' ? '#E8C84A' : 'var(--gold)';
     const displayEmail = app.customer_email ? `<div style="font-size:11px; color:var(--muted);">${app.customer_email}</div>` : '';
+    const statusBadge = app.status === 'cancelled' 
+  ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid #ef4444;">Cancelled</span>` 
+  : `<span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">${app.deposit_paid ? 'Paid' : 'Waived/None'}</span>`;
 
     return `
       <tr>
@@ -1381,12 +1384,10 @@ function renderAppointmentsTable(list) {
             ${app.artist_id}
           </span>
         </td>
-        <td style="max-width:240px; font-size:12px;">${svcNames}</td>
-        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
-        <td>
-          <span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">
-            ${app.deposit_paid ? 'Paid' : 'Waived/None'}
-          </span>
+         <td style="max-width:240px; font-size:12px;">${svcNames}</td>
+         <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
+       <td>
+          ${statusBadge}
         </td>
       </tr>
     `;
@@ -1484,7 +1485,7 @@ async function renderCalendarTimeline() {
 
   // 3. Fetch Day's Appointments & Blackouts from Supabase
   const [{ data: dayAppts }, { data: dayBlackouts }] = await Promise.all([
-    sbClient.from('appointments').select('*').eq('appointment_date', dateStr),
+    sbClient.from('appointments').select('*').eq('appointment_date', dateStr).neq('status', 'cancelled'),
     sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
   ]);
 
