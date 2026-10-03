@@ -1626,7 +1626,8 @@ async function renderCalendarTimeline() {
       const ampm = h >= 12 ? 'PM' : 'AM';
       const dispH = h % 12 || 12;
       const dispM = m < 10 ? '0' + m : m;
-      const cleanTime = a.appointment_time || `${dispH}:${dispM} ${ampm}`;
+      // Always enforce standard 12-hour display format:
+      const cleanTime = `${dispH}:${dispM} ${ampm}`;
 
       const finishTime = getEndTimeString(cleanTime, dur);
       const timeRangeDisplay = `${cleanTime} – ${finishTime}`;
