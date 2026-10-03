@@ -1417,25 +1417,33 @@ function shiftCalendarDay(offset) {
 
 function getEndTimeString(timeStr, durationMin) {
   if (!timeStr) return '';
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+
+  // Matches "11:00 AM", "11:00AM", or 24-hr style "11:00" without AM/PM
+  const match = timeStr.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
   if (!match) return '';
+
   let hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
-  const isPM = match[3].toUpperCase() === 'PM';
+  const ampm = match[3] ? match[3].toUpperCase() : null;
 
-  if (isPM && hours !== 12) hours += 12;
-  if (!isPM && hours === 12) hours = 0;
+  if (ampm) {
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+  } else {
+    // If no AM/PM provided, assume standard daytime business hours
+    // (e.g. 8 to 11 are AM; 12 is PM; 1 to 7 are PM)
+    if (hours < 8) hours += 12; // e.g. "1:00" -> 13:00 (1 PM)
+  }
 
   const totalMinutes = hours * 60 + minutes + (parseInt(durationMin, 10) || 60);
-  let endHour24 = Math.floor(totalMinutes / 60) % 24;
+  const endHour24 = Math.floor(totalMinutes / 60) % 24;
   const endMin = String(totalMinutes % 60).padStart(2, '0');
 
   const endAmpm = endHour24 >= 12 ? 'PM' : 'AM';
   const endDisplayHour = endHour24 % 12 || 12;
 
   return `${endDisplayHour}:${endMin} ${endAmpm}`;
-}
-  
+}  
 async function renderCalendarTimeline() {
   const dateInput = document.getElementById('calendarViewDate');
   if (!dateInput) return;
