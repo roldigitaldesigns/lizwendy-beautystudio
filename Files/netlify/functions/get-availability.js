@@ -245,6 +245,7 @@ exports.handler = async (event) => {
           }
         }
       });
+      }
 
     // Merge busy intervals
     busyIntervals.sort((a, b) => a.start - b.start);
