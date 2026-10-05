@@ -142,10 +142,19 @@ exports.handler = async (event) => {
     }
 
     if (isBlackedOut || !shift) {
+      const allSlots = [];
+      for (let h = 0; h < 24; h++) {
+        allSlots.push(`${String(h).padStart(2, '0')}:00`, `${String(h).padStart(2, '0')}:15`, `${String(h).padStart(2, '0')}:30`, `${String(h).padStart(2, '0')}:45`);
+      }
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ isFullyBlocked: true, busyIntervals: [], takenSlots: [], blackout: isBlackedOut })
+        body: JSON.stringify({ 
+          isFullyBlocked: true, 
+          busyIntervals: [{ start: 0, end: 9999999999999 }], 
+          takenSlots: allSlots, 
+          blackout: isBlackedOut 
+        })
       };
     }
 
@@ -189,16 +198,29 @@ exports.handler = async (event) => {
       const targetDayStart = new Date(dateStr + 'T00:00:00' + offset);
       const targetDayEnd = new Date(dateStr + 'T23:59:59' + offset);
 
-      events.forEach(ev => {
+     events.forEach(ev => {
         if (!ev.start) return;
+
+        // Ignore events explicitly marked as "Free" in Google Calendar (e.g., standard Holidays)
+        if (ev.transparency === 'transparent') return;
+
         if (ev.start.date && !ev.start.dateTime) {
-          const summary = (ev.summary || '').toLowerCase();
-          const isClosure = summary.includes('closed') || summary.includes('off') || summary.includes('vacation') || summary.includes('holiday') || summary.includes('cerrado');
-          if (isClosure) {
-            const startDate = ev.start.date;
-            const endDate = (ev.end && ev.end.date) || startDate;
-            if (dateStr >= startDate && dateStr < endDate) {
-              isBlackedOut = true;
+          // Any All-Day Event marked "Busy" blocks the day without requiring keywords
+          const startDate = ev.start.date;
+          const endDate = (ev.end && ev.end.date) || startDate;
+          
+          if (dateStr >= startDate && dateStr < endDate) {
+            isBlackedOut = true;
+            
+            // Force block for interval-math frontends
+            busyIntervals.push({ start: targetDayStart.getTime(), end: targetDayEnd.getTime() });
+            
+            // Force block for array-checking frontends
+            for (let h = 0; h < 24; h++) {
+              takenSlotsSet.add(`${String(h).padStart(2, '0')}:00`);
+              takenSlotsSet.add(`${String(h).padStart(2, '0')}:15`);
+              takenSlotsSet.add(`${String(h).padStart(2, '0')}:30`);
+              takenSlotsSet.add(`${String(h).padStart(2, '0')}:45`);
             }
           }
         } else if (ev.start.dateTime && ev.end.dateTime) {
