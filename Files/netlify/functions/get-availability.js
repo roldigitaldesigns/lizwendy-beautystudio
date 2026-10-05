@@ -8,11 +8,15 @@ exports.handler = async (event) => {
   const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
   try {
-    // 1. SUPABASE CONFIG
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co';
+   // 1. SUPABASE CONFIG
+    // Strip trailing slashes and quotes from the URL
+    const SUPABASE_URL = (process.env.SUPABASE_URL || 'https://dayyxufmvxqxobjxdxzv.supabase.co').replace(/\/$/, '').replace(/['"]/g, '').trim();
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
-    const authKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+    
+    // Strip hidden quotes and spaces from the key
+    const rawAuth = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+    const authKey = rawAuth.replace(/['"]/g, '').trim();
 
     // 2. PARSE REQUEST
     const dateStr = event.queryStringParameters && event.queryStringParameters.date;
