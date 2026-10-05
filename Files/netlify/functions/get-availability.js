@@ -201,11 +201,15 @@ exports.handler = async (event) => {
      events.forEach(ev => {
         if (!ev.start) return;
 
-        // Ignore events explicitly marked as "Free" in Google Calendar (e.g., standard Holidays)
-        if (ev.transparency === 'transparent') return;
+        // Check if it's an all-day event
+        const isAllDay = ev.start.date && !ev.start.dateTime;
 
-        if (ev.start.date && !ev.start.dateTime) {
-          // Any All-Day Event marked "Busy" blocks the day without requiring keywords
+        // Ignore explicitly "Free" events, UNLESS it's an all-day event.
+        // This ensures Wendy's all-day events block the calendar automatically.
+        if (ev.transparency === 'transparent' && !isAllDay) return;
+
+        if (isAllDay) {
+          // Any All-Day Event blocks the day without requiring keywords or "Busy" status
           const startDate = ev.start.date;
           const endDate = (ev.end && ev.end.date) || startDate;
           
@@ -241,7 +245,6 @@ exports.handler = async (event) => {
           }
         }
       });
-    }
 
     // Merge busy intervals
     busyIntervals.sort((a, b) => a.start - b.start);
