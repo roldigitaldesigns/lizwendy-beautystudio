@@ -55,7 +55,7 @@ exports.handler = async (event) => {
 
     const DEFAULT_HOURS = {
       liz: { 1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [8, 16], 0: null },
-      johanna: { 1: [9, 19], 2: [10, 18], 3: [10, 18], 4: [10, 18], 5: [10, 18], 6: [10, 18], 0: null }
+    johanna: { 1: [17, 20], 2: [17, 20], 3: null, 4: [17, 20], 5: [17, 20], 6: [8, 15], 0: [8, 12] }
     };
 
     let fallbackHours = DEFAULT_HOURS[artistId] ? DEFAULT_HOURS[artistId][dow] : (DEFAULT_HOURS.liz[dow] || null);
@@ -206,7 +206,7 @@ exports.handler = async (event) => {
 
         // Ignore explicitly "Free" events, UNLESS it's an all-day event.
         // This ensures Wendy's all-day events block the calendar automatically.
-        if (ev.transparency === 'transparent' && !isAllDay) return;
+
 
         if (isAllDay) {
           // Any All-Day Event blocks the day without requiring keywords or "Busy" status
