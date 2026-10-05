@@ -3337,7 +3337,7 @@ function renderSlots(date) {
   const rawDuration = (window.BOOKING_STATE?.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
   const reqMinutes = Math.ceil(rawDuration / 15) * 15;
 
-  const stepMinutes = 30;
+  const stepMinutes = 15;
 
   const availableSlots = [];
  // Calculate precise DST offset for the requested date
