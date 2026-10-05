@@ -93,6 +93,7 @@ exports.handler = async (event) => {
       // 5b. Check Schedules
       const scRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_schedules?artist_id=eq.${artistId}&day_of_week=eq.${dow}&select=start_hour,end_hour,is_active`, { headers: sbHeaders });
       const schedulesData = await scRes.json();
+      console.log("SUPABASE RESPONSE:", schedulesData);
       const schedules = (Array.isArray(schedulesData) && schedulesData.length > 0) ? schedulesData[0] : null;
 
       if (schedules && schedules.is_active) {
