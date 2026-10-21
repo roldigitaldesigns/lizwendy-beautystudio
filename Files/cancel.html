@@ -5,133 +5,370 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="robots" content="noindex, nofollow"/>
 <title>Manage Appointment — Liz Wendy Beauty Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg: #0a0908;
-    --card: #151311;
-    --gold: #d4af37;
-    --gold-dim: rgba(212,175,55,.35);
-    --muted: #9a9088;
-    --white: #f5f1ea;
+    --bg: #FCFBF8;
+    --card: #FFFFFF;
+    --card-sub: #F7F4EE;
+    --border: #E8DEC8;
+    --gold: #B5904B;
+    --gold-lt: #D6B26C;
+    --gold-dim: #947234;
+    --gold-pale: rgba(181, 144, 75, 0.08);
+    --gold-glow: rgba(181, 144, 75, 0.22);
+    --text: #2B2620;
+    --muted: #7A7060;
+    --muted-lt: #8E8270;
     --maroon: #8b1a1a;
-    --serif: Georgia, 'Times New Roman', serif;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: var(--bg); color: var(--white);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    line-height: 1.6;
   }
   body.lang-es [data-en] { display: none !important; }
   body.lang-en [data-es] { display: none !important; }
+
+  .brand-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
   .brand {
-    font-family: var(--serif); font-size: 22px; color: var(--gold);
-    margin-bottom: 6px; text-align: center;
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-transform: uppercase;
+    margin-bottom: 2px;
   }
   .brand-sub {
-    font-size: 9px; letter-spacing: .3em; color: var(--muted);
-    text-transform: uppercase; margin-bottom: 28px; text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 700;
   }
+
   .card {
-    background: var(--card); border: 1px solid var(--gold-dim);
-    border-radius: 16px; padding: 32px 26px; max-width: 460px; width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 28px;
+    max-width: 480px;
+    width: 100%;
     text-align: center;
+    box-shadow: 0 4px 20px rgba(43, 38, 32, 0.04);
   }
-  .card h1 { font-family: var(--serif); font-size: 20px; margin-bottom: 14px; }
+  .card h1 {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.25;
+  }
+
   .detail-box {
-    border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--gold-dim);
-    padding: 16px 0; margin: 18px 0; text-align: left; font-size: 14px; line-height: 2;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    margin: 20px 0;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--text);
   }
-  .detail-box strong { color: var(--gold); }
+  .detail-box strong { color: var(--gold-dim); font-weight: 600; }
+
   .scarcity {
-    font-size: 13px; color: var(--white); line-height: 1.6;
-    background: rgba(212,175,55,.08); border: 1px solid var(--gold-dim);
-    border-radius: 10px; padding: 14px 16px; margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    background: var(--gold-pale);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
   }
+
   /* Primary CTA (gold) — reschedule / keep spot */
   .btn-primary {
-    display: inline-block; background: linear-gradient(135deg, #a8872a, var(--gold));
-    color: var(--bg); text-decoration: none; border: none; cursor: pointer;
-    padding: 14px 30px; border-radius: 8px; font-weight: bold; font-size: 14px;
-    letter-spacing: .02em; width: 100%;
+    display: inline-block;
+    background: var(--gold);
+    color: #FFFFFF;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: var(--sans);
+    width: 100%;
+    transition: all .2s;
   }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-  /* Ghost / destructive button (un-filled) — used ONLY inside the modal */
+  .btn-primary:hover:not(:disabled) {
+    background: var(--gold-dim);
+    transform: translateY(-1px);
+  }
+  .btn-primary:disabled {
+    background: var(--border);
+    color: #FFFFFF;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Ghost button for modal */
   .btn-ghost {
-    display: inline-block; background: none; border: 1px solid var(--gold-dim);
-    color: var(--muted); cursor: pointer; padding: 12px 20px; border-radius: 8px;
-    font-size: 13px; width: 100%; margin-top: 10px;
+    display: inline-block;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-family: var(--sans);
+    width: 100%;
+    margin-top: 10px;
+    transition: all .2s;
   }
+  .btn-ghost:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+    background: #FFF9F9;
+  }
+
   .btn-book {
-    display: inline-block; background: linear-gradient(135deg, #a8872a, var(--gold));
-    color: var(--bg); text-decoration: none; padding: 13px 30px;
-    border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 8px;
+    display: inline-block;
+    background: var(--gold);
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 12px 26px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: var(--sans);
+    margin-top: 8px;
+    transition: all .2s;
   }
-  /* Muted cancel text link — deliberately low-emphasis, decoupled from main UI */
+  .btn-book:hover {
+    background: var(--gold-dim);
+    transform: translateY(-1px);
+  }
+
+  /* Muted cancel text link */
   .cancel-link {
-    display: inline-block; margin-top: 22px; background: none; border: none;
-    color: var(--muted); font-size: 12px; text-decoration: underline;
-    cursor: pointer; opacity: .75;
+    display: inline-block;
+    margin-top: 24px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color .2s;
+    font-family: var(--sans);
   }
-  .status-icon { font-size: 40px; margin-bottom: 12px; }
-  .muted-note { font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+  .cancel-link:hover {
+    color: var(--text);
+  }
+
+  .status-icon { font-size: 38px; margin-bottom: 12px; }
+  .muted-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+
   .lang-toggle {
-    position: fixed; top: 16px; right: 16px; display: flex; gap: 4px;
-    border: 1px solid var(--gold-dim); border-radius: 20px; padding: 3px;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    background: rgba(232, 222, 200, 0.35);
+    border-radius: 20px;
+    padding: 3px;
   }
   .lang-toggle button {
-    background: none; border: none; color: var(--muted); font-size: 11px;
-    font-weight: bold; padding: 5px 12px; border-radius: 16px; cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 5px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all .2s;
   }
-  .lang-toggle button.active { background: var(--gold); color: var(--bg); }
+  .lang-toggle button.active {
+    background: var(--gold);
+    color: #FFFFFF;
+  }
+
   .spinner {
-    width: 28px; height: 28px; border: 3px solid var(--gold-dim);
-    border-top-color: var(--gold); border-radius: 50%;
-    margin: 10px auto; animation: spin .8s linear infinite;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    margin: 12px auto;
+    animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .hidden { display: none !important; }
 
   /* ── RESCHEDULE PICKER ── */
   .resched-label {
-    font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
-    color: var(--gold); margin: 20px 0 10px; text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 22px 0 10px;
+    text-align: left;
   }
   .date-strip {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
     -webkit-overflow-scrolling: touch;
   }
   .date-chip {
-    flex: 0 0 auto; min-width: 62px; padding: 10px 6px; border-radius: 10px;
-    border: 1px solid var(--gold-dim); background: none; color: var(--white);
-    cursor: pointer; text-align: center; font-size: 12px; line-height: 1.4;
+    flex: 0 0 auto;
+    min-width: 64px;
+    padding: 10px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.35;
+    font-family: var(--sans);
+    transition: all .2s;
   }
-  .date-chip .dow { font-size: 10px; color: var(--muted); text-transform: uppercase; }
-  .date-chip .num { font-size: 17px; font-weight: bold; }
-  .date-chip.selected { background: var(--gold); color: var(--bg); border-color: var(--gold); }
-  .date-chip.selected .dow { color: var(--bg); }
+  .date-chip .dow {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .date-chip .num {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 2px 0;
+  }
+  .date-chip:hover:not(.selected) {
+    border-color: var(--gold);
+    background: var(--gold-pale);
+  }
+  .date-chip.selected {
+    background: var(--gold);
+    color: #FFFFFF;
+    border-color: var(--gold);
+  }
+  .date-chip.selected .dow,
+  .date-chip.selected .num {
+    color: #FFFFFF;
+  }
+
   .slots-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0 4px;
   }
   .slot-btn {
-    padding: 11px 4px; border-radius: 8px; border: 1px solid var(--gold-dim);
-    background: none; color: var(--white); cursor: pointer; font-size: 13px;
+    padding: 11px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--sans);
+    transition: all .2s;
   }
-  .slot-btn.selected { background: var(--gold); color: var(--bg); border-color: var(--gold); }
-  .slot-btn:disabled { opacity: .28; cursor: not-allowed; text-decoration: line-through; }
-  .slots-placeholder { font-size: 12px; color: var(--muted); padding: 14px 0; }
+  .slot-btn:hover:not(:disabled):not(.selected) {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-pale);
+  }
+  .slot-btn.selected {
+    background: var(--gold);
+    color: #FFFFFF;
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+  .slot-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    background: var(--card-sub);
+    color: var(--muted);
+  }
+  .slots-placeholder {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 16px 0;
+  }
 
   /* ── MODAL ── */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.72);
-    display: flex; align-items: center; justify-content: center; padding: 22px; z-index: 999;
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 38, 32, 0.45);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    z-index: 999;
   }
   .modal-box {
-    background: var(--card); border: 1px solid var(--gold-dim); border-radius: 16px;
-    padding: 28px 24px; max-width: 400px; width: 100%; text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 30px 24px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   }
-  .modal-box .status-icon { font-size: 34px; }
+  .modal-box .status-icon { font-size: 32px; }
 </style>
 </head>
 <body class="lang-en">
@@ -141,8 +378,10 @@
   <button id="btn-es" onclick="setPageLang('es')">ES</button>
 </div>
 
-<div class="brand">Liz Wendy</div>
-<div class="brand-sub">Beauty Studio · New Brunswick, NJ</div>
+<div class="brand-header">
+  <div class="brand">Liz Wendy</div>
+  <div class="brand-sub">Beauty Studio LLC · New Brunswick, NJ</div>
+</div>
 
 <div class="card">
 
@@ -155,7 +394,7 @@
     </p>
   </div>
 
-  <!-- MANAGE (main state: reschedule-first, cancel muted) -->
+  <!-- MANAGE -->
   <div id="view-manage" class="hidden">
     <div class="status-icon">🗓️</div>
     <h1>
@@ -190,25 +429,25 @@
         </div>
       </div>
 
-      <button class="btn-primary" id="rescheduleBtn" style="margin-top:16px" onclick="submitReschedule()" disabled>
+      <button class="btn-primary" id="rescheduleBtn" style="margin-top:18px" onclick="submitReschedule()" disabled>
         <span data-en>Reschedule Appointment</span>
         <span data-es>Reprogramar Cita</span>
       </button>
     </div>
 
-    <!-- Within-24h note (shown instead of the picker when <= 24h out) -->
+    <!-- Within-24h note -->
     <div id="tooLateNote" class="hidden">
       <p class="muted-note" style="margin-top:18px">
         <span data-en>Rescheduling is available more than 24 hours before your appointment. To make a change now, please contact us directly.</span>
         <span data-es>La reprogramación está disponible con más de 24 horas de anticipación. Para hacer un cambio ahora, contáctanos directamente.</span>
       </p>
-      <a class="btn-book" id="tooLateWhatsapp" href="#" target="_blank" rel="noopener" style="margin-top:12px">
+      <a class="btn-book" id="tooLateWhatsapp" href="#" target="_blank" rel="noopener" style="margin-top:14px">
         <span data-en>Message Us on WhatsApp →</span>
         <span data-es>Escríbenos por WhatsApp →</span>
       </a>
     </div>
 
-    <!-- Muted cancel link (decoupled, low-emphasis) -->
+    <!-- Muted cancel link -->
     <button class="cancel-link" onclick="openCancelModal()">
       <span data-en>I no longer need this appointment. Cancel my reservation.</span>
       <span data-es>Ya no necesito esta cita. Cancelar mi reservación.</span>
@@ -217,7 +456,7 @@
 
   <!-- RESCHEDULE SUCCESS -->
   <div id="view-resched-success" class="hidden">
-    <div class="status-icon">✅</div>
+    <div class="status-icon">✨</div>
     <h1>
       <span data-en>Your appointment has been rescheduled</span>
       <span data-es>Tu cita ha sido reprogramada</span>
@@ -231,7 +470,7 @@
 
   <!-- CANCEL SUCCESS -->
   <div id="view-success" class="hidden">
-    <div class="status-icon">✅</div>
+    <div class="status-icon">✓</div>
     <h1>
       <span data-en>Your appointment has been cancelled</span>
       <span data-es>Tu cita ha sido cancelada</span>
@@ -250,7 +489,7 @@
 
   <!-- NOT FOUND / ALREADY CANCELLED -->
   <div id="view-notfound" class="hidden">
-    <div class="status-icon">🤔</div>
+    <div class="status-icon">✦</div>
     <h1>
       <span data-en>Appointment not found</span>
       <span data-es>Cita no encontrada</span>
@@ -302,7 +541,6 @@
       <span data-en>Are you sure you want to release this spot? This action cannot be undone, and another client will be able to book this time.</span>
       <span data-es>¿Seguro que deseas liberar este lugar? Esta acción no se puede deshacer, y otra clienta podrá reservar este horario.</span>
     </p>
-    <!-- Primary = KEEP (solid gold). Destructive = ghost. -->
     <button class="btn-primary" onclick="closeCancelModal()">
       <span data-en>Keep My Spot</span>
       <span data-es>Conservar Mi Lugar</span>
@@ -315,7 +553,7 @@
 </div>
 
 <script>
-/* ── LANGUAGE (shares the main site's saved preference) ── */
+/* ── LANGUAGE ── */
 function setPageLang(lang) {
   document.body.className = 'lang-' + lang;
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
@@ -334,15 +572,15 @@ const params  = new URLSearchParams(window.location.search);
 const token   = params.get('token')  || '';
 const artist  = params.get('artist') || '';
 
-const WHATSAPP_NUMBER = '18483891934'; // studio WhatsApp (matches main site)
+const WHATSAPP_NUMBER = '18483891934';
 
 /* ── RESCHEDULE STATE ── */
-let selectedDate = null;   // Date object
-let selectedSlot = null;   // "HH:MM"
+let selectedDate = null;
+let selectedSlot = null;
 let takenSlots   = [];
 let isSubmitting = false;
 
-/* ── SCHEDULES (mirror of main site's schedules.json logic) ── */
+/* ── SCHEDULES ── */
 const DEFAULT_SCHEDULE = { 1:[9,19], 3:[9,19], 4:[9,19], 5:[9,19], 6:[7,16] };
 let ARTIST_SCHEDULES = null;
 
@@ -377,7 +615,7 @@ function show(viewId) {
     .forEach(id => document.getElementById(id).classList.toggle('hidden', id !== viewId));
 }
 
-/* ── STEP 1: LOOK UP THE BOOKING (no deletion) ── */
+/* ── STEP 1: LOOK UP THE BOOKING ── */
 async function lookupBooking() {
   if (!token || !artist) { show('view-notfound'); return; }
   await loadSchedules();
@@ -395,15 +633,13 @@ async function lookupBooking() {
     const es = isEs();
 
     document.getElementById('bookingDetails').innerHTML =
-      '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
       (es ? 'Tu cita actual' : 'Your current appointment') + '</div>' +
       '📅 <strong>' + escapeHtml(b.date) + '</strong><br/>' +
       '🕐 <strong>' + escapeHtml(b.time) + '</strong><br/>' +
       '✨ ' + escapeHtml(b.services) + '<br/>' +
       '💅 ' + (es ? 'Con' : 'With') + ': ' + escapeHtml(b.artistName);
 
-    // ── 24-HOUR GATE (client-side; backend enforces authoritatively too) ──
-    // appointmentStart is the event's real ISO timestamp from lookup.
     const startMs = data.appointmentStart ? Date.parse(data.appointmentStart) : NaN;
     const within24h = !isNaN(startMs) && (startMs - Date.now() < 24 * 60 * 60 * 1000);
 
@@ -426,7 +662,7 @@ async function lookupBooking() {
   }
 }
 
-/* ── BUILD DATE STRIP (next available work days for this artist) ── */
+/* ── BUILD DATE STRIP ── */
 function buildDateStrip() {
   const schedule = getSchedule(artist);
   const strip = document.getElementById('dateStrip');
@@ -435,7 +671,6 @@ function buildDateStrip() {
   const months = es ? MONTHS_ES : MONTHS_EN;
   const dows   = es ? DOW_ES : DOW_EN;
 
-  // Start from tomorrow and collect the next 21 working, non-blacked-out days.
   const out = [];
   const cursor = new Date();
   cursor.setHours(0,0,0,0);
@@ -468,7 +703,7 @@ function buildDateStrip() {
   });
 }
 
-/* ── SELECT A DATE → FETCH AVAILABILITY ── */
+/* ── SELECT A DATE ── */
 async function selectDate(date, chipEl) {
   selectedDate = date;
   selectedSlot = null;
@@ -491,7 +726,7 @@ async function selectDate(date, chipEl) {
   renderSlots(date);
 }
 
-/* ── RENDER TIME SLOTS (per-artist step, matches backend) ── */
+/* ── RENDER TIME SLOTS ── */
 function renderSlots(date) {
   const es = isEs();
   const schedule = getSchedule(artist);
@@ -505,7 +740,6 @@ function renderSlots(date) {
   }
 
   const [start, end] = hrs;
-  // Wendy (liz): hourly. Johanna: 30-min. Mirrors get-availability.js.
   const step = (artist === 'liz') ? 60 : 30;
   const slots = [];
   for (let mins = start * 60; mins < end * 60; mins += step) {
@@ -580,8 +814,6 @@ async function submitReschedule() {
     if (res.status === 404) { show('view-notfound'); return; }
 
     if (res.status === 409) {
-      // Either the slot was just taken, or the 24h window was hit (rare edge
-      // if the page sat open a long time).
       const data = await res.json().catch(() => ({}));
       const es = isEs();
       if (data.error === 'slot_taken') {
@@ -594,7 +826,6 @@ async function submitReschedule() {
         }
         return;
       }
-      // too_late or other conflict
       show('view-error');
       return;
     }
@@ -605,7 +836,7 @@ async function submitReschedule() {
     const b = data.booking || {};
     const es = isEs();
     document.getElementById('reschedDetails').innerHTML =
-      '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
       (es ? 'Tu nueva cita' : 'Your new appointment') + '</div>' +
       '📅 <strong>' + escapeHtml(b.date) + '</strong><br/>' +
       '🕐 <strong>' + escapeHtml(b.time) + '</strong><br/>' +
@@ -623,7 +854,7 @@ async function submitReschedule() {
 function openCancelModal()  { document.getElementById('cancelModal').classList.remove('hidden'); }
 function closeCancelModal() { document.getElementById('cancelModal').classList.add('hidden'); }
 
-/* ── CONFIRMED CANCELLATION (only reachable via modal's ghost button) ── */
+/* ── CONFIRMED CANCELLATION ── */
 async function confirmCancel() {
   if (isSubmitting) return;
   isSubmitting = true;
