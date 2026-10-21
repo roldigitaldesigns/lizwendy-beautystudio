@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Liz Wendy Beauty Studio — Makeup, PMU & Beauty Academy | New Brunswick, NJ</title>
+<title>Liz Wendy Beauty Studio — Makeup, PMU &amp; Beauty Academy | New Brunswick, NJ</title>
 <meta name="description" content="Premium makeup artistry, permanent makeup (PMU), nails, waxing &amp; professional beauty education in New Brunswick, NJ. Book online with Liz Wendy Beauty Studio. Bilingual — English &amp; Español."/>
 <meta name="keywords" content="makeup artist New Brunswick NJ, PMU New Brunswick, permanent makeup, bridal makeup, beauty academy, nail salon New Brunswick, microblading, lip blush"/>
 <meta name="robots" content="index, follow"/>
@@ -21,23 +21,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:        #0A0908;
-  --surface:   #111009;
-  --card:      #181410;
-  --card2:     #1F1A14;
-  --border:    #2E2820;
-  --gold:      #D4AF37;
-  --gold-lt:   #E8C84A;
-  --gold-dim:  #A8891F;
-  --gold-pale: rgba(212,175,55,.09);
-  --gold-glow: rgba(212,175,55,.22);
-  --white:     #FAF7F2;
-  --text:      #EDE8DF;
+  --bg:        #FCFBF8;
+  --surface:   #FFFFFF;
+  --card:      #FFFFFF;
+  --card2:     #F7F4EE;
+  --border:    #E8DEC8;
+  --gold:      #B5904B;
+  --gold-lt:   #D6B26C;
+  --gold-dim:  #947234;
+  --gold-pale: rgba(181, 144, 75, 0.08);
+  --gold-glow: rgba(181, 144, 75, 0.22);
+  --white:     #2B2620;
+  --text:      #2B2620;
   --muted:     #7A7060;
-  --muted-lt:  #A09080;
+  --muted-lt:  #8E8270;
   --serif:     'Playfair Display', Georgia, serif;
   --sans:      'Montserrat', sans-serif;
-  --radius:    4px;
+  --radius:    12px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -52,1033 +52,924 @@ body {
 *::-webkit-scrollbar { width: 4px; background: var(--bg); }
 *::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 
-/* ── NAV ── */
+/* ── NAV & HEADER POSITIONING ── */
 .nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 64px;
-  background: rgba(10,9,8,.92);
-  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 72px;
+  background: rgba(252, 251, 248, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 24px;
+  position: relative;
 }
-/* ── LANG SWITCH ── */
+.nav-brand-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.nav-logo-img {
+  max-height: 52px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 50%;
+}
+.nav-titles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.nav-logo-name {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.nav-logo-sub {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-top: 1px;
+}
 .lang-switch {
-  display: flex; align-items: center; gap: 0;
-  background: rgba(255,255,255,.06); border: 1px solid var(--border);
-  border-radius: 20px; padding: 3px; flex-shrink: 0;
+  position: absolute;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(232, 222, 200, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px;
+  flex-shrink: 0;
 }
 .lang-btn {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em;
-  padding: 5px 13px; border: none; border-radius: 16px;
-  cursor: pointer; transition: all .22s; font-family: var(--sans);
-  background: transparent; color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all .22s;
+  font-family: var(--sans);
+  background: transparent;
+  color: var(--muted);
 }
 .lang-btn.active {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg);
+  background: var(--gold);
+  color: #FFFFFF;
 }
-.gold-shimmer {
-  background: linear-gradient(90deg, var(--gold-dim) 0%, var(--gold) 30%, var(--gold-lt) 50%, var(--gold) 70%, var(--gold-dim) 100%);
-  background-size: 300% auto;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-@keyframes shimmerBg { to { background-position: -200% center; } }
-.nav-logo-name { font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: .06em; }
-.nav-logo-sub  { font-size: 8px; letter-spacing: .32em; color: rgba(212,175,55,.45); text-transform: uppercase; margin-top: 1px; }
 
 /* ── LAYOUT ── */
-.page { max-width: 860px; margin: 0 auto; padding: 88px 20px 80px; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 20px 80px; }
 body.cart-active .page { padding-bottom: 80px; }
 
-/* ── STEP INDICATOR ── */
+/* ── MINIMALIST STEP INDICATOR ── */
 .funnel-steps {
-  display: flex; align-items: center; justify-content: center;
-  gap: 0; margin-bottom: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 320px;
+  margin: 0 auto 40px auto;
+}
+.funnel-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: var(--border);
+  z-index: 0;
+  transform: translateY(-50%);
 }
 .fstep {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 9px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted);
-  transition: color .3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+}
+.fstep-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  background: #FCFBF8;
+  color: var(--muted);
+  transition: all 0.3s ease;
+}
+.fstep.active .fstep-num {
+  background: #FCFBF8;
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px rgba(181, 144, 75, 0.15);
+}
+.fstep.done .fstep-num {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #FFFFFF;
 }
 .fstep.active { color: var(--gold); }
-.fstep.done   { color: var(--muted-lt); }
-.fstep-num {
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
-  background: var(--card); transition: all .3s;
+.fstep.done { color: var(--muted-lt); }
+.fstep-line { display: none; }
+.fstep-label {
+  display: inline;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-.fstep.active .fstep-num { background: var(--gold); border-color: var(--gold); color: var(--bg); }
-.fstep.done   .fstep-num { background: var(--card2); border-color: var(--muted); color: var(--muted-lt); }
-.fstep-label { display: none; }
-@media (min-width: 480px) { .fstep-label { display: inline; } }
-.fstep-line { width: 32px; height: 1px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
-@media (min-width: 600px) { .fstep-line { width: 48px; } }
 
 /* ── PAGE HEADER ── */
 .funnel-header {
-  text-align: center; margin-bottom: 36px;
+  text-align: center;
+  margin-bottom: 36px;
   animation: fadeUp .5s ease both;
 }
 .funnel-header .eyebrow {
-  font-size: 10px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
 }
 .funnel-header h1 {
   font-family: var(--serif);
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 600; color: var(--white); line-height: 1.1; margin-bottom: 8px;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 8px;
 }
 .funnel-header h1 em { font-style: italic; color: var(--gold); }
-.funnel-header p { font-size: 13px; color: var(--muted-lt); max-width: 420px; margin: 0 auto; }
+.funnel-header p {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 440px;
+  margin: 0 auto;
+}
 
 /* ── STEP PANELS ── */
-.funnel-panel {
-  display: none !important; animation: fadeUp .4s ease both;
-}
+.funnel-panel { display: none !important; animation: fadeUp .4s ease both; }
 .funnel-panel.active { display: block !important; }
 
 /* ── STEP 1: CATEGORY PILLS ── */
-.step1-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--muted-lt);
-  margin-bottom: 20px; text-align: center;
-}
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 32px;
 }
 @media (max-width: 480px) { .category-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .cat-pill {
-  position: relative; cursor: pointer;
-  border-radius: var(--radius); overflow: hidden;
-  aspect-ratio: 1; border: 2px solid transparent;
-  transition: border-color .22s, transform .18s;
+  position: relative;
+  cursor: pointer;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  transition: border-color .22s, transform .18s, box-shadow .22s;
   background: var(--card2);
 }
-.cat-pill:hover { transform: scale(1.02); }
-.cat-pill.selected { border-color: var(--gold); }
+.cat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+.cat-pill.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold);
+}
 .cat-pill-bg {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center;
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
   transition: transform .4s ease;
 }
-.cat-pill:hover .cat-pill-bg { transform: scale(1.06); }
-.cat-pill-emoji {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px; z-index: 1;
-}
+.cat-pill:hover .cat-pill-bg { transform: scale(1.05); }
 .cat-pill-overlay {
-  position: absolute; inset: 0; z-index: 2;
-  background: linear-gradient(to bottom, rgba(10,9,8,.1) 0%, rgba(10,9,8,.5) 55%, rgba(10,9,8,.85) 100%);
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(43,38,32,0.05) 0%, rgba(43,38,32,0.45) 60%, rgba(43,38,32,0.85) 100%);
   transition: background .3s;
 }
-.cat-pill:hover .cat-pill-overlay {
-  background: linear-gradient(to bottom, rgba(10,9,8,.0) 0%, rgba(10,9,8,.35) 50%, rgba(10,9,8,.75) 100%);
-}
-.cat-pill.selected .cat-pill-overlay {
-  background: linear-gradient(to bottom, rgba(212,175,55,.08) 0%, rgba(10,9,8,.35) 50%, rgba(10,9,8,.8) 100%);
-}
 .cat-pill-label {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
-  padding: 10px 6px; text-align: center;
-  font-size: 9px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--white); transition: color .22s;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 12px 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #FFFFFF;
 }
-.cat-pill.selected .cat-pill-label { color: var(--gold); }
+.cat-pill.selected .cat-pill-label { color: #FFFFFF; }
 .cat-pill-check {
-  position: absolute; top: 7px; right: 7px; z-index: 4;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--gold); color: var(--bg);
-  font-size: 9px; font-weight: 700;
-  display: none; align-items: center; justify-content: center;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
 .cat-pill.selected .cat-pill-check { display: flex; }
 
-.cat-pill-disabled { cursor: default; }
-.cat-pill-disabled .cat-pill-bg { filter: grayscale(100%); opacity: .35; }
-.cat-pill-notavailable {
-  position: absolute; top: 36%; left: 0; right: 0; z-index: 3;
-  text-align: center; padding: 0 6px;
-  font-family: var(--serif); font-weight: 700; font-size: 12px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: #e8433d; letter-spacing: .03em; text-shadow: 0 1px 3px rgba(0,0,0,.6);
-}
-.cat-pill-whatsapp {
-  position: absolute; top: 54%; left: 0; right: 0; z-index: 4;
-  text-align: center; font-size: 10px; font-weight: 700;
-  color: var(--gold); text-decoration: none; letter-spacing: .03em;
-}
-.cat-pill-whatsapp:hover { text-decoration: underline; }
-
 .step1-cta-wrap { display: flex; justify-content: center; }
 .btn-next {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 10px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s, transform .15s;
-  opacity: .4; pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--gold);
+  color: #FFFFFF;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s, background .2s;
+  opacity: .4;
+  pointer-events: none;
 }
 .btn-next.enabled { opacity: 1; pointer-events: all; }
-.btn-next.enabled:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-next.enabled:hover {
+  background: var(--gold-dim);
+  transform: translateY(-1px);
+}
 
 /* ── STEP 2: SERVICE ACCORDIONS ── */
-.step2-back {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  padding: 8px 14px; margin-bottom: 28px;
-  transition: color .2s, border-color .2s, background .2s;
+.step2-back, .step-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 8px 16px;
+  margin-bottom: 24px;
+  transition: all .2s;
   min-height: 36px;
 }
-.step2-back:hover { color: var(--gold); border-color: rgba(212,175,55,.4); background: var(--card2); }
-.step2-back svg { width: 13px; height: 13px; flex-shrink: 0; }
+.step2-back:hover, .step-back:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-pale);
+}
+.step2-back svg, .step-back svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-.accordions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
-
+.accordions { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
 .accordion {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
   transition: border-color .22s;
 }
-.accordion.has-selection { border-color: rgba(212,175,55,.4); }
-
+.accordion.has-selection { border-color: var(--gold); }
 .accordion-head {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 20px; cursor: pointer;
-  user-select: none; transition: background .18s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: #FFFFFF;
+  transition: background .18s;
 }
 .accordion-head:hover { background: var(--card2); }
-/* .svc-row-img emoji fallbacks hidden inline via JS — photos show normally */
 .accordion-title {
-  font-size: 11px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--white); flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  flex: 1;
 }
 .accordion-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em;
-  color: var(--bg); background: var(--gold);
-  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: var(--gold);
+  padding: 2px 8px;
+  border-radius: 10px;
   display: none;
 }
 .accordion.has-selection .accordion-badge { display: inline-block; }
-.accordion-chevron {
-  font-size: 12px; color: var(--muted);
-  transition: transform .25s;
-}
+.accordion-chevron { font-size: 11px; color: var(--muted); transition: transform .25s; }
 .accordion.open .accordion-chevron { transform: rotate(180deg); }
-
-.accordion-body {
-  max-height: 0; overflow: hidden;
-  transition: max-height .35s ease;
-}
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
 .accordion.open .accordion-body { max-height: 4000px; }
 
 /* ── SERVICE ROWS ── */
 .service-rows { padding: 0 0 8px; }
 .service-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
   border-top: 1px solid var(--border);
-  cursor: pointer; transition: background .18s;
-  position: relative; min-height: 90px;
+  cursor: pointer;
+  transition: background .18s;
+  position: relative;
+  min-height: 84px;
 }
 .service-row:hover { background: var(--card2); }
-.service-row.selected { background: rgba(212,175,55,.04); }
-
+.service-row.selected { background: var(--gold-pale); }
 .svc-row-img {
-  width: 90px; height: 78px; border-radius: 4px;
-  overflow: hidden; flex-shrink: 0;
+  width: 78px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
   background: var(--card2);
-  border: 1px solid rgba(212,175,55,.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .svc-row-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
 .svc-row-info { flex: 1; min-width: 0; }
 .svc-row-name {
-  font-size: 13px; font-weight: 600; color: var(--white);
-  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2px;
 }
 .svc-row-sub {
-  font-size: 11px; color: var(--muted); line-height: 1.5;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--muted);
+  opacity: 0.85;
+  line-height: 1.4;
 }
 .svc-row-right { text-align: right; flex-shrink: 0; }
 .svc-row-price {
-  font-family: var(--serif); font-size: 14px; font-weight: 600;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--gold);
 }
-.svc-row-time { font-size: 10px; color: var(--muted); margin-top: 3px; }
-
+.svc-row-time {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .svc-row-check {
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: all .18s;
-  font-size: 11px; color: transparent;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: transparent;
+  transition: all .18s;
 }
 .service-row.selected .svc-row-check {
-  background: var(--gold); border-color: var(--gold);
-  color: var(--bg);
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #FFFFFF;
 }
 
-/* ══════════════════════════════════════════════════════════
-   FACIAL MENU — "Hierarchy by Density"
-   This category has no photography, so visual hierarchy is
-   carried entirely by spacing, borders and type. Three tiers,
-   each progressively less dense / more premium:
-     Tier 1 Essentials  → tight rows, fast scanning
-     Tier 2 Targeted    → standard spacing + left accent rule
-     Tier 3 Signature   → centered, boxed, maximum whitespace
-   ══════════════════════════════════════════════════════════ */
-
-/* ── Anchor jump-nav (skips the scroll without any filter logic) ── */
+/* ── FACIAL MENU ── */
 .facial-jumpnav {
   display: flex; gap: 8px; flex-wrap: wrap;
   padding: 14px 20px 4px;
   border-top: 1px solid var(--border);
 }
 .facial-jumpnav a {
-  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted-lt); text-decoration: none;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
   border: 1px solid var(--border); border-radius: 999px;
-  padding: 6px 13px; transition: color .18s, border-color .18s, background .18s;
+  padding: 6px 14px; transition: all .18s;
 }
 .facial-jumpnav a:hover {
-  color: var(--gold); border-color: var(--gold-dim); background: var(--gold-pale);
+  color: var(--gold); border-color: var(--gold); background: var(--gold-pale);
 }
-
-/* ── Tier header ── */
 .facial-tier-head {
   padding: 22px 20px 10px;
-  scroll-margin-top: 80px; /* so anchor links don't hide under the nav */
+  scroll-margin-top: 80px;
   text-align: center;
 }
 .facial-tier-title {
-  font-family: var(--serif); font-size: 15px; color: var(--gold);
-  letter-spacing: .04em; margin-bottom: 5px;
+  font-family: var(--serif); font-size: 16px; color: var(--gold);
+  margin-bottom: 4px; font-weight: 600;
 }
 .facial-tier-blurb {
-  font-size: 11px; color: var(--muted); line-height: 1.65; max-width: 46ch;
-  margin: 0 auto; /* center the text block itself, not just the text within it */
+  font-size: 11px; color: var(--muted); line-height: 1.6; max-width: 46ch; margin: 0 auto;
 }
-
-/* ── TIER 1: Essentials — high density, restaurant-menu feel ── */
-.service-row.facial-tier1 { min-height: 0; padding: 11px 20px; gap: 12px; }
+.service-row.facial-tier1 { min-height: 0; padding: 12px 20px; }
 .service-row.facial-tier1 .svc-row-img { display: none; }
-
-/* ── TIER 2: Targeted — standard density, left accent rule ── */
 .service-row.facial-tier2 {
-  min-height: 0; padding: 13px 20px 13px 18px;
-  border-left: 2px solid var(--gold-dim);
+  min-height: 0; padding: 14px 20px 14px 18px;
+  border-left: 3px solid var(--gold);
 }
 .service-row.facial-tier2 .svc-row-img { display: none; }
-
-/* Upsell seed under a Targeted Treatment row. Tappable once the parent
-   facial is selected — one tap adds the paired add-on, same as picking
-   it manually down in "Enhance Your Facial." Three states:
-     disabled → parent facial not selected yet, inert/muted
-     active   → parent selected, add-on not yet added, tappable to add
-     added    → add-on is in the cart, tappable to remove */
 .facial-addon-nudge {
-  padding: 8px 20px 13px 18px;
-  border-left: 2px solid var(--gold-dim);
-  margin-top: -4px;
-  transition: background .15s;
+  padding: 8px 20px 12px 18px;
+  border-left: 3px solid var(--gold);
+  background: var(--card2);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  transition: background .15s;
 }
-.facial-addon-nudge span {
-  font-size: 10px; color: var(--muted-lt); letter-spacing: .02em;
-}
+.facial-addon-nudge span { font-size: 10px; color: var(--muted); }
 .facial-addon-nudge b { color: var(--gold-dim); font-weight: 600; }
-
-/* Small square check, same visual language as .svc-row-check on every
-   other row — outlined and empty, fills solid gold with a ✓ once added. */
 .facial-nudge-check {
-  width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0;
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; color: transparent;
-  transition: all .18s;
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: transparent;
 }
-
-.facial-addon-nudge.nudge-disabled { opacity: .55; }
-
-.facial-addon-nudge.nudge-active {
-  cursor: pointer; border-left-color: var(--gold);
-}
+.facial-addon-nudge.nudge-active { cursor: pointer; }
 .facial-addon-nudge.nudge-active:hover { background: var(--gold-pale); }
 .facial-addon-nudge.nudge-active span { color: var(--text); }
-.facial-addon-nudge.nudge-active b { color: var(--gold); }
 .facial-addon-nudge.nudge-active .facial-nudge-check { border-color: var(--gold); }
-
-.facial-addon-nudge.nudge-added {
-  cursor: pointer; border-left-color: var(--gold);
-  background: var(--gold-pale);
-}
+.facial-addon-nudge.nudge-added { cursor: pointer; background: var(--gold-pale); }
 .facial-addon-nudge.nudge-added span { color: var(--text); }
-.facial-addon-nudge.nudge-added b { color: var(--gold); }
-.facial-addon-nudge.nudge-added .facial-nudge-check {
-  background: var(--gold); border-color: var(--gold); color: var(--bg);
-}
-
-/* ── TIER 3: Signature — low density, centered, boxed ── */
-.facial-signature-wrap { padding: 4px 20px 8px; }
+.facial-addon-nudge.nudge-added .facial-nudge-check { background: var(--gold); border-color: var(--gold); color: #FFF; }
+.facial-signature-wrap { padding: 8px 20px; }
 .service-row.facial-tier3 {
-  flex-direction: column; text-align: center; gap: 7px;
-  min-height: 0; padding: 22px 18px;
-  border: 1px solid var(--gold-dim); border-radius: var(--radius);
-  border-top: 1px solid var(--gold-dim);
+  flex-direction: column; text-align: center; gap: 8px;
+  padding: 22px 18px;
+  border: 1px solid var(--gold); border-radius: var(--radius);
   margin-bottom: 12px; background: var(--card);
 }
 .service-row.facial-tier3 .svc-row-img { display: none; }
 .service-row.facial-tier3 .svc-row-info { text-align: center; }
-.service-row.facial-tier3 .svc-row-name {
-  font-family: var(--serif); font-size: 16px; margin-bottom: 6px;
-}
-.service-row.facial-tier3 .svc-row-sub { font-size: 11px; }
+.service-row.facial-tier3 .svc-row-name { font-family: var(--serif); font-size: 16px; margin-bottom: 4px; }
 .service-row.facial-tier3 .svc-row-right { text-align: center; }
-.service-row.facial-tier3 .svc-row-price { font-size: 19px; }
+.service-row.facial-tier3 .svc-row-price { font-size: 18px; }
 .service-row.facial-tier3 .svc-row-check { position: absolute; top: 12px; right: 12px; }
-.facial-sig-badge {
-  font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--gold-dim); margin-bottom: 2px;
-}
+.facial-sig-badge { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
 
-/* ── Membership — deliberately NOT bookable; sits outside the cart ── */
 .facial-membership {
-  margin: 6px 20px 18px; padding: 18px;
-  border: 1px dashed var(--gold-dim); border-radius: var(--radius);
+  margin: 12px 20px 18px; padding: 20px;
+  border: 1px dashed var(--gold); border-radius: var(--radius);
   text-align: center; background: var(--gold-pale);
 }
-.facial-membership-title {
-  font-family: var(--serif); font-size: 14px; color: var(--gold); margin-bottom: 6px;
-}
-.facial-membership-text {
-  font-size: 11px; color: var(--muted-lt); line-height: 1.65; margin-bottom: 12px;
-}
+.facial-membership-title { font-family: var(--serif); font-size: 15px; color: var(--gold-dim); margin-bottom: 6px; }
+.facial-membership-text { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
 .facial-membership a {
-  display: inline-block; font-size: 11px; font-weight: 600;
-  letter-spacing: .04em; color: var(--bg); background: var(--gold);
-  text-decoration: none; padding: 9px 20px; border-radius: var(--radius);
-}
-
-@media (max-width: 480px) {
-  .svc-row-img { width: 70px; height: 62px; font-size: 22px; }
-  .service-row { padding: 12px 14px; gap: 10px; }
-  .svc-row-name { font-size: 12px; }
-  .svc-row-sub  { font-size: 10px; }
+  display: inline-block; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: #FFFFFF; background: var(--gold);
+  text-decoration: none; padding: 10px 20px; border-radius: 8px;
 }
 
 /* ── STAGE 2: ARTIST CARDS ── */
-.artist-grid {
-  display: flex; flex-direction: column;
-  gap: 14px; margin-bottom: 32px;
-}
-
+.artist-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
 .artist-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
-  cursor: pointer; transition: border-color .22s, background .22s;
-  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .22s;
   display: flex; flex-direction: row; align-items: stretch;
+  position: relative;
 }
-.artist-card:hover:not(.coming-soon) { border-color: rgba(212,175,55,.4); background: var(--card2); }
-.artist-card.selected { border-color: var(--gold); background: rgba(212,175,55,.05); }
-.artist-card.coming-soon { opacity: .45; cursor: not-allowed; }
-
+.artist-card:hover { border-color: var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+.artist-card.selected { border-color: var(--gold); background: var(--gold-pale); }
 .artist-card-photo {
-  width: 110px; min-width: 110px;
-  align-self: stretch; height: auto;
-  background: linear-gradient(155deg, #2a1a08 0%, #1a1006 50%, #0e0b07 100%);
+  width: 105px; min-width: 105px;
+  align-self: stretch;
+  background: var(--card2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 40px; overflow: hidden; position: relative; flex-shrink: 0;
+  overflow: hidden; position: relative;
 }
-.artist-card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.artist-card-soon-badge {
-  position: absolute; inset: 0;
-  background: rgba(10,9,8,.6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; color: rgba(212,175,55,.7);
-  text-align: center; padding: 8px;
-}
+.artist-card-photo img { width: 100%; height: 100%; object-fit: cover; }
 .artist-card-info {
-  padding: 14px 16px; flex: 1; display: flex;
+  padding: 16px; flex: 1; display: flex;
   flex-direction: column; justify-content: center; gap: 6px;
 }
 .artist-card-name {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); line-height: 1.2;
+  font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--text);
 }
-.artist-card-title { font-size: 10px; color: var(--gold-dim); letter-spacing: .08em; }
+.artist-card-title {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
 .artist-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .artist-tag {
-  font-size: 8px; letter-spacing: .1em; padding: 3px 7px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.2);
-  color: var(--gold); border-radius: 2px; text-transform: uppercase; font-weight: 600;
+  font-size: 8px; letter-spacing: 0.1em; padding: 3px 6px;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--gold-dim); border-radius: 4px; text-transform: uppercase; font-weight: 600;
 }
 .artist-select-btn {
   align-self: flex-start; margin-top: 4px;
-  padding: 7px 16px;
-  font-size: 9px; letter-spacing: .18em; font-weight: 700; text-transform: uppercase;
-  border: 1px solid rgba(212,175,55,.3); background: transparent;
-  color: var(--gold); border-radius: 2px; transition: all .2s; cursor: pointer;
+  padding: 6px 14px;
+  font-size: 9px; letter-spacing: 0.1em; font-weight: 700; text-transform: uppercase;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--gold); border-radius: 4px; transition: all .2s; cursor: pointer;
 }
-.artist-select-btn:hover { background: rgba(212,175,55,.08); border-color: var(--gold); }
-.artist-card.selected .artist-select-btn {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); border-color: transparent;
-}
+.artist-select-btn:hover { background: var(--gold); color: #FFF; border-color: var(--gold); }
+.artist-card.selected .artist-select-btn { background: var(--gold); color: #FFF; border-color: var(--gold); }
 .artist-selected-check {
   position: absolute; top: 8px; right: 8px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--gold); color: var(--bg);
-  font-size: 11px; font-weight: 700;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold); color: #FFF; font-size: 10px; font-weight: 700;
   display: none; align-items: center; justify-content: center; z-index: 2;
 }
 .artist-card.selected .artist-selected-check { display: flex; }
-
-/* ── STAFF PIN OVERRIDE (Wendy only) ──
-   Deliberately subtle — not styled like a real control — so it reads
-   as visual noise to regular customers, not a feature worth tapping. */
 .artist-select-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-.artist-select-row .artist-select-btn { margin-top: 0; }
 .staff-override-lock {
   background: none; border: none; padding: 4px; cursor: pointer;
-  font-size: 12px; line-height: 1; opacity: .32; color: var(--muted, #8a8a8a);
-  transition: opacity .2s;
+  font-size: 12px; opacity: .4; color: var(--muted);
 }
-.staff-override-lock:hover { opacity: .55; }
-.staff-override-lock.active { opacity: 1; }
-.staff-override-panel {
-  display: none; align-items: center; gap: 6px; margin-top: 8px;
-}
+.staff-override-panel { display: none; align-items: center; gap: 6px; margin-top: 8px; }
 .staff-override-panel.open { display: flex; }
 .staff-override-input {
-  flex: 1; min-width: 0; background: rgba(0,0,0,.25);
-  border: 1px solid rgba(212,175,55,.3); border-radius: 2px;
-  color: var(--white); padding: 6px 8px; font-size: 12px; letter-spacing: .06em;
+  flex: 1; border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 8px; font-size: 12px; background: #FFF; color: var(--text);
 }
-.staff-override-input:focus { outline: none; border-color: var(--gold); }
 .staff-override-apply {
-  flex-shrink: 0; width: 28px; height: 28px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.3);
-  color: var(--gold); border-radius: 2px; font-size: 12px; cursor: pointer;
+  padding: 6px 10px; background: var(--gold); border: none;
+  color: #FFF; border-radius: 4px; font-size: 11px; cursor: pointer;
 }
-.staff-override-apply:hover { background: rgba(212,175,55,.18); }
 
-/* ── STAGE 2: CALENDAR ── */
+/* ── CALENDAR & SLOTS ── */
 .calendar-wrap {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 24px; margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.calendar-header-row {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px;
-}
+.calendar-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .cal-artist-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold-dim);
-  margin-bottom: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px;
 }
-.cal-month-label {
-  font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--white);
-}
+.cal-month-label { font-family: var(--serif); font-size: 18px; font-weight: 600; color: var(--text); }
 .cal-nav-btn {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--card2); border: 2px solid var(--gold-dim);
-  color: var(--gold-dim); display: flex; align-items: center;
-  justify-content: center; cursor: pointer; transition: all .2s; font-size: 20px; font-weight: 700;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s; font-size: 16px;
 }
-.cal-nav-btn:hover { border-color: var(--gold); color: var(--gold); }
-.cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
-  margin-bottom: 20px;
-}
+.cal-nav-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-pale); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 20px; }
 .cal-dow {
-  text-align: center; font-size: 9px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--muted); padding: 6px 0;
+  text-align: center; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); padding: 6px 0;
 }
 .cal-day {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 500; border-radius: var(--radius);
+  font-size: 12px; font-weight: 500; border-radius: 8px;
   cursor: pointer; border: 1px solid transparent; transition: all .2s; position: relative;
+  color: var(--text);
 }
 .cal-day:hover:not(.cal-disabled):not(.cal-empty):not(.cal-past) {
   border-color: var(--gold); color: var(--gold); background: var(--gold-pale);
 }
 .cal-day.cal-selected {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-weight: 700; border-color: var(--gold);
+  background: var(--gold); color: #FFF; font-weight: 700; border-color: var(--gold);
 }
-.cal-day.cal-today { color: var(--gold); font-weight: 700; }
+.cal-day.cal-today { font-weight: 700; color: var(--gold); }
 .cal-day.cal-today::after {
-  content: ''; position: absolute; bottom: 3px; left: 50%;
-  transform: translateX(-50%);
+  content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
   width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
 }
-.cal-day.cal-today.cal-selected::after { background: var(--bg); }
-.cal-day.cal-disabled, .cal-day.cal-past { color: var(--border); cursor: not-allowed; }
+.cal-day.cal-today.cal-selected::after { background: #FFF; }
+.cal-day.cal-disabled, .cal-day.cal-past { color: #D5CEC2; cursor: not-allowed; }
 .cal-day.cal-empty { cursor: default; }
 
-/* ── STAGE 2: TIME SLOTS ── */
 .slots-section { margin-top: 4px; }
 .slots-date-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 14px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px;
 }
-.slots-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px;
-}
+.slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
 .time-slot {
   padding: 10px 8px; text-align: center;
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 12px; font-weight: 600;
+  background: #FFF; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 12px; font-weight: 500;
   color: var(--text); cursor: pointer; transition: all .2s;
 }
 .time-slot:hover:not(.slot-taken) { border-color: var(--gold); color: var(--gold); background: var(--gold-pale); }
-.time-slot.slot-selected { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); border-color: var(--gold); color: var(--bg); }
-.time-slot.slot-taken { color: var(--border); cursor: not-allowed; text-decoration: line-through; }
-.slots-placeholder {
-  text-align: center; padding: 28px 0;
-  color: var(--muted); font-size: 12px;
-}
-.slots-loading {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 28px 0; color: var(--muted); font-size: 12px;
-}
+.time-slot.slot-selected { background: var(--gold); border-color: var(--gold); color: #FFF; }
+.time-slot.slot-taken { color: #D5CEC2; cursor: not-allowed; text-decoration: line-through; }
+.slots-placeholder, .slots-loading { text-align: center; padding: 24px 0; color: var(--muted); font-size: 12px; }
 .spinner {
   width: 16px; height: 16px; border: 2px solid var(--border);
   border-top-color: var(--gold); border-radius: 50%;
-  animation: spin .7s linear infinite;
+  animation: spin .7s linear infinite; display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── STAGE 2: BACK BUTTON ── */
-.step-back {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  padding: 8px 14px; margin-bottom: 28px;
-  transition: color .2s, border-color .2s, background .2s;
-  min-height: 36px;
-}
-.step-back:hover { color: var(--gold); border-color: rgba(212,175,55,.4); background: var(--card2); }
-.step-back svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-/* ── GALLERY SECTION ── */
-.gallery-section {
-  padding: 80px 20px;
-  max-width: 860px; margin: 0 auto;
-  border-top: 1px solid rgba(212,175,55,.12);
-}
-.gallery-section-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
-}
-.section-label {
-  font-size: 10px; letter-spacing: .28em; font-weight: 600;
-  color: rgba(212,175,55,.55); text-transform: uppercase; margin-bottom: 8px;
-}
-.section-title {
-  font-family: var(--serif); font-size: clamp(28px, 4vw, 44px);
-  font-weight: 600; color: var(--white); line-height: 1.1;
-}
-.section-title em { font-style: italic; color: var(--gold); }
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 200px;
-  grid-auto-flow: dense;
-  gap: 10px;
-}
-@media (max-width: 700px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; } }
-.gallery-cell {
-  border-radius: 3px; overflow: hidden; position: relative; cursor: pointer;
-}
-.gallery-cell:hover .gallery-overlay { opacity: 1; }
-.gallery-cell:hover .gallery-cell-inner { transform: scale(1.04); }
-.gallery-cell-inner {
-  width: 100%; height: 100%;
-  transition: transform .5s ease;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 44px;
-}
-.gallery-overlay {
-  position: absolute; inset: 0;
-  background: rgba(10,9,8,.7);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity .3s;
-}
-.gallery-overlay span {
-  font-size: 9px; letter-spacing: .2em;
-  color: var(--gold); font-weight: 600; text-transform: uppercase;
-}
-.gallery-tall { grid-row: span 2; }
-.gallery-wide { grid-column: span 2; }
-
-.btn-ghost-sm {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: transparent;
-  border: 1px solid rgba(212,175,55,.4);
-  color: var(--gold); font-size: 10px; font-weight: 600;
-  letter-spacing: .18em; text-transform: uppercase;
-  padding: 10px 20px; border-radius: 3px;
-  transition: border-color .2s, background .2s;
-  text-decoration: none;
-}
-.btn-ghost-sm:hover { border-color: var(--gold); background: rgba(212,175,55,.07); }
 
 /* ── STAGE 3: BOOKING SUMMARY CARD ── */
 .booking-summary-card {
-  background: var(--card); border: 1px solid rgba(212,175,55,.3);
+  background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 .booking-summary-title {
-  font-size: 9px; font-weight: 700; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--gold-dim); margin-bottom: 16px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 16px;
 }
 .booking-summary-rows { display: flex; flex-direction: column; gap: 12px; }
 .booking-summary-row {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 12px; color: var(--muted-lt); line-height: 1.6;
+  display: flex; align-items: flex-start; gap: 10px; font-size: 12px; color: var(--muted); line-height: 1.6;
 }
 .booking-summary-icon { color: var(--gold); flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-.booking-summary-row strong { color: var(--text); }
-.booking-summary-row .svc-list {
-  display: flex; flex-direction: column; gap: 2px;
-}
-.booking-summary-row .svc-pill {
-  font-size: 11px; color: var(--text);
-}
+.booking-summary-row strong { color: var(--text); font-weight: 600; }
+.booking-summary-row .svc-pill { font-size: 11px; color: var(--text); }
 
-/* ── STAGE 3: FORM ── */
+/* ── FORM FIELD UI (PHYSICAL DOCUMENT ELEGANCE) ── */
 .form-section {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+  border-radius: var(--radius); padding: 28px 24px; margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 .form-section-title {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); margin-bottom: 20px;
-  display: flex; align-items: center; gap: 10px;
+  font-family: var(--serif); font-size: 16px; font-weight: 600;
+  color: var(--text); margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
 }
 .form-section-icon {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--gold-pale); border: 1px solid rgba(212,175,55,.2);
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--gold-pale); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center; font-size: 12px;
 }
-.form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 16px; }
 @media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group.full { grid-column: 1 / -1; }
 .form-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted-lt);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
 }
 .form-input {
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
-  font-family: var(--sans); font-size: 13px; color: var(--text);
-  transition: border-color .2s; width: 100%;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  border-radius: 0;
+  padding: 10px 2px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-bottom 0.25s ease;
 }
-.form-input:focus { outline: none; border-color: var(--gold); background: rgba(212,175,55,.04); }
-.form-input::placeholder { color: var(--muted); }
-.form-input.error { border-color: #c0392b; }
-.form-input:disabled { opacity: .5; cursor: not-allowed; }
+.form-input:focus {
+  border-bottom: 2px solid var(--gold);
+}
+.form-input::placeholder { color: #BFB6A8; }
+.form-input.error { border-bottom-color: #c0392b; }
 
-/* ── STAGE 3: POLICY GATE ── */
-.policy-gate {
+/* ── POLICY & PAYMENT GATES ── */
+.policy-gate, .payment-gate {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.policy-box {
-  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.2);
-  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
-}
-.policy-box-label {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--gold);
-}
-.policy-box p { font-size: 12px; color: var(--muted-lt); line-height: 1.75; margin: 0; }
 .policy-cancel-box {
-  background: rgba(192,57,43,.06); border: 1px solid rgba(192,57,43,.2);
-  border-left: 3px solid #c0392b; border-radius: var(--radius);
-  padding: 14px 16px; margin-bottom: 20px;
+  background: #FFF9F9; border: 1px solid #F5D3D3; border-left: 3px solid #c0392b;
+  border-radius: 8px; padding: 14px 16px; margin-bottom: 18px;
 }
 .policy-cancel-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; color: #e74c3c; margin-bottom: 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #c0392b; margin-bottom: 6px;
 }
-.policy-cancel-box p { font-size: 12px; color: var(--muted-lt); line-height: 1.75; margin: 0; }
+.policy-cancel-box p { font-size: 12px; color: var(--muted); line-height: 1.6; }
 .policy-checkbox-row {
   display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
-  padding: 14px 16px; background: var(--card2);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  transition: border-color .2s;
+  padding: 12px 14px; background: var(--card2);
+  border: 1px solid var(--border); border-radius: 8px;
 }
-.policy-checkbox-row:hover { border-color: rgba(212,175,55,.3); }
 .policy-checkbox-row input[type=checkbox] {
-  width: 16px; height: 16px; margin-top: 2px;
-  accent-color: var(--gold); cursor: pointer; flex-shrink: 0;
+  width: 16px; height: 16px; margin-top: 2px; accent-color: var(--gold); cursor: pointer;
 }
-.policy-checkbox-row span { font-size: 12px; color: var(--muted-lt); line-height: 1.7; }
+.policy-checkbox-row span { font-size: 12px; color: var(--text); line-height: 1.6; }
 
-/* ── STAGE 3: PAYMENT GATE ── */
-.payment-gate {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
-  opacity: .4; pointer-events: none; transition: opacity .4s;
-}
+.payment-gate { opacity: .4; pointer-events: none; transition: opacity .3s; }
 .payment-gate.unlocked { opacity: 1; pointer-events: all; }
 .payment-gate-label {
-  font-family: var(--serif); font-size: 16px; font-weight: 500;
-  color: var(--white); margin-bottom: 6px;
-  display: flex; align-items: center; gap: 10px;
+  font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px;
 }
-.payment-gate-sub {
-  font-size: 12px; color: var(--muted-lt); margin-bottom: 20px; line-height: 1.7;
+.payment-gate-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+.btn-deposit, .btn-confirm-submit {
+  display: block; width: 100%; padding: 15px;
+  background: var(--gold); color: #FFF; font-family: var(--sans);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  border: none; border-radius: 8px; cursor: pointer; text-align: center; text-decoration: none;
+  transition: all .2s;
 }
-.btn-deposit {
-  display: block; width: 100%; padding: 16px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 11px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; text-align: center; text-decoration: none;
-  transition: filter .2s, transform .1s; margin-bottom: 8px;
+.btn-deposit:hover, .btn-confirm-submit:hover:not(:disabled) {
+  background: var(--gold-dim); transform: translateY(-1px);
 }
-.btn-deposit:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.deposit-note {
-  font-size: 10px; color: var(--muted); text-align: center;
-  margin-bottom: 16px; line-height: 1.6;
-}
-.deposit-confirm-row {
-  display: none; flex-direction: column; gap: 12px;
-}
+.btn-confirm-submit:disabled { background: var(--border); color: #FFF; cursor: not-allowed; }
+.deposit-note, .submit-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+.deposit-confirm-row { display: none; flex-direction: column; gap: 12px; }
 .deposit-confirm-row.visible { display: flex; }
-
-/* ── STAGE 3: AUTO-DETECT PAYMENT STATUS ──
-   Shown while the page quietly polls for the Clover deposit to land, so
-   most customers never have to touch the manual checkbox below at all. */
 .deposit-auto-status {
-  display: none; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: var(--radius);
-  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.2);
-  font-size: 11px; color: var(--gold-dim); margin-bottom: 4px;
+  display: none; align-items: center; gap: 10px; padding: 12px 14px;
+  border-radius: 8px; background: var(--gold-pale); border: 1px solid var(--border);
+  font-size: 11px; color: var(--gold-dim);
 }
 .deposit-auto-status.visible { display: flex; }
-.deposit-auto-status.confirmed {
-  background: rgba(46,160,67,.08); border-color: rgba(46,160,67,.3); color: #6fcf7a;
-}
+.deposit-auto-status.confirmed { background: #F1F9F1; border-color: #C3E6CB; color: #2E7D32; }
 .deposit-auto-status-spinner {
-  width: 14px; height: 14px; flex-shrink: 0;
-  border: 2px solid rgba(212,175,55,.25); border-top-color: var(--gold);
-  border-radius: 50%; animation: spin .7s linear infinite;
+  width: 14px; height: 14px; border: 2px solid var(--border);
+  border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite;
 }
 .deposit-auto-status.confirmed .deposit-auto-status-spinner { display: none; }
 .deposit-auto-status-check { display: none; font-size: 13px; }
 .deposit-auto-status.confirmed .deposit-auto-status-check { display: inline; }
-
-/* ── STAGE 3: FORM ERROR ── */
 .form-error {
-  background: rgba(192,57,43,.1); border: 1px solid rgba(192,57,43,.3);
-  border-radius: var(--radius); padding: 12px 16px;
-  font-size: 12px; color: #e74c3c; margin-bottom: 12px; display: none;
+  background: #FFF3F3; border: 1px solid #F5C6CB; border-radius: 8px;
+  padding: 12px; font-size: 12px; color: #721C24; display: none; margin-bottom: 12px;
 }
 .form-error.visible { display: block; }
 
-/* ── STAGE 3: SUBMIT BUTTON ── */
-.btn-confirm-submit {
-  width: 100%; padding: 17px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans);
-  font-size: 11px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s, transform .1s;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
+/* ── STICKY CTA ON STEP 2 ── */
+.step2-cta {
+  position: sticky; bottom: 0;
+  background: rgba(252, 251, 248, 0.95); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px;
+  display: none; align-items: center; justify-content: space-between; gap: 12px;
+  z-index: 90;
 }
-.btn-confirm-submit:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-.btn-confirm-submit:disabled { background: var(--card2); color: var(--muted); cursor: not-allowed; }
-.btn-confirm-submit .btn-spinner {
-  display: none; width: 16px; height: 16px;
-  border: 2px solid rgba(10,9,8,.3); border-top-color: var(--bg);
-  border-radius: 50%; animation: spin .7s linear infinite;
+.step2-cta.visible { display: flex; }
+.step2-cta-count {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
 }
-.btn-confirm-submit.loading .btn-text { display: none; }
-.btn-confirm-submit.loading .btn-spinner { display: block; }
-.submit-note { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.7; }
+.step2-cta-total { font-family: var(--serif); font-size: 17px; font-weight: 600; color: var(--gold); }
 
-/* ── STAGE 3: SUCCESS SCREEN ── */
+/* ── SUCCESS SCREEN ── */
 .success-screen {
   display: none; text-align: center; padding: 60px 20px;
   animation: fadeUp .5s ease both; max-width: 860px; margin: 0 auto;
 }
 .success-screen.visible { display: block; }
 .success-icon {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 28px; font-size: 32px;
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--gold-pale); border: 2px solid var(--gold);
+  color: var(--gold); display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px; font-size: 28px;
 }
-.success-title {
-  font-family: var(--serif); font-size: clamp(28px, 4vw, 42px);
-  font-weight: 600; color: var(--white); margin-bottom: 12px;
-}
+.success-title { font-family: var(--serif); font-size: 32px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
 .success-title em { font-style: italic; color: var(--gold); }
-.success-msg {
-  font-size: 13px; color: var(--muted-lt); max-width: 420px;
-  margin: 0 auto 36px; line-height: 1.8;
-}
+.success-msg { font-size: 13px; color: var(--muted); max-width: 420px; margin: 0 auto 32px; line-height: 1.6; }
 .success-details {
-  background: var(--card); border: 1px solid rgba(212,175,55,.25);
-  border-radius: var(--radius); padding: 24px;
-  max-width: 440px; margin: 0 auto 32px; text-align: left;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px; max-width: 440px; margin: 0 auto 32px; text-align: left;
 }
 .success-detail-row {
-  display: flex; gap: 12px; align-items: flex-start;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  display: flex; gap: 12px; align-items: flex-start; padding: 10px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
 }
 .success-detail-row:last-child { border-bottom: none; }
-.success-detail-icon { color: var(--gold); flex-shrink: 0; }
-.success-detail-label {
-  font-size: 9px; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 3px;
-}
-.success-detail-value { color: var(--text); font-weight: 500; }
+.success-detail-icon { color: var(--gold); }
+.success-detail-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 .btn-back-home {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 13px 32px; border: 1px solid var(--gold);
-  border-radius: var(--radius); color: var(--gold);
-  font-size: 11px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; text-decoration: none;
-  transition: all .2s;
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
+  border: 1px solid var(--gold); border-radius: 8px; color: var(--gold);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  text-decoration: none; transition: all .2s;
 }
-.btn-back-home:hover { background: var(--gold-pale); }
+.btn-back-home:hover { background: var(--gold); color: #FFF; }
 
-/* ── REVIEWS SECTION ── */
-.reviews-section {
-  padding: 80px 20px;
-  background: var(--surface);
-  border-top: 1px solid rgba(212,175,55,.1);
-  border-bottom: 1px solid rgba(212,175,55,.1);
+/* ── GALLERY, REVIEWS, CONTACT ── */
+.gallery-section, .reviews-section, .contact-section {
+  padding: 72px 20px; max-width: 860px; margin: 0 auto;
 }
-.reviews-inner { max-width: 860px; margin: 0 auto; }
-.reviews-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px; margin-top: 36px;
+.gallery-section-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
 }
+.section-label {
+  font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+  color: var(--gold); text-transform: uppercase; margin-bottom: 6px;
+}
+.section-title {
+  font-family: var(--serif); font-size: clamp(26px, 4vw, 38px); font-weight: 600; color: var(--text); line-height: 1.15;
+}
+.section-title em { font-style: italic; color: var(--gold); }
+.btn-ghost-sm {
+  display: inline-flex; align-items: center; gap: 7px; background: transparent;
+  border: 1px solid var(--border); color: var(--text); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 9px 18px; border-radius: 8px;
+  text-decoration: none; transition: all .2s;
+}
+.btn-ghost-sm:hover { border-color: var(--gold); color: var(--gold); }
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 180px; gap: 12px;
+}
+@media (max-width: 700px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 140px; } }
+.gallery-cell { border-radius: 8px; overflow: hidden; position: relative; }
+.gallery-cell.gallery-tall { grid-row: span 2; }
+.gallery-cell.gallery-wide { grid-column: span 2; }
+.gallery-overlay {
+  position: absolute; inset: 0; background: rgba(43,38,32,0.4);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .3s;
+}
+.gallery-cell:hover .gallery-overlay { opacity: 1; }
+.gallery-overlay span {
+  font-size: 10px; letter-spacing: 0.1em; color: #FFFFFF; font-weight: 600; text-transform: uppercase;
+}
+
+.reviews-section { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
 @media (max-width: 700px) { .reviews-grid { grid-template-columns: 1fr; } }
 .review-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 3px; padding: 24px; position: relative;
-}
-.review-card::before {
-  content: '"'; font-family: var(--serif); font-size: 72px; line-height: 1;
-  color: rgba(212,175,55,.1); position: absolute; top: 8px; right: 14px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 .review-stars { display: flex; gap: 3px; margin-bottom: 12px; color: var(--gold); font-size: 12px; }
-.review-text { font-size: 12px; color: var(--muted-lt); line-height: 1.8; margin-bottom: 18px; }
+.review-text { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 .review-author { display: flex; align-items: center; gap: 10px; }
 .review-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold-dim), rgba(212,175,55,.3));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: var(--bg); font-family: var(--serif);
+  width: 32px; height: 32px; border-radius: 50%; background: var(--gold);
+  color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
 }
-.review-name { font-size: 12px; font-weight: 600; color: var(--white); }
-.review-loc  { font-size: 9px; letter-spacing: .1em; color: var(--muted); margin-top: 1px; }
+.review-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.review-loc { font-size: 9px; color: var(--muted); margin-top: 1px; }
 
-/* ── CONTACT SECTION ── */
-.contact-section { padding: 80px 20px; }
 .contact-inner {
-  max-width: 860px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start;
 }
-@media (max-width: 700px) { .contact-inner { grid-template-columns: 1fr; gap: 32px; } }
+@media (max-width: 700px) { .contact-inner { grid-template-columns: 1fr; gap: 28px; } }
 .contact-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 3px; padding: 28px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.contact-card-icon { font-size: 26px; margin-bottom: 12px; }
-.contact-card-title {
-  font-family: var(--serif); font-size: 20px; font-weight: 500;
-  color: var(--white); margin-bottom: 10px;
-}
-.contact-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.contact-list-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 12px; color: var(--muted-lt); line-height: 1.6;
-}
+.contact-card-title { font-family: var(--serif); font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.contact-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.contact-list-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--muted); }
 .contact-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-top: 6px; }
 .contact-directions {
-  display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 16px; padding: 10px 18px;
-  background: rgba(212,175,55,.08); border: 1px solid rgba(212,175,55,.25);
-  border-radius: 3px; font-size: 10px; font-weight: 700;
-  letter-spacing: .14em; color: var(--gold); text-decoration: none;
-  text-transform: uppercase; transition: background .2s;
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  padding: 9px 16px; background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--gold); text-decoration: none; text-transform: uppercase; transition: all .2s;
 }
-.contact-directions:hover { background: rgba(212,175,55,.14); }
+.contact-directions:hover { border-color: var(--gold); background: var(--gold-pale); }
 
-/* Step 2 CTA bar */
-.step2-cta {
-  position: sticky; bottom: 0;
-  background: rgba(10,9,8,.97); backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(212,175,55,.2);
-  padding: 8px 20px 10px;
-  display: none; align-items: center; justify-content: space-between; gap: 6px;
-}
-.step2-cta.visible { display: flex; }
-.step2-cta-info { display: flex; flex-direction: column; gap: 1px; }
-.step2-cta-count {
-  font-size: 9px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--gold-dim);
-}
-.step2-cta-total {
-  font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--gold);
-}
-
-/* ── ANIMATIONS ── */
-@keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── GOLD LINE ── */
-.gold-line { height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-
-/* ── FOOTER ── */
+.gold-line { height: 1px; background: var(--border); }
 .footer {
-  text-align: center; padding: 32px 20px;
-  border-top: 1px solid var(--border);
+  text-align: center; padding: 32px 20px; border-top: 1px solid var(--border);
   margin-top: 40px; font-size: 11px; color: var(--muted);
 }
-.footer a { color: var(--gold-dim); text-decoration: none; }
+.footer a { color: var(--gold); text-decoration: none; }
 
-/* ── BILINGUAL ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BILINGUAL SUPPORT ── */
 [data-en], [data-es] { transition: opacity .15s; }
 body.lang-es [data-en] { display: none !important; }
 body.lang-en [data-es] { display: none !important; }
 </style>
-  <!-- Supabase Client -->
+
+<!-- Supabase Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="lang-en">
@@ -1089,12 +980,12 @@ body.lang-en [data-es] { display: none !important; }
 })();
 </script>
 
-<!-- CATEGORY CONFLICT MODAL (pilot mode: no single artist covers some combos) -->
-<div id="catConflictModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;">
+<!-- CATEGORY CONFLICT MODAL -->
+<div id="catConflictModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(43,38,32,.5);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;box-shadow:0 8px 30px rgba(0,0,0,0.12);">
     <button onclick="closeCatConflictModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
     <div style="font-size:32px;margin-bottom:12px;">✨</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px;color:#fff;">
+    <div style="font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:10px;color:var(--text);">
       <span data-en>These services are not available together</span>
       <span data-es>Estos servicios no están disponibles juntos</span>
     </div>
@@ -1102,7 +993,7 @@ body.lang-en [data-es] { display: none !important; }
       <span data-en>Message us directly and we'll get you booked with both artists!</span>
       <span data-es>¡Escríbenos directamente y te agendamos con ambas artistas!</span>
     </p>
-    <a id="catConflictWhatsapp" href="#" target="_blank" class="btn-next" style="display:inline-block;text-decoration:none;">
+    <a id="catConflictWhatsapp" href="#" target="_blank" class="btn-next enabled" style="display:inline-block;text-decoration:none;">
       <span data-en>💬 Message us on WhatsApp</span>
       <span data-es>💬 Escríbenos por WhatsApp</span>
     </a>
@@ -1115,11 +1006,11 @@ body.lang-en [data-es] { display: none !important; }
   </div>
 </div>
 
-<!-- NAIL ART / DESIGN ADD-ON POPUP (shown when any nail-art trigger service is selected) -->
-<div id="nailArtModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;">
+<!-- NAIL ART / DESIGN ADD-ON POPUP -->
+<div id="nailArtModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(43,38,32,.5);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;padding:28px;text-align:center;position:relative;box-shadow:0 8px 30px rgba(0,0,0,0.12);">
     <div style="font-size:32px;margin-bottom:12px;">💅</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px;color:#fff;">
+    <div style="font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:10px;color:var(--text);">
       <span data-en>Add nail art or a design?</span>
       <span data-es>¿Agregar arte o diseño de uñas?</span>
     </div>
@@ -1131,18 +1022,18 @@ body.lang-en [data-es] { display: none !important; }
       <span data-en>Yes, add nail art</span>
       <span data-es>Sí, agregar diseño</span>
     </button>
-    <button onclick="confirmNailArt(false)" style="background:none;border:1px solid var(--gold-dim);color:var(--muted);font-size:13px;padding:11px 16px;border-radius:10px;cursor:pointer;width:100%;">
+    <button onclick="confirmNailArt(false)" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:13px;padding:11px 16px;border-radius:8px;cursor:pointer;width:100%;">
       <span data-en>No, thanks</span>
       <span data-es>No, gracias</span>
     </button>
   </div>
 </div>
 
-<!-- PMU TOUCH-UP AREA POPUP (shown when a PMU touch-up service is selected) -->
-<div id="pmuAreaModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--panel-bg,#151515);border:1px solid var(--gold-dim);border-radius:16px;max-width:420px;width:100%;padding:28px;text-align:center;">
+<!-- PMU TOUCH-UP AREA POPUP -->
+<div id="pmuAreaModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(43,38,32,.5);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;padding:28px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.12);">
     <div style="font-size:32px;margin-bottom:12px;">💉</div>
-    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:16px;color:#fff;">
+    <div style="font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:16px;color:var(--text);">
       <span data-en>What are you touching up?</span>
       <span data-es>¿Qué te estás retocando?</span>
     </div>
@@ -1158,43 +1049,41 @@ body.lang-en [data-es] { display: none !important; }
   </div>
 </div>
 
-<!-- NAV -->
-<nav class="nav">
-  <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-    <img src="Images/logo.png" alt="Liz Wendy Beauty Studio" style="height:40px;width:40px;object-fit:contain;border-radius:50%;flex-shrink:0;">    <div>
-      <div class="nav-logo-name gold-shimmer">Liz Wendy</div>
-      <div class="nav-logo-sub">Beauty Studio · 76 Livingston Ave, New Brunswick, NJ</div>
+<!-- STICKY HEADER & LOGO -->
+<header class="nav">
+  <a href="#" class="nav-brand-center">
+    <img src="Images/logo.png" alt="Liz Wendy Beauty Studio" class="nav-logo-img">
+    <div class="nav-titles">
+      <div class="nav-logo-name">Liz Wendy</div>
+      <div class="nav-logo-sub">Beauty Studio LLC</div>
     </div>
   </a>
   <div class="lang-switch">
     <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
     <button class="lang-btn"        id="btn-es" onclick="setLang('es')">ES</button>
   </div>
-</nav>
+</header>
 
 <div id="bookingFunnel">
 <div class="page">
 
-  <!-- STEP INDICATOR -->
+  <!-- MINIMALIST STEP INDICATOR -->
   <div class="funnel-steps">
     <div class="fstep active" id="fstep1">
       <div class="fstep-num">1</div>
       <span class="fstep-label" data-en>Services</span>
       <span class="fstep-label" data-es>Servicios</span>
     </div>
-    <div class="fstep-line"></div>
     <div class="fstep" id="fstep2">
       <div class="fstep-num">2</div>
       <span class="fstep-label" data-en>Artist</span>
       <span class="fstep-label" data-es>Artista</span>
     </div>
-    <div class="fstep-line"></div>
     <div class="fstep" id="fstep3">
       <div class="fstep-num">3</div>
       <span class="fstep-label" data-en>Date &amp; Time</span>
       <span class="fstep-label" data-es>Fecha y Hora</span>
     </div>
-    <div class="fstep-line"></div>
     <div class="fstep" id="fstep4">
       <div class="fstep-num">4</div>
       <span class="fstep-label" data-en>Confirm</span>
@@ -1202,10 +1091,8 @@ body.lang-en [data-es] { display: none !important; }
     </div>
   </div>
 
-
   <!-- ── STEP 1: CATEGORY SELECTION ── -->
   <div class="funnel-panel active" id="panel-step1">
-
     <div class="funnel-header">
       <div class="eyebrow">✦ <span data-en>Book Your Appointment</span><span data-es>Reserva tu Cita</span></div>
       <h1><span data-en>What are you looking<br>for <em>today?</em></span><span data-es>¿Qué estás buscando<br><em>hoy?</em></span></h1>
@@ -1213,7 +1100,7 @@ body.lang-en [data-es] { display: none !important; }
       <p data-es>Selecciona una o más categorías, luego elige tus servicios.</p>
     </div>
 
- <div class="category-grid">
+    <div class="category-grid">
       <div class="cat-pill" data-cat="makeup" onclick="toggleCat(this)">
         <div class="cat-pill-bg" style="background-image:url('Images/Makeup.png')"></div>
         <div class="cat-pill-overlay"></div>
@@ -1264,12 +1151,10 @@ body.lang-en [data-es] { display: none !important; }
         <span data-es>Ver Servicios →</span>
       </button>
     </div>
-
   </div>
 
   <!-- ── STEP 2: SERVICE ACCORDIONS ── -->
   <div class="funnel-panel" id="panel-step2">
-
     <button class="step2-back" onclick="goToStep1()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       <span data-en>Change categories</span>
@@ -1289,12 +1174,10 @@ body.lang-en [data-es] { display: none !important; }
         <span data-es>Siguiente: Artista →</span>
       </button>
     </div>
-
   </div>
 
   <!-- ── STEP 3: CHOOSE YOUR ARTIST ── -->
   <div class="funnel-panel" id="panel-step3">
-
     <button class="step-back" onclick="goBackTo(2)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       <span data-en>Back to Services</span><span data-es>Volver a Servicios</span>
@@ -1308,12 +1191,11 @@ body.lang-en [data-es] { display: none !important; }
     </div>
 
     <div class="artist-grid">
-
-      <!-- Liz Wendy Cedeño — Active -->
+      <!-- Liz Wendy Cedeño -->
       <div class="artist-card" id="artist-liz" onclick="selectArtist('liz')">
         <div class="artist-selected-check">✓</div>
         <div class="artist-card-photo">
-          <img src="Images/Wendy.jpeg" alt="Liz Wendy Cedeño" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+          <img src="Images/Wendy.jpeg" alt="Liz Wendy Cedeño">
         </div>
         <div class="artist-card-info">
           <div class="artist-card-name">Liz Wendy Cedeño</div>
@@ -1342,11 +1224,11 @@ body.lang-en [data-es] { display: none !important; }
         </div>
       </div>
 
-      <!-- Johanna — Nail Artist -->
+      <!-- Johanna -->
       <div class="artist-card" id="artist-johanna" data-cats="nails" onclick="selectArtist('johanna')">
         <div class="artist-selected-check">✓</div>
         <div class="artist-card-photo">
-          <img src="Images/Johanna.png" alt="Johanna" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+          <img src="Images/Johanna.png" alt="Johanna">
         </div>
         <div class="artist-card-info">
           <div class="artist-card-name">Johanna</div>
@@ -1361,22 +1243,18 @@ body.lang-en [data-es] { display: none !important; }
           </button>
         </div>
       </div>
-
     </div>
 
-    <!-- CTA -->
     <div style="display:flex;justify-content:center;">
       <button class="btn-next" id="step3Next" onclick="goToStep4()">
         <span data-en>Next: Date &amp; Time →</span>
         <span data-es>Siguiente: Fecha y Hora →</span>
       </button>
     </div>
-
   </div>
 
   <!-- ── STEP 4: DATE & TIME ── -->
   <div class="funnel-panel" id="panel-step4">
-
     <button class="step-back" onclick="goBackTo(3)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       <span data-en>Back to Artist</span><span data-es>Volver a Artista</span>
@@ -1414,7 +1292,6 @@ body.lang-en [data-es] { display: none !important; }
         <div class="cal-dow" data-en>Fri</div><div class="cal-dow" data-es>Vie</div>
         <div class="cal-dow" data-en>Sat</div><div class="cal-dow" data-es>Sáb</div>
       </div>
-      <!-- Time slots appear here after date selection -->
       <div class="slots-section" id="slotsSection" style="display:none">
         <div class="gold-line" style="margin-bottom:20px"></div>
         <div class="slots-date-label" id="slotsDateLabel"></div>
@@ -1425,19 +1302,16 @@ body.lang-en [data-es] { display: none !important; }
       </div>
     </div>
 
-    <!-- CTA -->
     <div style="display:flex;justify-content:center;">
       <button class="btn-next" id="step4Next" onclick="goToStep5()">
         <span data-en>Next: Confirm →</span>
         <span data-es>Siguiente: Confirmar →</span>
       </button>
     </div>
-
   </div>
 
   <!-- ── STEP 5: CONFIRM + PAYMENT ── -->
   <div class="funnel-panel" id="panel-step5">
-
     <button class="step-back" onclick="goBackTo(4)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       <span data-en>Back to Date &amp; Time</span><span data-es>Volver a Fecha y Hora</span>
@@ -1472,7 +1346,7 @@ body.lang-en [data-es] { display: none !important; }
           <input class="form-input" type="text" id="lastName" placeholder="Lopez" autocomplete="family-name"/>
         </div>
         <div class="form-group full">
-          <label class="form-label"><span data-en>Email Address</span><span data-es>Correo Electrónico</span><span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"> (<span data-en>optional</span><span data-es>opcional</span>)</span></label>
+          <label class="form-label"><span data-en>Email Address</span><span data-es>Correo Electrónico</span> <span style="color:var(--muted);font-weight:300;text-transform:none;letter-spacing:0">(<span data-en>optional</span><span data-es>opcional</span>)</span></label>
           <input class="form-input" type="email" id="emailInput" placeholder="maria@email.com" autocomplete="email"/>
         </div>
         <div class="form-group full">
@@ -1482,9 +1356,9 @@ body.lang-en [data-es] { display: none !important; }
         <div class="form-group full">
           <label class="form-label">
             <span data-en>Notes for your artist</span><span data-es>Notas para tu artista</span>
-            <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"> (<span data-en>optional</span><span data-es>opcional</span>)</span>
+            <span style="color:var(--muted);font-weight:300;text-transform:none;letter-spacing:0"> (<span data-en>optional</span><span data-es>opcional</span>)</span>
           </label>
-          <textarea class="form-input" id="notesInput" rows="3" placeholder="Allergies, preferences, or anything Wendy should know..."></textarea>
+          <textarea class="form-input" id="notesInput" rows="2" placeholder="Allergies, preferences, or notes..."></textarea>
         </div>
       </div>
     </div>
@@ -1495,8 +1369,8 @@ body.lang-en [data-es] { display: none !important; }
         <div class="form-section-icon">📋</div>
         <span data-en>Booking &amp; Cancellation Policy</span><span data-es>Política de Reserva y Cancelación</span>
       </div>
-      <div class=\"policy-cancel-box\">
-        <div class=\"policy-cancel-label\">✕ <span data-en>Cancellation Policy</span><span data-es>Política de Cancelación</span></div>
+      <div class="policy-cancel-box">
+        <div class="policy-cancel-label">✕ <span data-en>Cancellation Policy</span><span data-es>Política de Cancelación</span></div>
         <p>
           <span data-en>Appointments must be cancelled or rescheduled at least <strong style="color:var(--text)">24 hours in advance.</strong> No-shows may be required to prepay future appointments in full.</span>
           <span data-es>Las citas deben cancelarse o reprogramarse con al menos <strong style="color:var(--text)">24 horas de anticipación.</strong> La inasistencia sin aviso puede requerir pago completo en futuras citas.</span>
@@ -1511,7 +1385,7 @@ body.lang-en [data-es] { display: none !important; }
       </label>
     </div>
 
-    <!-- Payment gate (locked until policy accepted) -->
+    <!-- Payment gate -->
     <div class="payment-gate" id="paymentGate">
       <div id="depositOnlyBlock">
         <div class="payment-gate-label">
@@ -1533,7 +1407,6 @@ body.lang-en [data-es] { display: none !important; }
         </p>
       </div>
 
-      <!-- Shown after deposit button clicked (Liz Wendy) OR shown directly (Johanna, no deposit) -->
       <div class="deposit-confirm-row" id="depositConfirmRow">
         <div class="form-error" id="formError"></div>
         <div class="deposit-auto-status" id="depositAutoStatus">
@@ -1544,8 +1417,6 @@ body.lang-en [data-es] { display: none !important; }
             <span data-es>Esperando la confirmación de tu pago — solo toma unos segundos…</span>
           </span>
         </div>
-        <!-- depositCheckboxRow removed: manual deposit attestation bypass eliminated.
-             Booking only proceeds via auto-detected payment or staff PIN override. -->
         <label class="policy-checkbox-row" id="depositCheckboxRow" style="display:none!important">
           <input type="checkbox" id="depositPaidCheck" onchange="onDepositConfirm(this)"/>
           <span>
@@ -1562,16 +1433,13 @@ body.lang-en [data-es] { display: none !important; }
           <span data-es>Al reservar aceptas nuestra política de cancelación. Se enviará un correo de confirmación a ti y al estudio.</span>
         </p>
       </div>
-
     </div>
 
-
   </div>
+</div>
+</div>
 
-</div><!-- /page -->
-</div><!-- /bookingFunnel -->
-
-<!-- ── SUCCESS SCREEN (outside .page, full width) ── -->
+<!-- ── SUCCESS SCREEN ── -->
 <div class="success-screen" id="successScreen">
   <div class="success-icon">✦</div>
   <h2 class="success-title">
@@ -1605,34 +1473,24 @@ body.lang-en [data-es] { display: none !important; }
     </a>
   </div>
   <div class="gallery-grid">
-    <!-- Cell 1: Diamond Nails (Tall) -->
     <div class="gallery-cell gallery-tall" style="background-image:url('Images/nail design at our work.png');background-size:cover;background-position:center center">
       <div class="gallery-overlay"><span data-en>Nail Design</span><span data-es>Diseño de Uñas</span></div>
     </div>
-
-    <!-- Cell 2: PMU Brow & Lash Close-up -->
     <div class="gallery-cell" style="background-image:url('Images/Pmu at our brows.png');background-size:cover;background-position:center 30%">
       <div class="gallery-overlay"><span>PMU Brows</span></div>
     </div>
-
-    <!-- Cell 3: Pink Flame Nail Art -->
     <div class="gallery-cell" style="background-image:url('Images/nail art at our work.png');background-size:cover;background-position:center center">
       <div class="gallery-overlay"><span data-en>Nail Art</span><span data-es>Arte de Uñas</span></div>
     </div>
-
-    <!-- Cell 4: Glam Makeup Portrait (Tall) -->
     <div class="gallery-cell gallery-tall" style="background-image:url('Images/glam makeup at our work.png');background-size:cover;background-position:center top">
       <div class="gallery-overlay"><span data-en>Glam Makeup</span><span data-es>Maquillaje Glam</span></div>
     </div>
-
-    <!-- Cell 5: Beauty Masterclass (Wide) -->
-<div class="gallery-cell gallery-wide" style="background-image:url('Images/Maybe classes.png');background-size:cover;background-position:center 45%">
-    <!-- Cell 6: Gem Nail Art -->
+    <div class="gallery-cell gallery-wide" style="background-image:url('Images/Maybe classes.png');background-size:cover;background-position:center 45%">
+      <div class="gallery-overlay"><span data-en>Beauty Masterclasses</span><span data-es>Clases de Belleza</span></div>
+    </div>
     <div class="gallery-cell" style="background-image:url('Images/gem nail art at our work.png');background-size:cover;background-position:center center">
       <div class="gallery-overlay"><span data-en>Gem Nail Art</span><span data-es>Arte de Uñas con Gemas</span></div>
     </div>
-
-    <!-- Cell 7: Quinceañera Glam -->
     <div class="gallery-cell" style="background-image:url('Images/Quinceanera.png');background-size:cover;background-position:center 20%">
       <div class="gallery-overlay"><span data-en>Quinceañera Glam</span><span data-es>Glamour de Quince</span></div>
     </div>
@@ -1694,8 +1552,7 @@ body.lang-en [data-es] { display: none !important; }
       <p class="section-label" data-es>Encuéntranos</p>
       <h2 class="section-title" data-en>Visit the <em>Studio</em></h2>
       <h2 class="section-title" data-es>Visita el <em>Estudio</em></h2>
-      <div class="contact-card" style="margin-top:24px">
-        <div class="contact-card-icon">📍</div>
+      <div class="contact-card">
         <div class="contact-card-title" data-en>Location &amp; Hours</div>
         <div class="contact-card-title" data-es>Ubicación y Horarios</div>
         <div class="contact-list">
@@ -1715,7 +1572,7 @@ body.lang-en [data-es] { display: none !important; }
           </div>
           <div class="contact-list-item">
             <div class="contact-dot"></div>
-            <a href="https://www.instagram.com/lizwendybeautystudiollc/" target="_blank" style="color:var(--muted-lt);text-decoration:none;">📸 @lizwendybeautystudiollc</a>
+            <a href="https://www.instagram.com/lizwendybeautystudiollc/" target="_blank" style="color:var(--muted);text-decoration:none;">📸 @lizwendybeautystudiollc</a>
           </div>
         </div>
         <a href="https://maps.google.com/?q=76+Livingston+Ave,+New+Brunswick,+NJ+08901" target="_blank" class="contact-directions">
@@ -1729,8 +1586,7 @@ body.lang-en [data-es] { display: none !important; }
       <p class="section-label" data-es>La Academia</p>
       <h2 class="section-title" data-en>Learn from <em>Wendy</em></h2>
       <h2 class="section-title" data-es>Aprende con <em>Wendy</em></h2>
-      <div class="contact-card" style="margin-top:24px">
-        <div class="contact-card-icon">🎓</div>
+      <div class="contact-card">
         <div class="contact-card-title" data-en>Professional Courses</div>
         <div class="contact-card-title" data-es>Cursos Profesionales</div>
         <div class="contact-list">
@@ -1738,9 +1594,9 @@ body.lang-en [data-es] { display: none !important; }
           <div class="contact-list-item"><div class="contact-dot"></div><span>PMU Certification</span></div>
           <div class="contact-list-item"><div class="contact-dot"></div><span data-en>1-on-1 Consultation</span><span data-es>Consulta 1 a 1</span></div>
         </div>
-        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7" data-en>Pricing varies by class size and availability. Message Wendy on WhatsApp to inquire.</p>
-        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7" data-es>El precio varía según el tamaño del grupo y disponibilidad. Escríbele a Wendy por WhatsApp.</p>
-        <a id="whatsappCoursesLink" href="https://wa.me/18483891934?text=Hi%20Wendy%2C%20I%27m%20interested%20in%20the%20Professional%20Courses%20(Self-Makeup%20Class%2C%20PMU%20Certification%2C%20or%201-on-1%20Consultation).%20Could%20you%20share%20more%20details%3F" target="_blank" class="contact-directions" style="margin-top:12px">
+        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6" data-en>Pricing varies by class size and availability. Message Wendy on WhatsApp to inquire.</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6" data-es>El precio varía según el tamaño del grupo y disponibilidad. Escríbele a Wendy por WhatsApp.</p>
+        <a id="whatsappCoursesLink" href="https://wa.me/18483891934?text=Hi%20Wendy%2C%20I%27m%20interested%20in%20the%20Professional%20Courses%20(Self-Makeup%20Class%2C%20PMU%20Certification%2C%20or%201-on-1%20Consultation).%20Could%20you%20share%20more%20details%3F" target="_blank" class="contact-directions">
           💬 <span data-en>WhatsApp →</span><span data-es>WhatsApp →</span>
         </a>
       </div>
@@ -1751,7 +1607,7 @@ body.lang-en [data-es] { display: none !important; }
 <footer class="footer">
   © 2025 Liz Wendy Beauty Studio LLC · 76 Livingston Ave, New Brunswick, NJ 08901
   <div style="margin-top: 10px;">
-    <a href="/admin.html" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); opacity: 0.7; text-decoration: none; transition: opacity .2s;" onmouseover="this.style.opacity='1'; this.style.color='var(--gold)';" onmouseout="this.style.opacity='0.7'; this.style.color='var(--muted)';">Staff Portal ✦</a>
+    <a href="/admin.html" style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); opacity: 0.7; text-decoration: none;">Staff Portal ✦</a>
   </div>
 </footer>
 
@@ -1775,7 +1631,6 @@ function updateWhatsAppLink(lang) {
   link.href = 'https://wa.me/18483891934?text=' + encodeURIComponent(msg);
 }
 
-// Pilot mode: Waxing & Lash Ext. temporarily not bookable through the site.
 const PILOT_PILL_CONTENT = {
   waxing: {
     label: { en: 'NOT AVAILABLE', es: 'NO DISPONIBLE' },
@@ -1816,7 +1671,6 @@ function setLang(lang) {
   updateWhatsAppLink(lang);
   updatePilotPills(lang);
 
-  // Rebuild dynamic JS-rendered content in new language
   const step2 = document.getElementById('panel-step2');
   if (step2 && step2.classList.contains('active')) {
     buildAccordions();
@@ -1827,7 +1681,7 @@ function setLang(lang) {
     buildConfirmSummary();
   }
 }
-// Init language on load
+
 (function(){
   const lang = localStorage.getItem('lw-lang') || 'en';
   document.body.className = 'lang-' + lang;
@@ -1849,10 +1703,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-// Dynamically hydrate services from Supabase
 async function syncServicesFromSupabase() {
   if (!supabaseClient) return;
-
   try {
     const { data: dbServices, error } = await supabaseClient
       .from('services')
@@ -1862,7 +1714,6 @@ async function syncServicesFromSupabase() {
 
     if (error || !dbServices || !dbServices.length) return;
 
-    // Map database rows into SERVICES format
     dbServices.forEach(item => {
       const cat = item.category;
       if (!SERVICES[cat]) return;
@@ -1881,7 +1732,6 @@ async function syncServicesFromSupabase() {
       }
     });
 
-    // If customer is already on Step 2, re-render accordions with live DB prices
     const step2 = document.getElementById('panel-step2');
     if (step2 && step2.classList.contains('active')) {
       buildAccordions();
@@ -1892,7 +1742,6 @@ async function syncServicesFromSupabase() {
   }
 }
 
-// Run sync in the background on page load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', syncServicesFromSupabase);
 } else {
@@ -1901,445 +1750,69 @@ if (document.readyState === 'loading') {
   
 /* ─── SERVICE DATA ──────────────────────────────────────────────── */
 const SERVICES = {
-makeup: {
+  makeup: {
     label: { en: 'Makeup', es: 'Maquillaje' },
     items: [
-      {
-        id: 'makeup-1',
-        name: 'Occasion Makeup',
-        nameEs: 'Maquillaje de Ocasión',
-        sub: 'Simple look · no lashes · everyday glam',
-        subEs: 'Look simple · sin pestañas · glam diario',
-        price: 95,
-        dur: '45–60 min',
-        img: 'Images/Occasion makeup.png'
-      },
-      {
-        id: 'makeup-2',
-        name: 'Occasion Makeup + Lashes',
-        nameEs: 'Maquillaje de Ocasión + Pestañas',
-        sub: 'Full face with lash application included',
-        subEs: 'Rostro completo con aplicación de pestañas incluida',
-        price: 110,
-        dur: '60–75 min',
-        img: 'Images/Occasion Makeup + Lashes.png'
-      },
-      {
-        id: 'makeup-3',
-        name: 'Bridal Makeup',
-        nameEs: 'Maquillaje de Novia',
-        sub: 'Full glam · touch-up kit · bridal party available',
-        subEs: 'Full glam · kit de retoque · opción para cortejo nupcial',
-        price: 'From $250',
-        dur: 'Consultation',
-        img: 'Images/Bridal Makeup.png'
-      },
-      {
-        id: 'makeup-4',
-        name: 'Elaborate / Complex Look',
-        nameEs: 'Look Elaborado / Complejo',
-        sub: 'Bridal · editorial · advanced techniques',
-        subEs: 'Novia · editorial · técnicas avanzadas',
-        price: '$300–$375',
-        dur: 'Consultation',
-        img: 'Images/Elaborate - Complex Look.png'
-      },
-      {
-        id: 'makeup-5',
-        name: 'Quinceañera',
-        nameEs: 'Quinceañera',
-        sub: 'Glam makeup for your quince celebration',
-        subEs: 'Maquillaje glam para tus quince años',
-        price: '$300–$375',
-        dur: 'Consultation',
-        img: 'Images/Quinceanera.png'
-      }
+      { id: 'makeup-1', name: 'Occasion Makeup', nameEs: 'Maquillaje de Ocasión', sub: 'Simple look · no lashes · everyday glam', subEs: 'Look simple · sin pestañas · glam diario', price: 95, dur: '45–60 min', img: 'Images/Occasion makeup.png' },
+      { id: 'makeup-2', name: 'Occasion Makeup + Lashes', nameEs: 'Maquillaje de Ocasión + Pestañas', sub: 'Full face with lash application included', subEs: 'Rostro completo con aplicación de pestañas incluida', price: 110, dur: '60–75 min', img: 'Images/Occasion Makeup + Lashes.png' },
+      { id: 'makeup-3', name: 'Bridal Makeup', nameEs: 'Maquillaje de Novia', sub: 'Full glam · touch-up kit · bridal party available', subEs: 'Full glam · kit de retoque · opción para cortejo nupcial', price: 'From $250', dur: 'Consultation', img: 'Images/Bridal Makeup.png' },
+      { id: 'makeup-4', name: 'Elaborate / Complex Look', nameEs: 'Look Elaborado / Complejo', sub: 'Bridal · editorial · advanced techniques', subEs: 'Novia · editorial · técnicas avanzadas', price: '$300–$375', dur: 'Consultation', img: 'Images/Elaborate - Complex Look.png' },
+      { id: 'makeup-5', name: 'Quinceañera', nameEs: 'Quinceañera', sub: 'Glam makeup for your quince celebration', subEs: 'Maquillaje glam para tus quince años', price: '$300–$375', dur: 'Consultation', img: 'Images/Quinceanera.png' }
     ]
   },
-
   nails: {
     label: { en: 'Nails', es: 'Uñas' },
     items: [
-      {
-        id: 'nails-1',
-        name: 'Regular Manicure',
-        nameEs: 'Manicura Regular',
-        sub: 'Shape, buff, polish & cuticle care',
-        subEs: 'Forma, limado, esmalte y cuidado de cutículas',
-        priceLabel: '$20–$35',
-        priceLabelEs: '$20–$35',
-        price: 20,
-        dur: '30–45 min',
-        img: 'Images/Regular manicure.jpeg'
-      },
-      {
-        id: 'nails-2',
-        name: 'Gel Manicure',
-        nameEs: 'Manicura Gel',
-        sub: 'Long-lasting gel color · chip-resistant finish',
-        subEs: 'Color en gel de larga duración · acabado resistente',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '45–60 min',
-        img: 'Images/Gel Manicure.png'
-      },
-      {
-        id: 'nails-3',
-        name: 'Acrylic Full Set',
-        nameEs: 'Juego Completo Acrílico',
-        sub: 'Custom length & shape · gel or regular polish',
-        subEs: 'Largo y forma personalizada · esmalte en gel o regular',
-        priceLabel: '$50–$110+',
-        priceLabelEs: '$50–$110+',
-        price: 50,
-        dur: '120 min',
-        img: 'Images/Acrylic full set.png'
-      },
-      {
-        id: 'nails-4',
-        name: 'Acrylic Refill',
-        nameEs: 'Relleno Acrílico',
-        sub: '2–3 week fill · shape correction included',
-        subEs: 'Relleno de 2–3 semanas · corrección de forma incluida',
-        priceLabel: '$55–$65',
-        priceLabelEs: '$55–$65',
-        price: 55,
-        dur: '90 min',
-        img: 'Images/Acrylic refill.png'
-      },
-      {
-        id: 'nails-5',
-        name: 'Gel X / Soft Gel Tips',
-        nameEs: 'Gel X / Tips de Gel Suave',
-        sub: 'Full coverage tips · no drilling · natural finish',
-        subEs: 'Tips de cobertura completa · sin torno · acabado natural',
-        priceLabel: '$70–$100+',
-        priceLabelEs: '$70–$100+',
-        price: 70,
-        dur: '75 min',
-        img: 'Images/Gel X - Soft Gel Tips.png'
-      },
-      {
-        id: 'nails-6',
-        name: 'Dip Powder / SNS',
-        nameEs: 'Dip Powder / SNS',
-        sub: 'Odorless · lightweight · strong & durable',
-        subEs: 'Sin olor · ligero · resistente y duradero',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '60 min',
-        img: 'Images/Dip Powder.png'
-      },
-      {
-        id: 'nails-7',
-        name: 'Regular Pedicure',
-        nameEs: 'Pedicura Regular',
-        sub: 'Soak, trim, shape & polish',
-        subEs: 'Remojo, corte, limado y esmalte',
-        priceLabel: '$45–$65',
-        priceLabelEs: '$45–$65',
-        price: 45,
-        dur: '45 min',
-        img: 'Images/Regular pedicure.png'
-      },
-      {
-        id: 'nails-7b',
-        name: 'Gel Pedicure',
-        nameEs: 'Pedicura de Gel',
-        sub: 'Long-lasting gel polish · chip-resistant finish',
-        subEs: 'Esmalte en gel de larga duración · acabado resistente',
-        price: 45,
-        dur: '45–60 min',
-        img: 'Images/logo.png'
-      },
-      {
-        id: 'nails-8',
-        name: 'Spa / Deluxe Pedicure',
-        nameEs: 'Pedicura Spa / Deluxe',
-        sub: 'Extended soak, scrub, mask & massage',
-        subEs: 'Remojo prolongado, exfoliación, mascarilla y masaje',
-        priceLabel: '$75–$110',
-        priceLabelEs: '$75–$110',
-        price: 75,
-        dur: '60–75 min',
-        img: 'Images/Spa - Deluxe Pedicure.png'
-      },
-      {
-        id: 'nails-9',
-        name: 'Nail Art / Designs',
-        nameEs: 'Arte de Uñas / Diseños',
-        sub: 'Hand-painted art, gems, chrome, cat eye',
-        subEs: 'Arte a mano alzada, pedrería, efecto cromo, ojo de gato',
-        priceLabel: '+$5–$20/nail',
-        priceLabelEs: '+$5–$20/uña',
-        price: 5,
-        dur: 'Varies',
-        img: 'Images/nail art designs.png'
-      }
+      { id: 'nails-1', name: 'Regular Manicure', nameEs: 'Manicura Regular', sub: 'Shape, buff, polish & cuticle care', subEs: 'Forma, limado, esmalte y cuidado de cutículas', priceLabel: '$20–$35', priceLabelEs: '$20–$35', price: 20, dur: '30–45 min', img: 'Images/Regular manicure.jpeg' },
+      { id: 'nails-2', name: 'Gel Manicure', nameEs: 'Manicura Gel', sub: 'Long-lasting gel color · chip-resistant finish', subEs: 'Color en gel de larga duración · acabado resistente', priceLabel: '$45–$65', priceLabelEs: '$45–$65', price: 45, dur: '45–60 min', img: 'Images/Gel Manicure.png' },
+      { id: 'nails-3', name: 'Acrylic Full Set', nameEs: 'Juego Completo Acrílico', sub: 'Custom length & shape · gel or regular polish', subEs: 'Largo y forma personalizada · esmalte en gel o regular', priceLabel: '$50–$110+', priceLabelEs: '$50–$110+', price: 50, dur: '120 min', img: 'Images/Acrylic full set.png' },
+      { id: 'nails-4', name: 'Acrylic Refill', nameEs: 'Relleno Acrílico', sub: '2–3 week fill · shape correction included', subEs: 'Relleno de 2–3 semanas · corrección de forma incluida', priceLabel: '$55–$65', priceLabelEs: '$55–$65', price: 55, dur: '90 min', img: 'Images/Acrylic refill.png' },
+      { id: 'nails-5', name: 'Gel X / Soft Gel Tips', nameEs: 'Gel X / Tips de Gel Suave', sub: 'Full coverage tips · no drilling · natural finish', subEs: 'Tips de cobertura completa · sin torno · acabado natural', priceLabel: '$70–$100+', priceLabelEs: '$70–$100+', price: 70, dur: '75 min', img: 'Images/Gel X - Soft Gel Tips.png' },
+      { id: 'nails-6', name: 'Dip Powder / SNS', nameEs: 'Dip Powder / SNS', sub: 'Odorless · lightweight · strong & durable', subEs: 'Sin olor · ligero · resistente y duradero', priceLabel: '$45–$65', priceLabelEs: '$45–$65', price: 45, dur: '60 min', img: 'Images/Dip Powder.png' },
+      { id: 'nails-7', name: 'Regular Pedicure', nameEs: 'Pedicura Regular', sub: 'Soak, trim, shape & polish', subEs: 'Remojo, corte, limado y esmalte', priceLabel: '$45–$65', priceLabelEs: '$45–$65', price: 45, dur: '45 min', img: 'Images/Regular pedicure.png' },
+      { id: 'nails-7b', name: 'Gel Pedicure', nameEs: 'Pedicura de Gel', sub: 'Long-lasting gel polish · chip-resistant finish', subEs: 'Esmalte en gel de larga duración · acabado resistente', price: 45, dur: '45–60 min', img: 'Images/logo.png' },
+      { id: 'nails-8', name: 'Spa / Deluxe Pedicure', nameEs: 'Pedicura Spa / Deluxe', sub: 'Extended soak, scrub, mask & massage', subEs: 'Remojo prolongado, exfoliación, mascarilla y masaje', priceLabel: '$75–$110', priceLabelEs: '$75–$110', price: 75, dur: '60–75 min', img: 'Images/Spa - Deluxe Pedicure.png' },
+      { id: 'nails-9', name: 'Nail Art / Designs', nameEs: 'Arte de Uñas / Diseños', sub: 'Hand-painted art, gems, chrome, cat eye', subEs: 'Arte a mano alzada, pedrería, efecto cromo, ojo de gato', priceLabel: '+$5–$20/nail', priceLabelEs: '+$5–$20/uña', price: 5, dur: 'Varies', img: 'Images/nail art designs.png' }
     ]
   },
   waxing: {
     label: { en: 'Waxing', es: 'Depilación' },
     items: [
-      {
-        id: 'wax-1',
-        name: 'Eyebrows',
-        nameEs: 'Cejas',
-        sub: 'Precise shaping & clean edges',
-        subEs: 'Diseño preciso y bordes limpios',
-        priceLabel: '$10–$25',
-        priceLabelEs: '$10–$25',
-        price: 10,
-        dur: '15 min',
-        img: 'Images/Eyebrows.jpeg'
-      },
-      {
-        id: 'wax-2',
-        name: 'Upper Lip',
-        nameEs: 'Labio Superior',
-        sub: 'Quick & clean removal',
-        subEs: 'Depilación rápida y limpia',
-        priceLabel: '$8–$15',
-        priceLabelEs: '$8–$15',
-        price: 8,
-        dur: '10 min',
-        img: 'Images/Upper lip.jpeg'
-      },
-      {
-        id: 'wax-3',
-        name: 'Underarms',
-        nameEs: 'Axilas',
-        sub: 'Full underarm wax treatment',
-        subEs: 'Tratamiento completo para axilas',
-        priceLabel: '$15–$30',
-        priceLabelEs: '$15–$30',
-        price: 15,
-        dur: '15 min',
-        img: 'Images/Underarms.jpeg'
-      },
-      {
-        id: 'wax-4',
-        name: 'Bikini Line',
-        nameEs: 'Línea de Bikini',
-        sub: 'Clean bikini line shaping',
-        subEs: 'Depilación limpia del área del bikini',
-        priceLabel: '$25–$50',
-        priceLabelEs: '$25–$50',
-        price: 25,
-        dur: '20 min',
-        img: 'Images/Bikini Line.png'
-      },
-      {
-        id: 'wax-5',
-        name: 'Brazilian Wax',
-        nameEs: 'Depilación Brasileña',
-        sub: 'Full removal · gentle formula',
-        subEs: 'Depilación completa · fórmula suave',
-        priceLabel: '$55–$90+',
-        priceLabelEs: '$55–$90+',
-        price: 55,
-        dur: '30 min',
-        img: 'Images/brazilian wax.png'
-      },
-      {
-        id: 'wax-6',
-        name: 'Full Legs',
-        nameEs: 'Piernas Completas',
-        sub: 'Toes to thigh · full leg waxing',
-        subEs: 'Desde los dedos hasta el muslo',
-        priceLabel: '$60–$100',
-        priceLabelEs: '$60–$100',
-        price: 60,
-        dur: '45 min',
-        img: 'Images/full legs.png'
-      },
-      {
-        id: 'wax-7',
-        name: 'Half Legs',
-        nameEs: 'Media Pierna',
-        sub: 'Upper or lower half legs',
-        subEs: 'Parte superior o inferior',
-        priceLabel: '$35–$60',
-        priceLabelEs: '$35–$60',
-        price: 35,
-        dur: '25 min',
-        img: 'Images/half legs.png'
-      },
-      {
-        id: 'wax-8',
-        name: 'Full Arms',
-        nameEs: 'Brazos Completos',
-        sub: 'Wrists to shoulders · full arm wax',
-        subEs: 'De muñecas a hombros',
-        priceLabel: '$35–$60',
-        priceLabelEs: '$35–$60',
-        price: 35,
-        dur: '25 min',
-        img: 'Images/arm wax.png'
-      },
-      {
-        id: 'wax-9',
-        name: 'Back Wax',
-        nameEs: 'Espalda Completa',
-        sub: 'Full back treatment',
-        subEs: 'Tratamiento completo de espalda',
-        priceLabel: '$50–$90',
-        priceLabelEs: '$50–$90',
-        price: 50,
-        dur: '30 min',
-        img: 'Images/back wax.png'
-      },
-      {
-        id: 'wax-10',
-        name: 'Full Face Wax',
-        nameEs: 'Rostro Completo',
-        sub: 'Brows, lip, chin & cheeks',
-        subEs: 'Cejas, labio, mentón y mejillas',
-        priceLabel: '$35–$70',
-        priceLabelEs: '$35–$70',
-        price: 35,
-        dur: '30 min',
-        img: 'Images/full face wax.png'
-      },
-      {
-        id: 'wax-11',
-        name: 'Full Body Wax',
-        nameEs: 'Cuerpo Completo',
-        sub: 'Head to toe · complete treatment',
-        subEs: 'De pies a cabeza · tratamiento completo',
-        priceLabel: '$150–$300+',
-        priceLabelEs: '$150–$300+',
-        price: 150,
-        dur: '90–120 min',
-        img: 'Images/full body wax.png'
-      }
+      { id: 'wax-1', name: 'Eyebrows', nameEs: 'Cejas', sub: 'Precise shaping & clean edges', subEs: 'Diseño preciso y bordes limpios', priceLabel: '$10–$25', priceLabelEs: '$10–$25', price: 10, dur: '15 min', img: 'Images/Eyebrows.jpeg' },
+      { id: 'wax-2', name: 'Upper Lip', nameEs: 'Labio Superior', sub: 'Quick & clean removal', subEs: 'Depilación rápida y limpia', priceLabel: '$8–$15', priceLabelEs: '$8–$15', price: 8, dur: '10 min', img: 'Images/Upper lip.jpeg' },
+      { id: 'wax-3', name: 'Underarms', nameEs: 'Axilas', sub: 'Full underarm wax treatment', subEs: 'Tratamiento completo para axilas', priceLabel: '$15–$30', priceLabelEs: '$15–$30', price: 15, dur: '15 min', img: 'Images/Underarms.jpeg' },
+      { id: 'wax-4', name: 'Bikini Line', nameEs: 'Línea de Bikini', sub: 'Clean bikini line shaping', subEs: 'Depilación limpia del área del bikini', priceLabel: '$25–$50', priceLabelEs: '$25–$50', price: 25, dur: '20 min', img: 'Images/Bikini Line.png' },
+      { id: 'wax-5', name: 'Brazilian Wax', nameEs: 'Depilación Brasileña', sub: 'Full removal · gentle formula', subEs: 'Depilación completa · fórmula suave', priceLabel: '$55–$90+', priceLabelEs: '$55–$90+', price: 55, dur: '30 min', img: 'Images/brazilian wax.png' },
+      { id: 'wax-6', name: 'Full Legs', nameEs: 'Piernas Completas', sub: 'Toes to thigh · full leg waxing', subEs: 'Desde los dedos hasta el muslo', priceLabel: '$60–$100', priceLabelEs: '$60–$100', price: 60, dur: '45 min', img: 'Images/full legs.png' },
+      { id: 'wax-7', name: 'Half Legs', nameEs: 'Media Pierna', sub: 'Upper or lower half legs', subEs: 'Parte superior o inferior', priceLabel: '$35–$60', priceLabelEs: '$35–$60', price: 35, dur: '25 min', img: 'Images/half legs.png' },
+      { id: 'wax-8', name: 'Full Arms', nameEs: 'Brazos Completos', sub: 'Wrists to shoulders · full arm wax', subEs: 'De muñecas a hombros', priceLabel: '$35–$60', priceLabelEs: '$35–$60', price: 35, dur: '25 min', img: 'Images/arm wax.png' },
+      { id: 'wax-9', name: 'Back Wax', nameEs: 'Espalda Completa', sub: 'Full back treatment', subEs: 'Tratamiento completo de espalda', priceLabel: '$50–$90', priceLabelEs: '$50–$90', price: 50, dur: '30 min', img: 'Images/back wax.png' },
+      { id: 'wax-10', name: 'Full Face Wax', nameEs: 'Rostro Completo', sub: 'Brows, lip, chin & cheeks', subEs: 'Cejas, labio, mentón y mejillas', priceLabel: '$35–$70', priceLabelEs: '$35–$70', price: 35, dur: '30 min', img: 'Images/full face wax.png' },
+      { id: 'wax-11', name: 'Full Body Wax', nameEs: 'Cuerpo Completo', sub: 'Head to toe · complete treatment', subEs: 'De pies a cabeza · tratamiento completo', priceLabel: '$150–$300+', priceLabelEs: '$150–$300+', price: 150, dur: '90–120 min', img: 'Images/full body wax.png' }
     ]
   },
   pmu: {
     label: { en: 'PMU', es: 'PMU' },
     items: [
-      {
-        id: 'pmu-1',
-        name: 'Powder Brows / Ombré',
-        nameEs: 'Cejas en Polvo / Ombré',
-        sub: 'Semi-permanent soft powder pixel effect',
-        subEs: 'Efecto pixelado suave semipermanente',
-        price: 350,
-        dur: '120 min',
-        img: 'Images/powder brows - ombre.png'
-      },
-      {
-        id: 'pmu-2',
-        name: 'Combo Brows',
-        nameEs: 'Cejas Combinadas',
-        sub: 'Microblading strokes + shading definition',
-        subEs: 'Trazos pelo a pelo + sombreado',
-        price: 400,
-        dur: '150 min',
-        img: 'Images/combo brows.png'
-      },
-      {
-        id: 'pmu-3',
-        name: 'Lip Blush PMU',
-        nameEs: 'Micropigmentación de Labios',
-        sub: 'Natural tinted flush · defined shape & color',
-        subEs: 'Tono natural · definición de forma y color',
-        price: 350,
-        dur: '120 min',
-        img: 'Images/lip bluch pmu.png'
-      },
-      {
-        id: 'pmu-4',
-        name: 'Permanent Eyeliner',
-        nameEs: 'Delineado Permanente',
-        sub: 'Lash line enhancement · smudge-free',
-        subEs: 'Realce de línea de pestañas · a prueba de manchas',
-        price: 250,
-        dur: '90 min',
-        img: 'Images/Permanent eyeliner.png'
-      },
-      {
-        id: 'pmu-5',
-        name: '6–8 Week PMU Touch-Up',
-        nameEs: 'Retoque PMU (6–8 Semanas)',
-        sub: 'Perfecting session for new procedures',
-        subEs: 'Sesión de perfeccionamiento',
-        price: 100,
-        dur: '60 min',
-        img: 'Images/6-8 week PMU touch up.png'
-      },
-      {
-        id: 'pmu-6',
-        name: 'Annual PMU Touch-Up',
-        nameEs: 'Retoque Anual de PMU',
-        sub: 'Color boost & shape refresh',
-        subEs: 'Refresco de color y contorno anual',
-        price: 200,
-        dur: '90 min',
-        img: 'Images/annual pmu touch-up.png'
-      }
+      { id: 'pmu-1', name: 'Powder Brows / Ombré', nameEs: 'Cejas en Polvo / Ombré', sub: 'Semi-permanent soft powder pixel effect', subEs: 'Efecto pixelado suave semipermanente', price: 350, dur: '120 min', img: 'Images/powder brows - ombre.png' },
+      { id: 'pmu-2', name: 'Combo Brows', nameEs: 'Cejas Combinadas', sub: 'Microblading strokes + shading definition', subEs: 'Trazos pelo a pelo + sombreado', price: 400, dur: '150 min', img: 'Images/combo brows.png' },
+      { id: 'pmu-3', name: 'Lip Blush PMU', nameEs: 'Micropigmentación de Labios', sub: 'Natural tinted flush · defined shape & color', subEs: 'Tono natural · definición de forma y color', price: 350, dur: '120 min', img: 'Images/lip bluch pmu.png' },
+      { id: 'pmu-4', name: 'Permanent Eyeliner', nameEs: 'Delineado Permanente', sub: 'Lash line enhancement · smudge-free', subEs: 'Realce de línea de pestañas · a prueba de manchas', price: 250, dur: '90 min', img: 'Images/Permanent eyeliner.png' },
+      { id: 'pmu-5', name: '6–8 Week PMU Touch-Up', nameEs: 'Retoque PMU (6–8 Semanas)', sub: 'Perfecting session for new procedures', subEs: 'Sesión de perfeccionamiento', price: 100, dur: '60 min', img: 'Images/6-8 week PMU touch up.png' },
+      { id: 'pmu-6', name: 'Annual PMU Touch-Up', nameEs: 'Retoque Anual de PMU', sub: 'Color boost & shape refresh', subEs: 'Refresco de color y contorno anual', price: 200, dur: '90 min', img: 'Images/annual pmu touch-up.png' }
     ]
   },
   lashext: {
     label: { en: 'Lash Ext.', es: 'Pestañas' },
     items: [
-      {
-        id: 'lash-1',
-        name: 'Classic Lash Extensions',
-        nameEs: 'Extensiones Clásicas',
-        sub: '1:1 natural extension application',
-        subEs: 'Aplicación natural 1 a 1',
-        price: 120,
-        dur: '90–120 min',
-        img: 'Images/Classic lash extensions.jpeg'
-      },
-      {
-        id: 'lash-2',
-        name: 'Hybrid Lash Extensions',
-        nameEs: 'Extensiones Híbridas',
-        sub: 'Blend of classic & volume fans',
-        subEs: 'Mezcla de clásicas y abanicos de volumen',
-        price: 140,
-        dur: '120 min',
-        img: 'Images/Hybrid lash extensions.png'
-      },
-      {
-        id: 'lash-3',
-        name: 'Volume Lash Extensions',
-        nameEs: 'Extensiones de Volumen',
-        sub: 'Full, dense, fluffy lash look',
-        subEs: 'Look de pestañas lleno y tupido',
-        price: 160,
-        dur: '120–150 min',
-        img: 'Images/Volume lash exntensions.png'
-      },
-      {
-        id: 'lash-4',
-        name: 'Lash Lift + Tint',
-        nameEs: 'Lifting + Tinte de Pestañas',
-        sub: 'Natural curl enhancement with tint',
-        subEs: 'Rizado y coloración de pestañas naturales',
-        price: 85,  
-        dur: '60 min',
-        img: 'Images/Lash Lift + Tint (Image coming soon).png'
-      },
-      {
-        id: 'lash-5',
-        name: 'Lash Lift + Tint (Image coming soon)',
-        nameEs: 'Lifting + Tinte (Imagen pronto)',
-        sub: 'Lift, curl & darken for added definition',
-        subEs: 'Levanta, riza y oscurece para mayor definición',
-        priceLabel: '$80–$120',
-        priceLabelEs: '$80–$120',
-        price: 80,
-        dur: '60 min',
-        img: 'Images/logo.png'
-      }
+      { id: 'lash-1', name: 'Classic Lash Extensions', nameEs: 'Extensiones Clásicas', sub: '1:1 natural extension application', subEs: 'Aplicación natural 1 a 1', price: 120, dur: '90–120 min', img: 'Images/Classic lash extensions.jpeg' },
+      { id: 'lash-2', name: 'Hybrid Lash Extensions', nameEs: 'Extensiones Híbridas', sub: 'Blend of classic & volume fans', subEs: 'Mezcla de clásicas y abanicos de volumen', price: 140, dur: '120 min', img: 'Images/Hybrid lash extensions.png' },
+      { id: 'lash-3', name: 'Volume Lash Extensions', nameEs: 'Extensiones de Volumen', sub: 'Full, dense, fluffy lash look', subEs: 'Look de pestañas lleno y tupido', price: 160, dur: '120–150 min', img: 'Images/Volume lash exntensions.png' },
+      { id: 'lash-4', name: 'Lash Lift + Tint', nameEs: 'Lifting + Tinte de Pestañas', sub: 'Natural curl enhancement with tint', subEs: 'Rizado y coloración de pestañas naturales', price: 85, dur: '60 min', img: 'Images/Lash Lift + Tint (Image coming soon).png' },
+      { id: 'lash-5', name: 'Lash Lift + Tint (Image coming soon)', nameEs: 'Lifting + Tinte (Imagen pronto)', sub: 'Lift, curl & darken for added definition', subEs: 'Levanta, riza y oscurece para mayor definición', priceLabel: '$80–$120', priceLabelEs: '$80–$120', price: 80, dur: '60 min', img: 'Images/logo.png' }
     ]
   },
- mobile: {
+  mobile: {
     label: { en: 'Mobile', es: 'A Domicilio' },
     items: [
       { id: 'mob-1', name: 'Mobile Makeup (No Lashes)', nameEs: 'Maquillaje a Domicilio (Sin Pestañas)', sub: 'On-location service · within area', subEs: 'Servicio a domicilio · en el área', price: 125, dur: '60 min', img: 'Images/Occasion makeup.png' },
@@ -2347,136 +1820,60 @@ makeup: {
       { id: 'mob-3', name: 'Bridal Party Mobile', nameEs: 'Grupo de Novia a Domicilio', sub: 'Multiple people · on-site at venue', subEs: 'Múltiples personas · en el lugar del evento', price: 'Consultation', dur: 'Consultation', img: 'Images/Bridal Makeup.png' }
     ]
   },
-
-  /* ── FACIALS ──
-     Unlike other categories, this one renders in three tiers via
-     buildFacialAccordion() rather than the generic flat list. The
-     `tier` field on each item drives that grouping:
-       1 = Essentials · 2 = Targeted Treatments · 3 = Signature
-     Add-ons (isAddon) are bookable on their own but are hidden from
-     the main tiers and shown in their own group. `pairsWith` only
-     drives the static "Enhance this treatment" text under a Tier 2
-     row — it is a copy nudge, not a data relationship. */
   facial: {
     label: { en: 'Facials', es: 'Faciales' },
     emoji: '✨',
     items: [
-      /* ── TIER 1 · ESSENTIALS ── */
-      { id:'fac-1', tier:1, name:'Express Facial',              nameEs:'Facial Express',
-        sub:'Quick cleanse + hydration · best for a fast refresh',
-        subEs:'Limpieza rápida + hidratación · ideal para un refresco rápido',
-        price:50,  time:'30 min' },
-      { id:'fac-2', tier:1, name:'Deep Cleansing Facial',       nameEs:'Limpieza Facial Profunda',
-        sub:'Steam, exfoliation & extractions · best for monthly upkeep',
-        subEs:'Vapor, exfoliación y extracciones · ideal para mantenimiento mensual',
-        price:95,  time:'75 min' },
-
-      /* ── TIER 2 · TARGETED TREATMENTS ── */
-      { id:'fac-3', tier:2, name:'Hydrating Facial',            nameEs:'Facial Hidratante',
-        sub:'Deep moisture boost · best for dry, dehydrated skin',
-        subEs:'Hidratación profunda · ideal para piel seca y deshidratada',
-        price:85,  time:'60 min', pairsWith:'collagen' },
-      { id:'fac-4', tier:2, name:'Calming Facial',              nameEs:'Facial Calmante',
-        sub:'Reduces redness & soothes · best for sensitive, reactive skin',
-        subEs:'Reduce el enrojecimiento y calma · ideal para piel sensible y reactiva',
-        price:90,  time:'60 min', pairsWith:'lymphatic' },
-      { id:'fac-5', tier:2, name:'Vitamin C Brightening Facial',nameEs:'Facial Iluminador con Vitamina C',
-        sub:'Evens tone & adds glow · best for dull or uneven skin',
-        subEs:'Unifica el tono y da luminosidad · ideal para piel apagada o despareja',
-        price:95,  time:'60 min', pairsWith:'led' },
-      { id:'fac-6', tier:2, name:'Acne Facial',                 nameEs:'Facial para Acné',
-        sub:'Clears pores & controls oil · best for acne-prone skin',
-        subEs:'Limpia poros y controla la grasa · ideal para piel con acné',
-        price:110, time:'75 min', pairsWith:'highfreq' },
-      { id:'fac-7', tier:2, name:'Anti-Aging Facial',           nameEs:'Facial Antiedad',
-        sub:'Softens fine lines & firms · best for mature skin',
-        subEs:'Suaviza líneas finas y reafirma · ideal para piel madura',
-        price:120, time:'75 min', pairsWith:'eye' },
-      { id:'fac-8', tier:2, name:'Dermaplaning Facial',         nameEs:'Dermaplaning Facial',
-        sub:'Removes peach fuzz & dead skin · best for smooth, luminous skin',
-        subEs:'Elimina vello facial y células muertas · ideal para piel suave y luminosa',
-        price:110, time:'60 min', pairsWith:'collagen' },
-      { id:'fac-9', tier:2, name:'Microdermabrasion',           nameEs:'Microdermoabrasión',
-        sub:'Mechanical resurfacing · best for texture, pores & scarring',
-        subEs:'Exfoliación mecánica · ideal para textura, poros y marcas',
-        price:120, time:'60 min', pairsWith:'led' },
-
-      /* ── TIER 3 · SIGNATURE EXPERIENCES ── */
-      { id:'fac-10', tier:3, name:'Premium Facial',             nameEs:'Facial Premium',
-        sub:'Deep cleanse + dermaplaning + mask + LED therapy',
-        subEs:'Limpieza profunda + dermaplaning + mascarilla + terapia LED',
-        price:165, time:'90 min' },
-      { id:'fac-11', tier:3, name:'Glow Skin Package',          nameEs:'Paquete Glow Skin',
-        sub:'Deep cleanse + dermaplaning + collagen mask · save $20',
-        subEs:'Limpieza profunda + dermaplaning + mascarilla de colágeno · ahorra $20',
-        price:145, time:'90 min' },
-      { id:'fac-12', tier:3, name:'Luxury Facial Package',      nameEs:'Paquete Luxury Facial',
-        sub:'Deep cleanse + microdermabrasion + LED + eye contour',
-        subEs:'Limpieza profunda + microdermoabrasión + LED + contorno de ojos',
-        price:180, time:'105 min' },
-
-      /* ── ADD-ONS · bookable, but grouped separately ── */
-      { id:'fac-add-led',       isAddon:true, key:'led',       name:'LED Light Therapy',        nameEs:'Terapia de Luz LED',
-        sub:'Calms inflammation & boosts renewal',  subEs:'Calma la inflamación y estimula la renovación',
-        price:20, time:'15 min' },
-      { id:'fac-add-eye',       isAddon:true, key:'eye',       name:'Eye Contour Treatment',    nameEs:'Tratamiento Contorno de Ojos',
-        sub:'Targets puffiness & fine lines',       subEs:'Trata la hinchazón y líneas finas',
-        price:20, time:'15 min' },
-      { id:'fac-add-collagen',  isAddon:true, key:'collagen',  name:'Collagen Mask',            nameEs:'Mascarilla de Colágeno',
-        sub:'Intense plumping & firming boost',     subEs:'Efecto reafirmante e hidratante intenso',
-        price:25, time:'15 min' },
-      { id:'fac-add-highfreq',  isAddon:true, key:'highfreq',  name:'High Frequency',           nameEs:'Alta Frecuencia',
-        sub:'Kills bacteria & speeds healing',      subEs:'Elimina bacterias y acelera la cicatrización',
-        price:20, time:'15 min' },
-      { id:'fac-add-lymphatic', isAddon:true, key:'lymphatic', name:'Facial Massage & Lymphatic Drainage', nameEs:'Masaje Facial y Drenaje Linfático',
-        sub:'Releases tension & reduces puffiness',  subEs:'Libera tensión y reduce la hinchazón',
-        price:25, time:'20 min' },
-      { id:'fac-add-neck',      isAddon:true, key:'neck',      name:'Neck & Décolletage Treatment', nameEs:'Tratamiento para Cuello y Escote',
-        sub:'Extends your facial below the jawline', subEs:'Extiende tu facial más allá del mentón',
-        price:30, time:'20 min' },
+      { id:'fac-1', tier:1, name:'Express Facial', nameEs:'Facial Express', sub:'Quick cleanse + hydration · best for a fast refresh', subEs:'Limpieza rápida + hidratación · ideal para un refresco rápido', price:50, time:'30 min' },
+      { id:'fac-2', tier:1, name:'Deep Cleansing Facial', nameEs:'Limpieza Facial Profunda', sub:'Steam, exfoliation & extractions · best for monthly upkeep', subEs:'Vapor, exfoliación y extracciones · ideal para mantenimiento mensual', price:95, time:'75 min' },
+      { id:'fac-3', tier:2, name:'Hydrating Facial', nameEs:'Facial Hidratante', sub:'Deep moisture boost · best for dry, dehydrated skin', subEs:'Hidratación profunda · ideal para piel seca y deshidratada', price:85, time:'60 min', pairsWith:'collagen' },
+      { id:'fac-4', tier:2, name:'Calming Facial', nameEs:'Facial Calmante', sub:'Reduces redness & soothes · best for sensitive, reactive skin', subEs:'Reduce el enrojecimiento y calma · ideal para piel sensible y reactiva', price:90, time:'60 min', pairsWith:'lymphatic' },
+      { id:'fac-5', tier:2, name:'Vitamin C Brightening Facial', nameEs:'Facial Iluminador con Vitamina C', sub:'Evens tone & adds glow · best for dull or uneven skin', subEs:'Unifica el tono y da luminosidad · ideal para piel apagada o despareja', price:95, time:'60 min', pairsWith:'led' },
+      { id:'fac-6', tier:2, name:'Acne Facial', nameEs:'Facial para Acné', sub:'Clears pores & controls oil · best for acne-prone skin', subEs:'Limpia poros y controla la grasa · ideal para piel con acné', price:110, time:'75 min', pairsWith:'highfreq' },
+      { id:'fac-7', tier:2, name:'Anti-Aging Facial', nameEs:'Facial Antiedad', sub:'Softens fine lines & firms · best for mature skin', subEs:'Suaviza líneas finas y reafirma · ideal para piel madura', price:120, time:'75 min', pairsWith:'eye' },
+      { id:'fac-8', tier:2, name:'Dermaplaning Facial', nameEs:'Dermaplaning Facial', sub:'Removes peach fuzz & dead skin · best for smooth, luminous skin', subEs:'Elimina vello facial y células muertas · ideal para piel suave y luminosa', price:110, time:'60 min', pairsWith:'collagen' },
+      { id:'fac-9', tier:2, name:'Microdermabrasion', nameEs:'Microdermoabrasión', sub:'Mechanical resurfacing · best for texture, pores & scarring', subEs:'Exfoliación mecánica · ideal para textura, poros y marcas', price:120, time:'60 min', pairsWith:'led' },
+      { id:'fac-10', tier:3, name:'Premium Facial', nameEs:'Facial Premium', sub:'Deep cleanse + dermaplaning + mask + LED therapy', subEs:'Limpieza profunda + dermaplaning + mascarilla + terapia LED', price:165, time:'90 min' },
+      { id:'fac-11', tier:3, name:'Glow Skin Package', nameEs:'Paquete Glow Skin', sub:'Deep cleanse + dermaplaning + collagen mask · save $20', subEs:'Limpieza profunda + dermaplaning + mascarilla de colágeno · ahorra $20', price:145, time:'90 min' },
+      { id:'fac-12', tier:3, name:'Luxury Facial Package', nameEs:'Paquete Luxury Facial', sub:'Deep cleanse + microdermabrasion + LED + eye contour', subEs:'Limpieza profunda + microdermoabrasión + LED + contorno de ojos', price:180, time:'105 min' },
+      { id:'fac-add-led', isAddon:true, key:'led', name:'LED Light Therapy', nameEs:'Terapia de Luz LED', sub:'Calms inflammation & boosts renewal', subEs:'Calma la inflamación y estimula la renovación', price:20, time:'15 min' },
+      { id:'fac-add-eye', isAddon:true, key:'eye', name:'Eye Contour Treatment', nameEs:'Tratamiento Contorno de Ojos', sub:'Targets puffiness & fine lines', subEs:'Trata la hinchazón y líneas finas', price:20, time:'15 min' },
+      { id:'fac-add-collagen', isAddon:true, key:'collagen', name:'Collagen Mask', nameEs:'Mascarilla de Colágeno', sub:'Intense plumping & firming boost', subEs:'Efecto reafirmante e hidratante intenso', price:25, time:'15 min' },
+      { id:'fac-add-highfreq', isAddon:true, key:'highfreq', name:'High Frequency', nameEs:'Alta Frecuencia', sub:'Kills bacteria & speeds healing', subEs:'Elimina bacterias y acelera la cicatrización', price:20, time:'15 min' },
+      { id:'fac-add-lymphatic', isAddon:true, key:'lymphatic', name:'Facial Massage & Lymphatic Drainage', nameEs:'Masaje Facial y Drenaje Linfático', sub:'Releases tension & reduces puffiness', subEs:'Libera tensión y reduce la hinchazón', price:25, time:'20 min' },
+      { id:'fac-add-neck', isAddon:true, key:'neck', name:'Neck & Décolletage Treatment', nameEs:'Tratamiento para Cuello y Escote', sub:'Extends your facial below the jawline', subEs:'Extiende tu facial más allá del mentón', price:30, time:'20 min' },
     ]
   },
 };
 
-/* Facial tier headings + the membership block. Kept next to the data
-   (not hardcoded in the render function) so copy can be edited without
-   touching logic. */
 const FACIAL_TIERS = [
   { id:'essentials', tier:1,
-    title: { en:'The Essentials',           es:'Los Esenciales' },
-    blurb: { en:'Quick refreshes and regular upkeep — perfect if you are short on time, or new to facials and want to start simple.',
-             es:'Refrescos rápidos y mantenimiento regular — perfectos si tienes poco tiempo, o si es tu primera vez y quieres empezar simple.' } },
-  { id:'targeted',   tier:2,
-    title: { en:'Targeted Treatments',      es:'Tratamientos Específicos' },
-    blurb: { en:'Built around one specific concern — dryness, sensitivity, acne, uneven tone or visible signs of aging.',
-             es:'Diseñados para una necesidad específica — sequedad, sensibilidad, acné, tono desigual o signos de la edad.' } },
-  { id:'signature',  tier:3,
-    title: { en:'The Signature Experiences',es:'Las Experiencias Signature' },
-    blurb: { en:'Our most complete treatments and best-value bundles, for when you want the full experience.',
-             es:'Nuestros tratamientos más completos y paquetes de mejor valor, para cuando quieres la experiencia completa.' } },
-  { id:'addons',     tier:'addon',
-    title: { en:'Enhance Your Facial',      es:'Mejora Tu Facial' },
-    blurb: { en:'Optional add-ons — select any alongside the facial above to customize your treatment.',
-             es:'Complementos opcionales — selecciona los que quieras junto a tu facial para personalizar tu tratamiento.' } },
+    title: { en:'The Essentials', es:'Los Esenciales' },
+    blurb: { en:'Quick refreshes and regular upkeep — perfect if you are short on time, or new to facials and want to start simple.', es:'Refrescos rápidos y mantenimiento regular — perfectos si tienes poco tiempo, o si es tu primera vez y quieres empezar simple.' } },
+  { id:'targeted', tier:2,
+    title: { en:'Targeted Treatments', es:'Tratamientos Específicos' },
+    blurb: { en:'Built around one specific concern — dryness, sensitivity, acne, uneven tone or visible signs of aging.', es:'Diseñados para una necesidad específica — sequedad, sensibilidad, acné, tono desigual o signos de la edad.' } },
+  { id:'signature', tier:3,
+    title: { en:'The Signature Experiences', es:'Las Experiencias Signature' },
+    blurb: { en:'Our most complete treatments and best-value bundles, for when you want the full experience.', es:'Nuestros tratamientos más completos y paquetes de mejor valor, para cuando quieres la experiencia completa.' } },
+  { id:'addons', tier:'addon',
+    title: { en:'Enhance Your Facial', es:'Mejora Tu Facial' },
+    blurb: { en:'Optional add-ons — select any alongside the facial above to customize your treatment.', es:'Complementos opcionales — selecciona los que quieras junto a tu facial para personalizar tu tratamiento.' } },
 ];
 
 const FACIAL_MEMBERSHIP = {
-  title: { en:'Facial Membership',  es:'Membresía Facial' },
-  text:  { en:'One facial a month for six months — $480 total, about $80 per session. Ask us about it and we will set it up for you.',
-           es:'Un facial al mes durante seis meses — $480 en total, unos $80 por sesión. Pregúntanos y lo preparamos para ti.' },
+  title: { en:'Facial Membership', es:'Membresía Facial' },
+  text:  { en:'One facial a month for six months — $480 total, about $80 per session. Ask us about it and we will set it up for you.', es:'Un facial al mes durante seis meses — $480 en total, unos $80 por sesión. Pregúntanos y lo preparamos para ti.' },
   cta:   { en:'💬 Ask about membership', es:'💬 Preguntar por la membresía' },
-  msg:   { en:"Hi! I'd like to know more about the 6-month Facial Membership.",
-           es:'¡Hola! Me gustaría saber más sobre la Membresía Facial de 6 meses.' },
+  msg:   { en:"Hi! I'd like to know more about the 6-month Facial Membership.", es:'¡Hola! Me gustaría saber más sobre la Membresía Facial de 6 meses.' },
 };
 
 /* ─── STATE ─────────────────────────────────────────────────────── */
 const selectedCats   = new Set();
 const selectedSvcIds = new Set();
 
-/* ─── LANGUAGE HELPER ───────────────────────────────────────────── */
 function isEs() { return document.body.classList.contains('lang-es'); }
 
-/* ─── STEP INDICATOR ────────────────────────────────────────────── */
 /* ─── STEP 1: CATEGORY TOGGLE ───────────────────────────────────── */
 function toggleCat(pill) {
   const cat = pill.dataset.cat;
@@ -2489,14 +1886,9 @@ function toggleCat(pill) {
   }
   const btn = document.getElementById('step1Next');
   if (selectedCats.size > 0) btn.classList.add('enabled');
-  else                        btn.classList.remove('enabled');
+  else btn.classList.remove('enabled');
 }
 
-/* ─── STEP 1 → STEP 2 ───────────────────────────────────────────── */
-
-// Which artists are bookable and what they cover, used to check whether
-// a selected combination of categories can be handled by one artist.
-// Wendy covers every category, so she satisfies this for any combination.
 const PILOT_ARTIST_CATEGORIES = {
   liz:      ['makeup', 'nails', 'facial', 'waxing', 'pmu', 'lashext'],
   johanna:  ['nails'],
@@ -2525,17 +1917,10 @@ function closeCatConflictModal() {
   document.getElementById('catConflictModal').style.display = 'none';
 }
 
-/* ─── NAIL ART / DESIGN ADD-ON POPUP ─────────────────────────────────
-   Shown the moment an Acrylic Refill (nails-4) is selected. "Yes" flags
-   the nail-art add-on (extra 30 min, price confirmed at appointment);
-   "No" leaves the refill on its own. The flag is consumed in goToStep3()
-   and reflected in the sticky CTA total. */
-
 function toggleService(target, cat) {
   let svcId;
   let rowEl;
 
-  // Handles being passed an element: onclick="toggleService(this)"
   if (target instanceof HTMLElement || (target && target.nodeType === 1)) {
     rowEl = target.closest('.service-row') || target;
     svcId = rowEl.dataset.id;
@@ -2544,43 +1929,28 @@ function toggleService(target, cat) {
       if (acc) cat = acc.dataset.cat;
     }
   } else {
-    // Handles being passed an ID string: toggleService('nails-4')
     svcId = String(target);
     rowEl = document.querySelector(`.service-row[data-id="${svcId}"]`);
   }
 
   if (!svcId) return;
 
-  // Toggle selection
   if (selectedSvcIds.has(svcId)) {
     selectedSvcIds.delete(svcId);
-    
-    if (svcId === 'nails-4' || svcId === 'nail-4') {
-      nailArtSelected = false;
-    }
-    if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) {
-      pmuAreaChosen = null;
-    }
+    if (svcId === 'nails-4' || svcId === 'nail-4') nailArtSelected = false;
+    if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) pmuAreaChosen = null;
   } else {
     selectedSvcIds.add(svcId);
-
-    if (svcId === 'nails-4' || svcId === 'nail-4') {
-      openNailArtPopup();
-    } else if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) {
-      openPmuAreaPopup();
-    }
+    if (svcId === 'nails-4' || svcId === 'nail-4') openNailArtPopup();
+    else if (svcId.startsWith('pmu-5') || svcId.startsWith('pmu-6')) openPmuAreaPopup();
   }
 
-  // Update row visual state & checkmark
   if (rowEl) {
     rowEl.classList.toggle('selected', selectedSvcIds.has(svcId));
     const checkEl = rowEl.querySelector('.svc-row-check');
-    if (checkEl) {
-      checkEl.textContent = selectedSvcIds.has(svcId) ? '✓' : '';
-    }
+    if (checkEl) checkEl.textContent = selectedSvcIds.has(svcId) ? '✓' : '';
   }
 
-  // Refresh badges & bottom sticky cart
   if (cat) {
     updateAccordionBadge(cat);
   } else {
@@ -2589,49 +1959,35 @@ function toggleService(target, cat) {
     });
   }
 
-  if (typeof updateStep2Cta === 'function') {
-    updateStep2Cta();
-  }
+  if (typeof updateStep2Cta === 'function') updateStep2Cta();
 }
 
-function openNailArtPopup() {
-  document.getElementById('nailArtModal').style.display = 'flex';
-}
-
+function openNailArtPopup() { document.getElementById('nailArtModal').style.display = 'flex'; }
 function confirmNailArt(yes) {
   nailArtSelected = !!yes;
   document.getElementById('nailArtModal').style.display = 'none';
   updateStep2Cta();
 }
-
-function openPmuAreaPopup() {
-  document.getElementById('pmuAreaModal').style.display = 'flex';
-}
-
+function openPmuAreaPopup() { document.getElementById('pmuAreaModal').style.display = 'flex'; }
 function confirmPmuArea(labelEn, labelEs) {
   pmuAreaChosen = isEs() ? labelEs : labelEn;
   document.getElementById('pmuAreaModal').style.display = 'none';
 
-  // Option A: Append selected target area to PMU touch-up items
   const touchUpIds = ['pmu-5', 'pmu-6'];
-  const catalog = (typeof SERVICES !== 'undefined' && SERVICES) ||
-                  (typeof CATEGORIES !== 'undefined' && CATEGORIES) ||
-                  (typeof MENU !== 'undefined' && MENU) || null;
-
+  const catalog = (typeof SERVICES !== 'undefined' && SERVICES) || null;
   if (catalog && catalog.pmu && Array.isArray(catalog.pmu.items)) {
     catalog.pmu.items.forEach(item => {
       if (touchUpIds.includes(item.id)) {
         if (!item._baseName) item._baseName = item.name;
         if (!item._baseNameEs) item._baseNameEs = item.nameEs;
-
         item.name = `${item._baseName} (${labelEn})`;
         item.nameEs = `${item._baseNameEs} (${labelEs})`;
       }
     });
   }
-
   if (typeof updateStep2Cta === 'function') updateStep2Cta();
 }
+
 function goToStep2() {
   if (!selectedCats.size) return;
   if (!hasSingleArtistCoverage(selectedCats)) {
@@ -2641,40 +1997,31 @@ function goToStep2() {
   buildAccordions();
   document.getElementById('panel-step1').classList.remove('active');
   document.getElementById('panel-step2').classList.add('active');
-  setFunnelStep(1); // still "Services" — category select and service browsing are one step
+  setFunnelStep(1);
   scrollTop();
 }
 
-/* ─── BUILD ACCORDIONS ──────────────────────────────────────────── */
 function buildAccordions() {
   const container = document.getElementById('accordionsContainer');
   container.innerHTML = '';
-
   const catOrder = ['makeup','nails','facial','waxing','pmu','lashext'];
   catOrder.forEach(cat => {
     if (!selectedCats.has(cat)) return;
-
-    // Facials render as three density tiers instead of one flat list,
-    // so they get their own builder.
     if (cat === 'facial') { container.appendChild(buildFacialAccordion()); updateAccordionBadge('facial'); return; }
 
     const data = SERVICES[cat];
     const label = isEs() ? data.label.es : data.label.en;
-
     const acc = document.createElement('div');
     acc.className = 'accordion open';
     acc.dataset.cat = cat;
 
-    // Build service rows HTML
     const rowsHtml = data.items.map(svc => {
-      const name     = isEs() ? svc.nameEs : svc.name;
-      const sub      = isEs() ? svc.subEs  : svc.sub;
+      const name = isEs() ? svc.nameEs : svc.name;
+      const sub = isEs() ? svc.subEs : svc.sub;
       const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || (typeof svc.price === 'string' ? svc.price : '$' + svc.price) : (typeof svc.price === 'string' ? svc.price : '$' + svc.price));
       const selected = selectedSvcIds.has(svc.id);
       const imgSrc = svc.img || '';
-      const imgHtml = imgSrc
-  ? `<img src="${imgSrc}" alt="${name}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`
-  : '';
+      const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" decoding="async">` : '';
 
       return `<div class="service-row${selected ? ' selected' : ''}" data-id="${svc.id}" data-price="${svc.price}" data-pricestr="${priceStr}" data-time="${svc.time || svc.dur || ''}" onclick="toggleService(this)">
         <div class="svc-row-img">${imgHtml}</div>
@@ -2699,50 +2046,36 @@ function buildAccordions() {
       <div class="accordion-body">
         <div class="service-rows">${rowsHtml}</div>
       </div>`;
-
     container.appendChild(acc);
     updateAccordionBadge(cat);
   });
 }
 
-/* ─── FACIAL ACCORDION (three-tier build) ───────────────────────────
-   Facials are the only category without photography, so hierarchy is
-   carried by density instead: Tier 1 is tight and scannable, Tier 2 is
-   standard with a left accent rule, Tier 3 is centered and boxed.
-   Rows are still plain .service-row elements with the same data-* attrs
-   and the same toggleSvc() handler, so selection, the badge, the cart
-   total and the booking payload all keep working exactly as they do for
-   every other category — only the presentation differs. */
 function buildFacialAccordion() {
-  const es    = isEs();
-  const data  = SERVICES.facial;
+  const es = isEs();
+  const data = SERVICES.facial;
   const label = es ? data.label.es : data.label.en;
-
   const acc = document.createElement('div');
   acc.className = 'accordion open';
   acc.dataset.cat = 'facial';
 
   const row = svc => {
-    const name     = es ? svc.nameEs : svc.name;
-    const sub      = es ? svc.subEs  : svc.sub;
+    const name = es ? svc.nameEs : svc.name;
+    const sub = es ? svc.subEs : svc.sub;
     const priceStr = svc.priceLabel || (typeof svc.price === 'string' ? svc.price : '$' + svc.price);
     const selected = selectedSvcIds.has(svc.id);
-    const tierCls  = svc.isAddon ? 'facial-tier1' : 'facial-tier' + svc.tier;
-    const badge    = svc.tier === 3
-      ? `<div class="facial-sig-badge">${es ? '✦ Signature ✦' : '✦ Signature ✦'}</div>` : '';
+    const tierCls = svc.isAddon ? 'facial-tier1' : 'facial-tier' + svc.tier;
+    const badge = svc.tier === 3 ? `<div class="facial-sig-badge">✦ Signature ✦</div>` : '';
 
-    // Upsell nudge under Tier 2 rows. Tappable once the parent facial is
-    // selected — reuses the same selection mechanism as every other row,
-    // just triggered from this text instead of a full row.
     let nudge = '';
     if (svc.pairsWith) {
       const addon = data.items.find(a => a.key === svc.pairsWith);
       if (addon) {
-        const an           = es ? addon.nameEs : addon.name;
+        const an = es ? addon.nameEs : addon.name;
         const addonSelected = selectedSvcIds.has(addon.id);
         const stateCls = !selected ? 'nudge-disabled' : (addonSelected ? 'nudge-added' : 'nudge-active');
-        const click    = selected ? ` onclick="toggleFacialItem('${addon.id}')"` : '';
-        const icon     = addonSelected ? '✓ ' : '';
+        const click = selected ? ` onclick="toggleFacialItem('${addon.id}')"` : '';
+        const icon = addonSelected ? '✓ ' : '';
         nudge = `<div class="facial-addon-nudge ${stateCls}"${click}><span>${icon}${es ? 'Mejóralo con' : 'Enhance with'}: <b>${an} (+$${addon.price})</b></span><span class="facial-nudge-check">${addonSelected ? '✓' : ''}</span></div>`;
       }
     }
@@ -2762,34 +2095,18 @@ function buildFacialAccordion() {
       </div>${nudge}`;
   };
 
-  // Jump-nav: gives the "skip the scroll" benefit of a filter with no
-  // tagging logic to maintain.
-  const nav = FACIAL_TIERS
-    .map(t => `<a href="#facial-${t.id}">${es ? t.title.es : t.title.en}</a>`)
-    .join('');
-
+  const nav = FACIAL_TIERS.map(t => `<a href="#facial-${t.id}">${es ? t.title.es : t.title.en}</a>`).join('');
   const sections = FACIAL_TIERS.map(t => {
-    const items = t.tier === 'addon'
-      ? data.items.filter(s => s.isAddon)
-      : data.items.filter(s => !s.isAddon && s.tier === t.tier);
+    const items = t.tier === 'addon' ? data.items.filter(s => s.isAddon) : data.items.filter(s => !s.isAddon && s.tier === t.tier);
     if (!items.length) return '';
-
     const rows = items.map(row).join('');
-    const body = t.tier === 3
-      ? `<div class="facial-signature-wrap">${rows}</div>`
-      : rows;
-
-    return `
-      <div class="facial-tier-head" id="facial-${t.id}">
-        <div class="facial-tier-title">${es ? t.title.es : t.title.en}</div>
-        <div class="facial-tier-blurb">${es ? t.blurb.es : t.blurb.en}</div>
-      </div>
-      ${body}`;
+    const body = t.tier === 3 ? `<div class="facial-signature-wrap">${rows}</div>` : rows;
+    return `<div class="facial-tier-head" id="facial-${t.id}">
+      <div class="facial-tier-title">${es ? t.title.es : t.title.en}</div>
+      <div class="facial-tier-blurb">${es ? t.blurb.es : t.blurb.en}</div>
+    </div>${body}`;
   }).join('');
 
-  // Membership is a recurring commitment, not a single dated appointment,
-  // so it deliberately sits outside the bookable list — no price feeds the
-  // cart, no slot is reserved. It's a conversation starter only.
   const m = FACIAL_MEMBERSHIP;
   const waLink = `https://wa.me/18483891934?text=${encodeURIComponent(es ? m.msg.es : m.msg.en)}`;
   const membership = `
@@ -2810,33 +2127,14 @@ function buildFacialAccordion() {
       <div class="service-rows">${sections}</div>
       ${membership}
     </div>`;
-
   return acc;
 }
 
-/* ─── ACCORDION TOGGLE ──────────────────────────────────────────── */
-function toggleAccordion(acc) {
-  acc.classList.toggle('open');
-}
+function toggleAccordion(acc) { acc.classList.toggle('open'); }
 
-/* ─── SERVICE ROW TOGGLE ────────────────────────────────────────── */
-// Services that trigger the "add nail art?" popup when selected.
-// Gel Manicure · Acrylic Full Set · Acrylic Refill · Gel X / Soft Gel Tips.
-// Adding a service here is all that's needed to wire it into the popup flow.
 const NAIL_ART_TRIGGERS = new Set(['nails-2', 'nails-3', 'nails-4', 'nails-5']);
-
-// Whether the customer opted to add Nail Art / Design to their appointment.
-// Set true only if they answer "yes" to the popup. Cleared automatically
-// once no trigger service remains in the selection.
 let nailArtSelected = false;
-
-// Services that trigger the "what are you touching up?" popup when selected.
-// 6–8 Week PMU Touch-up · Annual PMU Touch-up.
 const PMU_AREA_TRIGGERS = new Set(['pmu-10', 'pmu-11']);
-
-// The area the customer picked (English label, used to build the display
-// name). null until the popup is answered. Cleared when the last PMU
-// touch-up trigger is deselected, same pattern as nailArtSelected.
 let pmuAreaChosen = null;
 
 function toggleSvc(row) {
@@ -2845,12 +2143,8 @@ function toggleSvc(row) {
     selectedSvcIds.delete(id);
     row.classList.remove('selected');
     row.querySelector('.svc-row-check').textContent = '';
-    if (NAIL_ART_TRIGGERS.has(id) && ![...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
-      nailArtSelected = false;
-    }
-    if (PMU_AREA_TRIGGERS.has(id) && ![...PMU_AREA_TRIGGERS].some(t => selectedSvcIds.has(t))) {
-      pmuAreaChosen = null;
-    }
+    if (NAIL_ART_TRIGGERS.has(id) && ![...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) nailArtSelected = false;
+    if (PMU_AREA_TRIGGERS.has(id) && ![...PMU_AREA_TRIGGERS].some(t => selectedSvcIds.has(t))) pmuAreaChosen = null;
   } else {
     selectedSvcIds.add(id);
     row.classList.add('selected');
@@ -2859,7 +2153,6 @@ function toggleSvc(row) {
     if (PMU_AREA_TRIGGERS.has(id) && !pmuAreaChosen) openPmuAreaPopup();
   }
 
-  // Find which cat this row belongs to
   const acc = row.closest('.accordion');
   if (acc) {
     const cat = acc.dataset.cat;
@@ -2867,21 +2160,9 @@ function toggleSvc(row) {
     if (selectedSvcIds.size > 0) acc.classList.add('has-selection');
     else acc.classList.remove('has-selection');
   }
-
   updateStep2Cta();
 }
 
-/* ─── FACIAL-SPECIFIC TOGGLE ─────────────────────────────────────────
-   Every clickable element inside the facial accordion (service rows AND
-   the "Enhance with" nudges) goes through this instead of toggleSvc().
-   A facial's row and its paired add-on's nudge both need to reflect each
-   other's selection state (nudge lights up once the facial is picked;
-   the facial row doesn't care about the add-on) — the simplest way to
-   keep that always correct, no matter which of the two was clicked, is
-   to rebuild the whole accordion from selectedSvcIds after every toggle,
-   rather than hand-patching two different elements in two different
-   ways. buildFacialAccordion() already renders purely from that state,
-   so this just calls it again and swaps the node in place. */
 function toggleFacialItem(id) {
   if (selectedSvcIds.has(id)) selectedSvcIds.delete(id);
   else selectedSvcIds.add(id);
@@ -2889,36 +2170,31 @@ function toggleFacialItem(id) {
   const oldAcc = document.querySelector('.accordion[data-cat="facial"]');
   if (oldAcc) {
     const wasOpen = oldAcc.classList.contains('open');
-    const newAcc  = buildFacialAccordion();
-    if (!wasOpen) newAcc.classList.remove('open'); // preserve collapsed state across rebuild
+    const newAcc = buildFacialAccordion();
+    if (!wasOpen) newAcc.classList.remove('open');
     oldAcc.replaceWith(newAcc);
     if (selectedSvcIds.size > 0) newAcc.classList.add('has-selection');
     else newAcc.classList.remove('has-selection');
   }
-
   updateAccordionBadge('facial');
   updateStep2Cta();
 }
 
-/* ─── ACCORDION BADGE ───────────────────────────────────────────── */
 function updateAccordionBadge(cat) {
-  const acc   = document.querySelector(`.accordion[data-cat="${cat}"]`);
+  const acc = document.querySelector(`.accordion[data-cat="${cat}"]`);
   const badge = document.getElementById('badge-' + cat);
   if (!acc || !badge) return;
-
   const rows = acc.querySelectorAll('.service-row.selected');
   badge.textContent = rows.length > 0 ? rows.length : '';
-
   if (rows.length > 0) acc.classList.add('has-selection');
-  else                 acc.classList.remove('has-selection');
+  else acc.classList.remove('has-selection');
 }
 
-/* ─── STEP 2 STICKY CTA ─────────────────────────────────────────── */
 function updateStep2Cta() {
-  const cta      = document.getElementById('step2Cta');
-  const countEl  = document.getElementById('step2CtaCount');
-  const totalEl  = document.getElementById('step2CtaTotal');
-  const n        = selectedSvcIds.size;
+  const cta = document.getElementById('step2Cta');
+  const countEl = document.getElementById('step2CtaCount');
+  const totalEl = document.getElementById('step2CtaTotal');
+  const n = selectedSvcIds.size;
 
   if (n === 0) {
     cta.classList.remove('visible');
@@ -2930,44 +2206,29 @@ function updateStep2Cta() {
   document.body.classList.add('cart-active');
 
   const lang = isEs();
-  // Count the nail-art add-on in the visible service count when active.
   const artOn = nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t));
   const shownCount = n + (artOn ? 1 : 0);
   countEl.textContent = shownCount === 1
     ? (lang ? '1 servicio seleccionado' : '1 service selected')
     : (lang ? `${shownCount} servicios seleccionados` : `${shownCount} services selected`);
 
-  // Calculate total from selected rows
   let total = 0;
   document.querySelectorAll('.service-row.selected').forEach(row => {
     total += parseInt(row.dataset.price) || 0;
   });
 
-  totalEl.textContent = total > 0
-    ? (lang ? 'desde $' : 'from $') + total.toLocaleString()
-    : '';
+  totalEl.textContent = total > 0 ? (lang ? 'desde $' : 'from $') + total.toLocaleString() : '';
 }
 
-/* ═══════════════════════════════════════════
-   STAGE 2 STATE
-═══════════════════════════════════════════ */
+/* ── STAGE 2 STATE & CALENDAR ── */
 let selectedArtist = null;
 let selectedDate   = null;
 let selectedTime   = null;
 let takenSlots     = [];
 let calYear, calMonth;
 
-// ── ARTIST SCHEDULES ──
-// Working hours now live in schedules.json (one shared config, edited
-// directly by the studio — no code changes needed to update hours).
-// DEFAULT_SCHEDULE is only a safety fallback in case schedules.json
-// fails to load, so the calendar never breaks entirely.
 const DEFAULT_SCHEDULE = {
-  1: [9, 19], // Mon
-  3: [9, 19], // Wed
-  4: [9, 19], // Thu
-  5: [9, 19], // Fri
-  6: [7, 16], // Sat
+  1: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [7, 16],
 };
 let ARTIST_SCHEDULES = null;
 let schedulesLoadPromise = null;
@@ -2980,7 +2241,6 @@ async function loadArtistSchedules() {
       ARTIST_SCHEDULES = data;
     }
   } catch (e) {
-    // Network/file issue — DEFAULT_SCHEDULE fallback below covers this.
     ARTIST_SCHEDULES = null;
   }
 }
@@ -2992,9 +2252,6 @@ function getArtistSchedule(artistId) {
   return DEFAULT_SCHEDULE;
 }
 
-// Checks an artist's optional "blackout" date ranges from schedules.json
-// (e.g. Wendy unavailable for all of August). dateStr must be YYYY-MM-DD,
-// which compares correctly as a plain string against the range bounds.
 function isDateBlackedOut(schedule, dateStr) {
   if (!schedule || !Array.isArray(schedule.blackout)) return false;
   return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
@@ -3003,104 +2260,68 @@ function isDateBlackedOut(schedule, dateStr) {
 const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-/* ═══════════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════════ */
 function goBackTo(stepNum) {
   stopDepositPolling();
-  // Hide all panels
   document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-step' + stepNum).classList.add('active');
-  // The step INDICATOR only has 4 stages (Services / Artist / Date & Time /
-  // Confirm) but there are 5 PANELS, since category-select (panel 1) and
-  // service-browse (panel 2) both belong to the "Services" indicator stage.
-  // So panel 3→indicator 2, panel 4→indicator 3, panel 5→indicator 4.
   setFunnelStep(Math.max(1, stepNum - 1));
   scrollTop();
 }
 
-/* ── DURATION PARSING ──
-   Parses the display "time" string (e.g. "45–60 min", "2 hrs", "Consultation")
-   into a number of minutes. For ranges, uses the SMALLER value.
-   Non-numeric labels ("Full Set", "Consultation", "Varies") fall back to
-   sensible defaults since no explicit duration is given. */
 function parseDurationMinutes(timeStr) {
   if (!timeStr) return 60;
   const str = timeStr.trim();
-
-  // Non-numeric labels — use defaults
   if (/full set/i.test(str)) return 120;
   if (/consultation/i.test(str)) return 60;
   if (/varies/i.test(str)) return 60;
-
-  // Hours, e.g. "2 hrs" or "2–3 hrs" — take smaller number
   const hrMatch = str.match(/(\d+)(?:\s*[–-]\s*(\d+))?\s*hr/i);
-  if (hrMatch) {
-    return parseInt(hrMatch[1], 10) * 60;
-  }
-
-  // Minutes, e.g. "45 min" or "45–60 min" — take smaller number
+  if (hrMatch) return parseInt(hrMatch[1], 10) * 60;
   const minMatch = str.match(/(\d+)(?:\s*[–-]\s*(\d+))?\s*min/i);
-  if (minMatch) {
-    return parseInt(minMatch[1], 10);
-  }
-
-  // Fallback for anything unrecognized
+  if (minMatch) return parseInt(minMatch[1], 10);
   return 60;
 }
 
 function goToStep3() {
   if (!selectedSvcIds.size) return;
-  // Collect services into global state
   window.BOOKING_STATE = window.BOOKING_STATE || {};
   window.BOOKING_STATE.services = [];
   document.querySelectorAll('.service-row.selected').forEach(row => {
     window.BOOKING_STATE.services.push({
-      id:       row.dataset.id,
-      name:     row.querySelector('.svc-row-name').textContent,
-      price:    parseInt(row.dataset.price) || 0,
+      id: row.dataset.id,
+      name: row.querySelector('.svc-row-name').textContent,
+      price: parseInt(row.dataset.price) || 0,
       priceStr: row.dataset.pricestr,
       durationMinutes: parseDurationMinutes(row.dataset.time),
     });
   });
-  // Append the chosen touch-up area onto the matching PMU service's own
-  // name, so it flows untouched into the calendar event and both emails
-  // via create-booking.js — no backend change needed. Safe to mutate here:
-  // each entry above is a fresh object scraped from the DOM, not a
-  // reference into the SERVICES catalog.
+
   if (pmuAreaChosen) {
     window.BOOKING_STATE.services.forEach(sv => {
-      if (PMU_AREA_TRIGGERS.has(sv.id)) {
-        sv.name = sv.name + ' — ' + pmuAreaChosen;
-      }
+      if (PMU_AREA_TRIGGERS.has(sv.id)) sv.name = sv.name + ' — ' + pmuAreaChosen;
     });
   }
-  // Nail Art / Design add-on (when chosen alongside any trigger service).
-  // No fixed price — cost depends on design complexity and is confirmed at
-  // the appointment. Adds 30 min to whatever service(s) were selected.
+
   if (nailArtSelected && [...NAIL_ART_TRIGGERS].some(t => selectedSvcIds.has(t))) {
     window.BOOKING_STATE.services.push({
-      id:       'nail-art',
-      name:     isEs() ? 'Arte / Diseño de Uñas' : 'Nail Art / Design',
-      price:    0,
+      id: 'nail-art',
+      name: isEs() ? 'Arte / Diseño de Uñas' : 'Nail Art / Design',
+      price: 0,
       priceStr: isEs() ? 'Precio en la cita' : 'Priced at appointment',
       durationMinutes: 30,
     });
   }
+
   document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-step3').classList.add('active');
-  setFunnelStep(2); // Artist
+  setFunnelStep(2);
   filterArtists();
   scrollTop();
 }
 
 function filterArtists() {
-  // Show only artists who can cover EVERY selected category — not just
-  // artists with any partial overlap. Liz (no data-cats) always shows
-  // since she covers all categories.
   document.querySelectorAll('.artist-card').forEach(card => {
-    const cats = card.dataset.cats; // e.g. "pmu" or undefined
-    if (!cats) return; // no filter attr = always visible (Liz)
+    const cats = card.dataset.cats;
+    if (!cats) return;
     const artistCats = cats.split(',').map(c => c.trim());
     const visible = [...selectedCats].every(c => artistCats.includes(c));
     card.style.display = visible ? '' : 'none';
@@ -3110,18 +2331,15 @@ function filterArtists() {
 async function goToStep4() {
   if (!selectedArtist) return;
   window.BOOKING_STATE = window.BOOKING_STATE || {};
-  window.BOOKING_STATE.artist   = selectedArtist;
+  window.BOOKING_STATE.artist = selectedArtist;
   window.BOOKING_STATE.artistId = selectedArtist === 'Johanna' ? 'johanna' : selectedArtist === 'Liz Wendy Cedeño' ? 'liz' : selectedArtist;
   document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-step4').classList.add('active');
-  setFunnelStep(3); // Date & Time
+  setFunnelStep(3);
   await initCalendar();
   scrollTop();
 }
 
-/* ═══════════════════════════════════════════
-   STEP INDICATOR UPDATE
-═══════════════════════════════════════════ */
 function setFunnelStep(active) {
   [1,2,3,4].forEach(n => {
     const el = document.getElementById('fstep' + n);
@@ -3130,50 +2348,29 @@ function setFunnelStep(active) {
   });
 }
 
-/* ═══════════════════════════════════════════
-   ARTIST SELECTION
-═══════════════════════════════════════════ */
 function selectArtist(id) {
   selectedArtist = null;
-  // Deselect all
   document.querySelectorAll('.artist-card:not(.coming-soon)').forEach(c => c.classList.remove('selected'));
-  // Select clicked
   const card = document.getElementById('artist-' + id);
   if (card) {
     card.classList.add('selected');
-    if (id === 'liz')           selectedArtist = 'Liz Wendy Cedeño';
-    else if (id === 'johanna')  selectedArtist = 'Johanna';
-    else                        selectedArtist = id;
+    if (id === 'liz') selectedArtist = 'Liz Wendy Cedeño';
+    else if (id === 'johanna') selectedArtist = 'Johanna';
+    else selectedArtist = id;
   }
-  // Enable next button
   const btn = document.getElementById('step3Next');
   if (selectedArtist) btn.classList.add('enabled');
-  else                btn.classList.remove('enabled');
+  else btn.classList.remove('enabled');
 }
 
-/* ═══════════════════════════════════════════
-   STAFF PIN OVERRIDE (Wendy only)
-   Lets Wendy skip the $20 deposit for a trusted client under her
-   discretion. The PIN itself is verified server-side only, inside
-   create-booking.js against the STAFF_OVERRIDE_PIN env var — nothing
-   in this file can confirm a PIN is correct. "Apply" here just stages
-   the value to be sent with the booking; the real check (and the
-   audit-trail logging) happens on submit, on the backend.
-═══════════════════════════════════════════ */
 let staffOverridePin = '';
-
 function toggleStaffOverride(event) {
-  event.stopPropagation(); // don't trigger selectArtist('liz') on the parent card
+  event.stopPropagation();
   document.getElementById('staffOverridePanel').classList.toggle('open');
   const panel = document.getElementById('staffOverridePanel');
-  if (panel.classList.contains('open')) {
-    document.getElementById('staffOverrideInput').focus();
-  }
+  if (panel.classList.contains('open')) document.getElementById('staffOverrideInput').focus();
 }
 
-// Fires on every keystroke so the deposit gate reacts correctly even if
-// Wendy types the PIN and moves on without tapping the ✓ button — the
-// checkmark is a visual confirmation, not a required step.
 function syncStaffOverridePin(input) {
   staffOverridePin = input.value.trim();
   const lock = document.getElementById('staffOverrideLock');
@@ -3184,70 +2381,59 @@ function syncStaffOverridePin(input) {
 function applyStaffOverride(event) {
   event.stopPropagation();
   const value = document.getElementById('staffOverrideInput').value.trim();
-  const lock  = document.getElementById('staffOverrideLock');
+  const lock = document.getElementById('staffOverrideLock');
   staffOverridePin = value;
   lock.classList.toggle('active', !!value);
   lock.textContent = value ? '🔓' : '🔒';
 }
 
-/* ═══════════════════════════════════════════
-   CALENDAR
-═══════════════════════════════════════════ */
 async function initCalendar() {
   const now = new Date();
-  calYear  = now.getFullYear();
+  calYear = now.getFullYear();
   calMonth = now.getMonth();
   selectedDate = null;
   selectedTime = null;
-  takenSlots   = [];
+  takenSlots = [];
 
-  // Update artist label
   const artistLabel = document.getElementById('calArtistLabel');
   if (artistLabel) artistLabel.textContent = window.BOOKING_STATE?.artist || 'Liz Wendy Cedeño';
 
-  // Hide slots until date chosen
   const slotsSection = document.getElementById('slotsSection');
   if (slotsSection) slotsSection.style.display = 'none';
 
-  // Disable next button
   const btn = document.getElementById('step4Next');
   if (btn) btn.classList.remove('enabled');
 
-  // Make sure schedules.json has loaded (or failed) before drawing the
-  // calendar, so we never briefly show fallback hours then flicker.
   if (schedulesLoadPromise) await schedulesLoadPromise;
-
   renderCalendar();
 }
 
 function changeMonth(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
   selectedDate = null;
   selectedTime = null;
-  takenSlots   = [];
+  takenSlots = [];
   document.getElementById('slotsSection').style.display = 'none';
   document.getElementById('step4Next').classList.remove('enabled');
   renderCalendar();
 }
 
 function renderCalendar() {
-  const es    = isEs();
+  const es = isEs();
   const label = document.getElementById('calMonthLabel');
   label.textContent = (es ? MONTHS_ES : MONTHS_EN)[calMonth] + ' ' + calYear;
 
-  const grid     = document.getElementById('calGrid');
-  const today    = new Date();
+  const grid = document.getElementById('calGrid');
+  const today = new Date();
   today.setHours(0,0,0,0);
   const artistSchedule = getArtistSchedule(window.BOOKING_STATE && window.BOOKING_STATE.artistId);
 
-  // Keep the day headers (first 7 children)
-  const headers = Array.from(grid.children).slice(0, 14); // 7 EN + 7 ES
+  const headers = Array.from(grid.children).slice(0, 14);
   grid.innerHTML = '';
   headers.forEach(h => grid.appendChild(h));
 
-  // First day offset
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   for (let i = 0; i < firstDay; i++) {
     const empty = document.createElement('div');
@@ -3255,51 +2441,45 @@ function renderCalendar() {
     grid.appendChild(empty);
   }
 
-  // Days
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(calYear, calMonth, d);
     date.setHours(0,0,0,0);
-    const dow  = date.getDay();
+    const dow = date.getDay();
     const cell = document.createElement('div');
     cell.textContent = d;
 
-    const isPast      = date < today;
-    const blackedOut  = isDateBlackedOut(artistSchedule, formatDateISO(date));
-    const isWorkDay   = !!artistSchedule[dow] && !blackedOut;
-    const isToday     = date.getTime() === today.getTime();
+    const isPast = date < today;
+    const blackedOut = isDateBlackedOut(artistSchedule, formatDateISO(date));
+    const isWorkDay = !!artistSchedule[dow] && !blackedOut;
+    const isToday = date.getTime() === today.getTime();
     const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
 
     let cls = 'cal-day';
-    if (isPast)       cls += ' cal-past';
+    if (isPast) cls += ' cal-past';
     else if (!isWorkDay) cls += ' cal-disabled';
-    if (isToday)      cls += ' cal-today';
-    if (isSelected)   cls += ' cal-selected';
+    if (isToday) cls += ' cal-today';
+    if (isSelected) cls += ' cal-selected';
 
     cell.className = cls;
-
-    if (!isPast && isWorkDay) {
-      cell.onclick = () => pickDate(date);
-    }
+    if (!isPast && isWorkDay) cell.onclick = () => pickDate(date);
     grid.appendChild(cell);
   }
 }
-let currentAvailability = null;
 
+let currentAvailability = null;
 async function pickDate(date) {
   selectedDate = date;
   selectedTime = null;
   currentAvailability = null;
 
   renderCalendar();
-
   const slotsSection = document.getElementById('slotsSection');
   slotsSection.style.display = 'block';
 
   const es = isEs();
   const dateStr = date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   document.getElementById('slotsDateLabel').textContent = dateStr;
-
   document.getElementById('step4Next').classList.remove('enabled');
 
   document.getElementById('slotsArea').innerHTML = `
@@ -3308,17 +2488,13 @@ async function pickDate(date) {
       <span>${es ? 'Cargando horarios...' : 'Loading times...'}</span>
     </div>`;
 
-  setTimeout(() => {
-    slotsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
+  setTimeout(() => { slotsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
 
   try {
     const dateISO = formatDateISO(date);
     const artistId = (window.BOOKING_STATE && window.BOOKING_STATE.artistId) || 'liz';
     const res = await fetch(`/.netlify/functions/get-availability?date=${dateISO}&artistId=${artistId}`);
-    if (res.ok) {
-      currentAvailability = await res.json();
-    }
+    if (res.ok) currentAvailability = await res.json();
   } catch(e) {
     currentAvailability = { isFullyBlocked: true, busyIntervals: [] };
   }
@@ -3328,7 +2504,6 @@ async function pickDate(date) {
 
 function renderSlots(date) {
   const es = isEs();
-
   if (!currentAvailability || currentAvailability.isFullyBlocked) {
     document.getElementById('slotsArea').innerHTML = `<div class="slots-placeholder">${es ? 'Sin disponibilidad este día.' : 'No availability on this day.'}</div>`;
     return;
@@ -3336,11 +2511,9 @@ function renderSlots(date) {
 
   const rawDuration = (window.BOOKING_STATE?.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
   const reqMinutes = Math.ceil(rawDuration / 15) * 15;
-
   const stepMinutes = 15;
-
   const availableSlots = [];
- // Calculate precise DST offset for the requested date
+
   function getNYOffset(dStr) {
     const d = new Date(`${dStr}T12:00:00Z`);
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
@@ -3353,13 +2526,10 @@ function renderSlots(date) {
 
   const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00${offset}`).getTime();
   const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00${offset}`).getTime();
+
   for (let timeMs = shiftStartMs; timeMs + (reqMinutes * 60000) <= shiftEndMs; timeMs += (stepMinutes * 60000)) {
     const slotEndMs = timeMs + (reqMinutes * 60000);
-
-    const hasCollision = (currentAvailability.busyIntervals || []).some(busy => {
-      return (timeMs < busy.end && slotEndMs > busy.start);
-    });
-
+    const hasCollision = (currentAvailability.busyIntervals || []).some(busy => (timeMs < busy.end && slotEndMs > busy.start));
     const nowMs = Date.now();
     const isTooSoon = (timeMs < nowMs + (30 * 60000));
 
@@ -3391,9 +2561,6 @@ function pickTime(slot) {
   document.getElementById('step4Next').classList.add('enabled');
 }
 
-/* ═══════════════════════════════════════════
-   UTILITIES
-═══════════════════════════════════════════ */
 function formatDateISO(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth()+1).padStart(2,'0');
@@ -3408,68 +2575,53 @@ function formatTimeLabel(slot) {
   return `${hour}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
-/* ═══════════════════════════════════════════
-   STAGE 3: STEP 5 — CONFIRM + PAYMENT
-═══════════════════════════════════════════ */
-
+/* ── STAGE 3: CONFIRM + PAYMENT ── */
 function goToStep5() {
   if (!selectedDate || !selectedTime) return;
   window.BOOKING_STATE = window.BOOKING_STATE || {};
   window.BOOKING_STATE.date = selectedDate;
   window.BOOKING_STATE.time = selectedTime;
 
-  // Build confirm summary
   buildConfirmSummary();
-
-  // Reset gates (clean slate before applying artist-specific state below)
   stopDepositPolling();
-  document.getElementById('policyCheckbox').checked  = false;
+  document.getElementById('policyCheckbox').checked = false;
   document.getElementById('depositPaidCheck').checked = false;
   document.getElementById('paymentGate').classList.remove('unlocked');
   document.getElementById('depositConfirmRow').classList.remove('visible');
   document.getElementById('submitBtn').disabled = true;
   document.getElementById('formError').classList.remove('visible');
 
-  // Johanna: no deposit required — hide deposit-only elements, show submit button directly.
-  // Same treatment applies when Wendy has staged a staff override PIN on her own card —
-  // she's explicitly waiving the deposit for this client, so the customer should see the
-  // same plain "Confirm Appointment" flow, not the Clover payment box.
   const depositOnlyBlock = document.getElementById('depositOnlyBlock');
   const depositCheckboxRow = document.getElementById('depositCheckboxRow');
-  const beforeYouBookBox = document.getElementById('beforeYouBookBox');
   const submitBtn = document.getElementById('submitBtn');
   const depositRow = document.getElementById('depositConfirmRow');
   const staffOverrideStaged = window.BOOKING_STATE.artistId === 'liz' && !!staffOverridePin;
+
   if (window.BOOKING_STATE.artistId === 'johanna' || window.BOOKING_STATE.artistId === 'liz' || staffOverrideStaged) {
-    if (depositOnlyBlock)   depositOnlyBlock.style.display = 'none';
+    if (depositOnlyBlock) depositOnlyBlock.style.display = 'none';
     if (depositCheckboxRow) depositCheckboxRow.style.display = 'none';
-    if (beforeYouBookBox)   beforeYouBookBox.style.display = 'none';
     if (depositRow) depositRow.classList.add('visible');
-    if (submitBtn)  { submitBtn.style.display = ''; submitBtn.disabled = false; }
+    if (submitBtn) { submitBtn.style.display = ''; submitBtn.disabled = false; }
   } else {
-    if (depositOnlyBlock)   depositOnlyBlock.style.display = '';
+    if (depositOnlyBlock) depositOnlyBlock.style.display = '';
     if (depositCheckboxRow) depositCheckboxRow.style.display = 'none';
-    if (beforeYouBookBox)   beforeYouBookBox.style.display = '';
     if (depositRow) depositRow.classList.remove('visible');
-    if (submitBtn)  { submitBtn.style.display = 'none'; submitBtn.disabled = true; }
+    if (submitBtn) { submitBtn.style.display = 'none'; submitBtn.disabled = true; }
   }
 
   document.querySelectorAll('.funnel-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-step5').classList.add('active');
-  setFunnelStep(4); // Step indicator shows step 4 as active (final)
+  setFunnelStep(4);
   scrollTop();
 }
 
-/* ── BUILD CONFIRM SUMMARY ── */
 function buildConfirmSummary() {
-  const s    = window.BOOKING_STATE || {};
-  const es   = isEs();
+  const s = window.BOOKING_STATE || {};
+  const es = isEs();
   const rows = document.getElementById('confirmSummaryRows');
   if (!rows) return;
 
-  const dateStr = s.date
-    ? s.date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
-    : '—';
+  const dateStr = s.date ? s.date.toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '—';
   const timeStr = s.time ? formatTimeLabel(s.time) : '—';
   const svcList = (s.services || []).map(sv =>
     `<div class="svc-pill">· ${es ? (sv.nameEs || sv.name) : sv.name} <span style="color:var(--gold-dim)">${sv.priceStr}</span></div>`
@@ -3494,7 +2646,6 @@ function buildConfirmSummary() {
     </div>`;
 }
 
-/* ── POLICY GATE TOGGLE ── */
 function onPolicyToggle(checkbox) {
   const gate = document.getElementById('paymentGate');
   if (checkbox.checked) gate.classList.add('unlocked');
@@ -3506,23 +2657,13 @@ function onPolicyToggle(checkbox) {
   }
 }
 
-/* ── DEPOSIT CLICK → AUTO-DETECT PAYMENT ──
-   Instead of making the customer come back and manually confirm they paid,
-   the original tab quietly polls in the background (Clover opens in a NEW
-   tab, so this tab's JS keeps running the whole time). The moment the
-   webhook-recorded payment shows up, the booking submits itself — payment
-   and confirmation happen in one motion, with no return trip required.
-   The manual "I completed my deposit" checkbox stays as a fallback if
-   detection doesn't land within DEPOSIT_POLL_TIMEOUT_MS. */
 const DEPOSIT_POLL_INTERVAL_MS = 4000;
-const DEPOSIT_POLL_TIMEOUT_MS  = 5 * 60 * 1000; // 5 minutes
+const DEPOSIT_POLL_TIMEOUT_MS  = 5 * 60 * 1000;
 let depositPollIntervalId = null;
 let depositPollTimeoutId  = null;
 let depositPollStartedAt  = 0;
 
 function onDepositClick() {
-  // Small delay so the Clover tab opens, then show the auto-detect status row.
-  // Booking only proceeds via confirmed payment detection or staff PIN override.
   setTimeout(() => {
     document.getElementById('depositConfirmRow').classList.add('visible');
   }, 800);
@@ -3530,7 +2671,7 @@ function onDepositClick() {
 }
 
 function startDepositPolling() {
-  stopDepositPolling(); // clear any stale timers from a previous attempt
+  stopDepositPolling();
   window.bookingAutoSubmitted = false;
   depositPollStartedAt = Date.now();
 
@@ -3539,29 +2680,18 @@ function startDepositPolling() {
   statusEl.classList.add('visible');
 
   depositPollIntervalId = setInterval(checkDepositStatus, DEPOSIT_POLL_INTERVAL_MS);
-  depositPollTimeoutId  = setTimeout(() => {
-    // Gave it 5 minutes — stop quietly and leave the manual checkbox as the
-    // path forward. Not an error state, just a handoff.
-    stopDepositPolling();
-  }, DEPOSIT_POLL_TIMEOUT_MS);
-
-  // Fire one check right away too, in case the customer already paid fast.
+  depositPollTimeoutId = setTimeout(() => { stopDepositPolling(); }, DEPOSIT_POLL_TIMEOUT_MS);
   checkDepositStatus();
 }
 
 async function checkDepositStatus() {
   if (window.bookingAutoSubmitted || window.isSubmittingBooking) return;
-
   try {
     const res = await fetch(`/.netlify/functions/check-deposit-status?since=${depositPollStartedAt}`);
-    if (!res.ok) return; // transient error — next poll tick will try again
+    if (!res.ok) return;
     const data = await res.json();
     if (!data.paid) return;
 
-    // Payment confirmed — stop polling, show the confirmed state, then
-    // submit the booking automatically. A short pause lets the customer
-    // actually see the confirmation instead of the screen jumping straight
-    // to success.
     window.bookingAutoSubmitted = true;
     clearInterval(depositPollIntervalId);
     clearTimeout(depositPollTimeoutId);
@@ -3574,14 +2704,11 @@ async function checkDepositStatus() {
       '<span data-en>Payment confirmed! Booking your appointment…</span>' +
       '<span data-es>¡Pago confirmado! Reservando tu cita…</span>';
 
-    // Payment confirmed — show, enable, and auto-trigger. Customer never has to touch it.
     const sBtn = document.getElementById('submitBtn');
     sBtn.style.display = '';
     sBtn.disabled = false;
-
     setTimeout(() => submitBooking(), 600);
   } catch (e) {
-    // Network hiccup — say nothing, just try again on the next tick.
     console.warn('check-deposit-status poll failed, will retry:', e);
   }
 }
@@ -3592,40 +2719,25 @@ function stopDepositPolling() {
   depositPollIntervalId = null;
   depositPollTimeoutId  = null;
   const statusEl = document.getElementById('depositAutoStatus');
-  if (statusEl && !statusEl.classList.contains('confirmed')) {
-    statusEl.classList.remove('visible');
-  }
+  if (statusEl && !statusEl.classList.contains('confirmed')) statusEl.classList.remove('visible');
 }
 
-/* ── DEPOSIT CONFIRM TOGGLE ── */
-function onDepositConfirm(checkbox) {
-  // Manual attestation bypass removed. Checkbox is hidden and this function
-  // is intentionally inert — submitBtn is only enabled by auto-detected
-  // payment (checkDepositStatus) or staff PIN override.
-  checkbox.checked = false;
-}
+function onDepositConfirm(checkbox) { checkbox.checked = false; }
 
 function formatPhoneInput(input) {
   let digits = input.value.replace(/\D/g, '').slice(0, 10);
   let formatted = digits;
-  if (digits.length > 6) {
-    formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-  } else if (digits.length > 3) {
-    formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-  } else if (digits.length > 0) {
-    formatted = `(${digits}`;
-  }
+  if (digits.length > 6) formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  else if (digits.length > 3) formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  else if (digits.length > 0) formatted = `(${digits}`;
   input.value = formatted;
 }
 
-/* ── SUBMIT BOOKING ── */
 async function submitBooking() {
-  // Guard against rapid double-taps/double-clicks racing past the
-  // disabled-button state, especially on slow connections.
   if (window.isSubmittingBooking) return;
   window.isSubmittingBooking = true;
 
-  const es       = isEs();
+  const es = isEs();
   const firstName = document.getElementById('firstName').value.trim();
   const lastName  = document.getElementById('lastName').value.trim();
   const email     = document.getElementById('emailInput').value.trim();
@@ -3634,13 +2746,9 @@ async function submitBooking() {
   const errEl     = document.getElementById('formError');
   const s         = window.BOOKING_STATE || {};
 
-  // Validation
   const errors = [];
   if (!firstName) errors.push(es ? 'Por favor ingresa tu nombre.' : 'Please enter your first name.');
   if (!lastName)  errors.push(es ? 'Por favor ingresa tu apellido.' : 'Please enter your last name.');
-  // Email is optional — customers without email or who don't want to share
-  // it still get a WhatsApp confirmation via their phone number. Only
-  // validate format if they actually typed something.
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     errors.push(es ? 'Por favor ingresa un correo válido, o deja el campo vacío.' : 'Please enter a valid email address, or leave the field empty.');
   const phoneDigits = phone.replace(/\D/g, '');
@@ -3665,39 +2773,35 @@ async function submitBooking() {
   btn.classList.add('loading');
   btn.disabled = true;
 
-  // Sum durations across all selected services, then round up to the
-  // nearest 15 minutes for calendar cleanliness.
   const rawDuration = (s.services || []).reduce((acc, sv) => acc + (sv.durationMinutes || 60), 0);
   const durationMinutes = Math.ceil(rawDuration / 15) * 15;
+  const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 
-const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   const bookingData = {
-      firstName:       formatName(firstName),
-      lastName:        formatName(lastName),
-      email, phone, notes,
-      date:            formatDateISO(s.date),
-      time:            s.time,
-      services:        (s.services || []).map(item => {
-        if ((item.id === 'pmu-5' || item.id === 'pmu-6' || (item.name && item.name.toLowerCase().includes('touch-up'))) && pmuAreaChosen) {
-          const cleanName = item.name.replace(/\s*\([^)]*\)\s*$/, '');
-          return {
-            ...item,
-            name: `${cleanName} (${pmuAreaChosen})`
-          };
-        }
-        return item;
-      }),
-      total:           (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
-      artist:          s.artist || 'Liz Wendy Cedeño',
-      durationMinutes,
-      overridePin:     staffOverridePin || '',
-      lang:            es ? 'es' : 'en',
-    };
+    firstName: formatName(firstName),
+    lastName:  formatName(lastName),
+    email, phone, notes,
+    date: formatDateISO(s.date),
+    time: s.time,
+    services: (s.services || []).map(item => {
+      if ((item.id === 'pmu-5' || item.id === 'pmu-6' || (item.name && item.name.toLowerCase().includes('touch-up'))) && pmuAreaChosen) {
+        const cleanName = item.name.replace(/\s*\([^)]*\)\s*$/, '');
+        return { ...item, name: `${cleanName} (${pmuAreaChosen})` };
+      }
+      return item;
+    }),
+    total: (s.services || []).reduce((acc, sv) => acc + (sv.price || 0), 0),
+    artist: s.artist || 'Liz Wendy Cedeño',
+    durationMinutes,
+    overridePin: staffOverridePin || '',
+    lang: es ? 'es' : 'en',
+  };
+
   try {
     const res = await fetch('/.netlify/functions/create-booking', {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(bookingData),
+      body: JSON.stringify(bookingData),
     });
 
     if (!res.ok) {
@@ -3706,7 +2810,6 @@ const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c 
     }
 
     showSuccess({ ...bookingData, email });
-
   } catch(e) {
     errEl.textContent = e.message || (es ? 'Algo salió mal. Por favor intenta de nuevo.' : 'Something went wrong. Please try again.');
     errEl.classList.add('visible');
@@ -3718,13 +2821,11 @@ const formatName = (str) => (str || '').trim().toLowerCase().replace(/\b\w/g, c 
   }
 }
 
-/* ── SUCCESS SCREEN ── */
 function showSuccess(data) {
   stopDepositPolling();
-  // Hide booking form area
   document.getElementById('bookingFunnel').style.display = 'none';
 
-  const es      = isEs();
+  const es = isEs();
   const dateStr = new Date(data.date + 'T12:00:00').toLocaleDateString(es ? 'es-ES' : 'en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
@@ -3764,7 +2865,7 @@ function showSuccess(data) {
       <span class="success-detail-icon">📧</span>
       <div>
         <div class="success-detail-label">${es ? 'Confirmación enviada a' : 'Confirmation sent to'}</div>
-        <div class="success-detail-value">${data.email}</div>
+        <div class="success-detail-value">${data.email || '—'}</div>
       </div>
     </div>`;
 
@@ -3773,20 +2874,12 @@ function showSuccess(data) {
   screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-/* ─── STEP 2 → STEP 1 ───────────────────────────────────────────── */
 function goToStep1() {
   document.getElementById('panel-step2').classList.remove('active');
   document.getElementById('panel-step1').classList.add('active');
   setFunnelStep(1);
-
-  // Selections are scoped to whichever categories were active when they
-  // were made. Without this, going back to change categories silently
-  // carried old picks forward — if a category was ever re-checked later,
-  // its previous selections would reappear as checked even though the
-  // customer never re-selected them on this visit.
   selectedSvcIds.clear();
   updateStep2Cta();
-
   scrollTop();
 }
 </script>
