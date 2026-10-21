@@ -1462,19 +1462,19 @@ body.lang-en [data-es] { display: none !important; }
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label"><span data-en>First Name</span><span data-es>Nombre</span></label>
-          <input class="form-input" type="text" id="firstName" placeholder="Maria" autocomplete="given-name"/>
+<input class="form-input" type="text" id="firstName" placeholder="Maria" autocomplete="given-name" autocapitalize="words" required/>
         </div>
         <div class="form-group">
           <label class="form-label"><span data-en>Last Name</span><span data-es>Apellido</span></label>
-          <input class="form-input" type="text" id="lastName" placeholder="Lopez" autocomplete="family-name"/>
+<input class="form-input" type="text" id="lastName" placeholder="Lopez" autocomplete="family-name" autocapitalize="words" required/>
         </div>
         <div class="form-group full">
           <label class="form-label"><span data-en>Email Address</span><span data-es>Correo Electrónico</span> <span style="color:var(--muted);font-weight:300;text-transform:none;letter-spacing:0">(<span data-en>optional</span><span data-es>opcional</span>)</span></label>
-          <input class="form-input" type="email" id="emailInput" placeholder="maria@email.com" autocomplete="email"/>
+<input class="form-input" type="email" id="emailInput" placeholder="maria@email.com" inputmode="email" autocomplete="email" autocapitalize="none" required/>
         </div>
         <div class="form-group full">
           <label class="form-label"><span data-en>Phone Number</span><span data-es>Número de Teléfono</span></label>
-          <input class="form-input" type="tel" id="phoneInput" placeholder="(732) 555-0100" autocomplete="tel" oninput="formatPhoneInput(this)"/>
+<input class="form-input" type="tel" id="phoneInput" placeholder="(732) 555-0100" inputmode="tel" autocomplete="tel" oninput="formatPhoneInput(this)" required/>
         </div>
         <div class="form-group full">
           <label class="form-label">
