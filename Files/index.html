@@ -1848,18 +1848,37 @@ async function syncServicesFromSupabase() {
 
     if (error || !dbServices || !dbServices.length) return;
 
-   if (existing) {
+    dbServices.forEach(item => {
+      const cat = (item.category || '').toLowerCase().trim();
+      if (!SERVICES[cat]) return;
+
+      const normDbEn = (item.name_en || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normDbEs = (item.name_es || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Match by exact ID, stripped singular/plural prefix, or normalized name
+      let existing = SERVICES[cat].items.find(s => {
+        const sId = (s.id || '').toLowerCase().replace(/^nails?-/, 'nail-');
+        const dbId = (item.id || '').toLowerCase().replace(/^nails?-/, 'nail-');
+        if (sId === dbId) return true;
+
+        const sNormEn = (s.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const sNormEs = (s.nameEs || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return (sNormEn && sNormEn === normDbEn) || (sNormEs && sNormEs === normDbEs);
+      });
+
+      if (existing) {
+        existing.id = item.id;
         existing.name = item.name_en || existing.name;
         existing.nameEs = item.name_es || existing.nameEs;
         existing.sub = item.sub_en || existing.sub;
         existing.subEs = item.sub_es || existing.subEs;
         existing.price = Number(item.price);
-        
-        // Map price range labels
+
+        // Price range tags
         if (item.price_label_en) existing.priceLabel = item.price_label_en;
         if (item.price_label_es) existing.priceLabelEs = item.price_label_es;
-        
-        // Map duration: prioritize custom estimated time tag, fallback to minutes
+
+        // Custom duration tags
         if (item.duration_label) {
           existing.dur = item.duration_label;
           existing.time = item.duration_label;
@@ -1870,9 +1889,11 @@ async function syncServicesFromSupabase() {
 
         if (item.img_url) existing.img = item.img_url;
       }
+    });
 
-    // Re-render accordions if already generated
-    if (typeof buildAccordions === 'function' && selectedCats && selectedCats.size > 0) {
+    // Re-render accordions if user is currently on Step 2
+    const step2 = document.getElementById('panel-step2');
+    if (step2 && step2.classList.contains('active')) {
       buildAccordions();
       if (typeof updateStep2Cta === 'function') updateStep2Cta();
     }
@@ -2157,8 +2178,9 @@ function buildAccordions() {
     const rowsHtml = data.items.map(svc => {
       const name = isEs() ? svc.nameEs : svc.name;
       const sub = isEs() ? svc.subEs : svc.sub;
-      const priceStr = svc.priceLabel || (isEs() ? svc.priceLabelEs || (typeof svc.price === 'string' ? svc.price : '$' + svc.price) : (typeof svc.price === 'string' ? svc.price : '$' + svc.price));
-      const selected = selectedSvcIds.has(svc.id);
+      const priceStr = isEs()
+      ? (svc.priceLabelEs || svc.priceLabel || (typeof svc.price === 'string' ? svc.price : '$' + svc.price))
+      : (svc.priceLabel || (typeof svc.price === 'string' ? svc.price : '$' + svc.price));      const selected = selectedSvcIds.has(svc.id);
       const imgSrc = svc.img || '';
       const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" decoding="async">` : '';
 
