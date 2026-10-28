@@ -789,8 +789,8 @@ function renderServicesTable(list) {
       <td><strong>${s.name_en}</strong><div style="font-size:11px; color:var(--muted);">${s.name_es}</div></td>
       <td><span class="badge" style="background:var(--card2); border:1px solid var(--border);">${s.category}</span></td>
       <td>$${Number(s.price).toFixed(2)}</td>
-      <td style="color:var(--gold);">${s.price_label_en || '—'}</td>
-      <td>${s.duration_minutes}m</td>
+      <td style="color:var(--gold);">${s.price_label_en || `$${Number(s.price).toFixed(0)}`}</td>
+      <td>${s.duration_label || `${s.duration_minutes}m`}</td>
       <td>
         <span class="badge ${s.is_active ? 'badge-active' : 'badge-hidden'}">
           ${s.is_active ? 'Active' : 'Hidden'}
@@ -822,6 +822,7 @@ function openEditService(id) {
   document.getElementById('editNameEn').value = s.name_en;
   document.getElementById('editNameEs').value = s.name_es;
   document.getElementById('editPrice').value = s.price;
+  document.getElementById('editDurationLabel').value = s.duration_label || (s.duration_minutes ? `${s.duration_minutes} min` : '');
   document.getElementById('editDuration').value = s.duration_minutes;
   document.getElementById('editPriceLabelEn').value = s.price_label_en || '';
   document.getElementById('editPriceLabelEs').value = s.price_label_es || '';
@@ -871,6 +872,7 @@ async function saveServiceChanges() {
       duration_minutes: parseInt(document.getElementById('editDuration').value, 10) || 60,
       price_label_en: document.getElementById('editPriceLabelEn').value.trim() || null,
       price_label_es: document.getElementById('editPriceLabelEs').value.trim() || null,
+      duration_label: document.getElementById('editDurationLabel').value.trim() || null,
       sub_en: document.getElementById('editSubEn').value.trim() || null,
       is_active: document.getElementById('editIsActive').checked
     };
