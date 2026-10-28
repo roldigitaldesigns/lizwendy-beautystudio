@@ -447,25 +447,33 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <input type="text" class="form-input" id="editNameEs"/>
     </div>
 
+  <!-- Pricing Row: Base Price + Customer Display String -->
     <div style="display:flex; gap:12px;">
       <div class="form-group" style="flex:1;">
-        <label class="form-label">Base Price ($)</label>
-        <input type="number" class="form-input" id="editPrice" step="1"/>
+        <label class="form-label">Min / Base Price ($)</label>
+        <input type="number" class="form-input" id="editPrice" step="1" placeholder="45"/>
+        <small style="font-size:10px; color:var(--muted); display:block; margin-top:3px;">Used for cart math</small>
       </div>
       <div class="form-group" style="flex:1;">
-        <label class="form-label">Duration (Minutes)</label>
-        <input type="number" class="form-input" id="editDuration" step="15"/>
+        <label class="form-label">Price Display Tag (EN)</label>
+        <input type="text" class="form-input" id="editPriceLabelEn" placeholder="$45–$65 or From $45"/>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Price Display Tag (ES)</label>
+        <input type="text" class="form-input" id="editPriceLabelEs" placeholder="$45–$65 o Desde $45"/>
       </div>
     </div>
 
+    <!-- Duration Row: Calendar Block Time + Customer Display String -->
     <div style="display:flex; gap:12px;">
       <div class="form-group" style="flex:1;">
-        <label class="form-label">Price Label (EN)</label>
-        <input type="text" class="form-input" id="editPriceLabelEn" placeholder="$20–$35"/>
+        <label class="form-label">Calendar Block (Minutes)</label>
+        <input type="number" class="form-input" id="editDuration" step="15" placeholder="60"/>
+        <small style="font-size:10px; color:var(--muted); display:block; margin-top:3px;">Slots to hold on calendar</small>
       </div>
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Price Label (ES)</label>
-        <input type="text" class="form-input" id="editPriceLabelEs" placeholder="$20–$35"/>
+      <div class="form-group" style="flex:2;">
+        <label class="form-label">Estimated Time Tag (e.g., 45–60 min)</label>
+        <input type="text" class="form-input" id="editDurationLabel" placeholder="45–60 min or Varies"/>
       </div>
     </div>
 
