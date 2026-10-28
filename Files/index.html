@@ -1843,7 +1843,6 @@ async function syncServicesFromSupabase() {
     const { data: dbServices, error } = await supabaseClient
       .from('services')
       .select('*')
-      .eq('is_active', true)
       .order('sort_order', { ascending: true });
 
     if (error || !dbServices || !dbServices.length) return;
@@ -1872,6 +1871,7 @@ async function syncServicesFromSupabase() {
         existing.sub = item.sub_en || existing.sub;
         existing.subEs = item.sub_es || existing.subEs;
         existing.price = Number(item.price);
+        existing.isActive = item.is_active;
 
         // Price range tags
         if (item.price_label_en) existing.priceLabel = item.price_label_en;
@@ -2174,7 +2174,7 @@ function buildAccordions() {
     acc.className = 'accordion open';
     acc.dataset.cat = cat;
 
-    const rowsHtml = data.items.map(svc => {
+const rowsHtml = data.items.filter(svc => svc.isActive !== false).map(svc => {
       const name = isEs() ? svc.nameEs : svc.name;
       const sub = isEs() ? svc.subEs : svc.sub;
       const priceStr = isEs()
