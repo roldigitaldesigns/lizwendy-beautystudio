@@ -1848,28 +1848,33 @@ async function syncServicesFromSupabase() {
 
     if (error || !dbServices || !dbServices.length) return;
 
-    dbServices.forEach(item => {
-      const cat = item.category;
-      if (!SERVICES[cat]) return;
-
-      const existing = SERVICES[cat].items.find(s => s.id === item.id);
-      if (existing) {
-        existing.name = item.name_en;
-        existing.nameEs = item.name_es;
+   if (existing) {
+        existing.name = item.name_en || existing.name;
+        existing.nameEs = item.name_es || existing.nameEs;
         existing.sub = item.sub_en || existing.sub;
         existing.subEs = item.sub_es || existing.subEs;
         existing.price = Number(item.price);
+        
+        // Map price range labels
         if (item.price_label_en) existing.priceLabel = item.price_label_en;
         if (item.price_label_es) existing.priceLabelEs = item.price_label_es;
-        if (item.duration_minutes) existing.dur = `${item.duration_minutes} min`;
+        
+        // Map duration: prioritize custom estimated time tag, fallback to minutes
+        if (item.duration_label) {
+          existing.dur = item.duration_label;
+          existing.time = item.duration_label;
+        } else if (item.duration_minutes) {
+          existing.dur = `${item.duration_minutes} min`;
+          existing.time = `${item.duration_minutes} min`;
+        }
+
         if (item.img_url) existing.img = item.img_url;
       }
-    });
 
-    const step2 = document.getElementById('panel-step2');
-    if (step2 && step2.classList.contains('active')) {
+    // Re-render accordions if already generated
+    if (typeof buildAccordions === 'function' && selectedCats && selectedCats.size > 0) {
       buildAccordions();
-      updateStep2Cta();
+      if (typeof updateStep2Cta === 'function') updateStep2Cta();
     }
   } catch (err) {
     console.warn('Supabase sync skipped, using local fallback:', err);
