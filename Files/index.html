@@ -1856,11 +1856,10 @@ async function syncServicesFromSupabase() {
       const normDbEs = (item.name_es || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
       // Match by exact ID, stripped singular/plural prefix, or normalized name
+      // Match strictly by exact ID or clean name (no loose prefix substitution)
       let existing = SERVICES[cat].items.find(s => {
-        const sId = (s.id || '').toLowerCase().replace(/^nails?-/, 'nail-');
-        const dbId = (item.id || '').toLowerCase().replace(/^nails?-/, 'nail-');
-        if (sId === dbId) return true;
-
+        if (s.id && s.id === item.id) return true;
+        
         const sNormEn = (s.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const sNormEs = (s.nameEs || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         return (sNormEn && sNormEn === normDbEn) || (sNormEs && sNormEs === normDbEs);
