@@ -81,10 +81,34 @@ exports.handler = async (event) => {
             isBlackedOut = true;
             break;
           } else {
-            const [sh, sm] = b.start_time.split(':').map(Number);
-            const [eh, em] = b.end_time.split(':').map(Number);
-            const bStart = new Date(Date.UTC(y, m - 1, d, sh + 4, sm || 0)).getTime();
-            const bEnd = new Date(Date.UTC(y, m - 1, d, eh + 4, em || 0)).getTime();
+            function parseTo24Hour(timeStr) {
+              let t = timeStr.trim();
+              const match12 = t.match(/(\d+):(\d+)\s*(am|pm)/i);
+              if (match12) {
+                let h = parseInt(match12[1], 10);
+                const mn = parseInt(match12[2], 10);
+                const isPm = match12[3].toLowerCase() === 'pm';
+                if (isPm && h < 12) h += 12;
+                if (!isPm && h === 12) h = 0;
+                return [h, mn];
+              }
+              const match24 = t.match(/^(\d{1,2}):(\d{2})/);
+              if (match24) {
+                return [parseInt(match24[1], 10), parseInt(match24[2], 10)];
+              }
+              return [0, 0];
+            }
+
+            let [sh, sm] = parseTo24Hour(b.start_time);
+            let [eh, em] = parseTo24Hour(b.end_time);
+
+            if (eh < sh && eh < 12) {
+              eh += 12;
+            }
+
+            const bStart = new Date(`${dateStr}T${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}:00${offset}`).getTime();
+            const bEnd = new Date(`${dateStr}T${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}:00${offset}`).getTime();
+
             busyIntervals.push({ start: bStart, end: bEnd });
           }
         }
