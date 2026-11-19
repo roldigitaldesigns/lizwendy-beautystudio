@@ -2,7 +2,11 @@ const { google } = require('googleapis');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
+
+const CALENDAR_IDS = [
+  process.env.GOOGLE_CALENDAR_ID,
+  process.env.JOHANNA_CALENDAR_ID || process.env.GOOGLE_CALENDAR_ID_JOHANNA,
+].filter(Boolean);
 
 // Canonical mapping: Merges bilingual variants and tags proper business categories
 const SERVICE_META = {
@@ -59,14 +63,13 @@ const SERVICE_META = {
   'classic lash set': { name: 'Classic Lash Set', cat: 'Lash Ext' },
   'volume lash set': { name: 'Volume Lash Set', cat: 'Lash Ext' },
   'lash refill': { name: 'Lash Refill', cat: 'Lash Ext' },
-  'extensiones de pestañas': { name: 'Classic Lash Set', cat: 'Lash Ext' }
+  'extensiones de pestañas': { name: 'Classic Lash Set', cat: 'Lash Ext' },
 };
 
 function resolveService(rawName) {
   const key = rawName.trim().toLowerCase();
   if (SERVICE_META[key]) return SERVICE_META[key];
-  
-  // Smart fallback categorization if unmapped
+
   let guessedCat = 'Other';
   if (/nail|pedicur|manicur|acryl|gel|dip/i.test(rawName)) guessedCat = 'Nails';
   else if (/makeup|maquill/i.test(rawName)) guessedCat = 'Makeup';
@@ -83,7 +86,7 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS'
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
   };
 
   if (event.httpMethod === 'OPTIONS') {
@@ -104,23 +107,34 @@ exports.handler = async (event) => {
     const calendar = google.calendar({ version: 'v3', auth });
 
     const now = new Date();
-    const currentWindowStart = new Date(now.getTime() - (validRange * 24 * 60 * 60 * 1000));
-    const priorWindowStart = new Date(now.getTime() - (2 * validRange * 24 * 60 * 60 * 1000));
+    const currentWindowStart = new Date(now.getTime() - validRange * 24 * 60 * 60 * 1000);
+    const priorWindowStart = new Date(now.getTime() - 2 * validRange * 24 * 60 * 60 * 1000);
 
-    // Fetch double the window with maxResults 2500 to prevent pagination clipping
-    const response = await calendar.events.list({
-      calendarId: CALENDAR_ID,
-      timeMin: priorWindowStart.toISOString(),
-      timeMax: now.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 2500
-    });
+    const responses = await Promise.all(
+      CALENDAR_IDS.map((calId) =>
+        calendar.events.list({
+          calendarId: calId,
+          timeMin: priorWindowStart.toISOString(),
+          timeMax: now.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 2500,
+        })
+      )
+    );
 
-    const events = response.data.items || [];
+    const seenEventIds = new Set();
+    const events = responses
+      .flatMap((r) => r.data.items || [])
+      .filter((ev) => {
+        if (!ev.id || seenEventIds.has(ev.id)) return false;
+        seenEventIds.add(ev.id);
+        return true;
+      });
+
     const stats = {};
 
-    events.forEach(item => {
+    events.forEach((item) => {
       const desc = item.description || '';
       const eventDate = new Date(item.start?.dateTime || item.start?.date || 0);
 
@@ -128,14 +142,14 @@ exports.handler = async (event) => {
       const isInPriorWindow = eventDate >= priorWindowStart && eventDate < currentWindowStart;
 
       const servicesMatch = desc.match(/Services:\s*(.+)/);
-      const totalMatch = desc.match(/Estimated Total:\s*\$(\d+)/);
+      const totalMatch = desc.match(/Estimated Total:\s*\$(\d+(?:\.\d{1,2})?)/);
 
       if (servicesMatch) {
-        const rawServices = servicesMatch[1].split(',').map(s => s.trim());
-        const eventRevenue = totalMatch ? parseInt(totalMatch[1], 10) : 0;
-        const revenuePerService = rawServices.length > 0 ? (eventRevenue / rawServices.length) : 0;
+        const rawServices = servicesMatch[1].split(',').map((s) => s.trim());
+        const eventRevenue = totalMatch ? parseFloat(totalMatch[1]) : 0;
+        const revenuePerService = rawServices.length > 0 ? eventRevenue / rawServices.length : 0;
 
-        rawServices.forEach(rawName => {
+        rawServices.forEach((rawName) => {
           const resolved = resolveService(rawName);
           const serviceName = resolved.name;
 
@@ -145,7 +159,7 @@ exports.handler = async (event) => {
               cat: resolved.cat,
               count: 0,
               revenue: 0,
-              priorCount: 0
+              priorCount: 0,
             };
           }
 
@@ -159,64 +173,61 @@ exports.handler = async (event) => {
       }
     });
 
-   // Format table items
-      const trendingArray = Object.values(stats)
-        .filter(s => s.count > 0)
-        .map((stat, index) => {
-          let velocityStr = '0%';
-          let status = 'Steady';
+    const trendingArray = Object.values(stats)
+      .filter((s) => s.count > 0)
+      .map((stat, index) => {
+        let velocityStr = '0%';
+        let status = 'Steady';
 
-          if (stat.priorCount === 0) {
-            // If there are zero prior events:
-            // For established services with significant volume, show baseline pending (—)
-            // For lower volume services, tag as New
-            if (stat.count >= 5) {
-              velocityStr = '—';
-              status = stat.count >= 15 ? 'Surge' : 'Steady';
-            } else {
-              velocityStr = 'New';
-              status = 'Surge';
-            }
+        if (stat.priorCount === 0) {
+          if (stat.count >= 5) {
+            velocityStr = '—';
+            status = stat.count >= 15 ? 'Surge' : 'Steady';
           } else {
-            const diff = stat.count - stat.priorCount;
-            const pct = Math.round((diff / stat.priorCount) * 100);
-            velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
-
-            if (pct >= 25) {
-              status = 'Surge';
-            } else if (pct <= -20) {
-              status = 'Cooling';
-            } else {
-              status = 'Steady';
-            }
+            velocityStr = 'New';
+            status = 'Surge';
           }
+        } else {
+          const diff = stat.count - stat.priorCount;
+          const pct = Math.round((diff / stat.priorCount) * 100);
+          velocityStr = pct > 0 ? `+${pct}%` : `${pct}%`;
 
-          return {
-            id: `svc-${index}`,
-            name: stat.name,
-            cat: stat.cat,
-            count: stat.count,
-            revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
-            velocity: velocityStr,
-            status: status
-          };
-        });
+          if (pct >= 25) {
+            status = 'Surge';
+          } else if (pct <= -20) {
+            status = 'Cooling';
+          } else {
+            status = 'Steady';
+          }
+        }
+
+        return {
+          id: `svc-${index}`,
+          name: stat.name,
+          cat: stat.cat,
+          count: stat.count,
+          revenue: `$${Math.round(stat.revenue).toLocaleString()}`,
+          velocity: velocityStr,
+          status: status,
+        };
+      });
 
     trendingArray.sort((a, b) => b.count - a.count);
-    trendingArray.forEach((item, idx) => { item.rank = idx + 1; });
+    trendingArray.forEach((item, idx) => {
+      item.rank = idx + 1;
+    });
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(trendingArray)
+      body: JSON.stringify(trendingArray),
     };
-
   } catch (error) {
     console.error('Error in get-trending:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message || 'Failed to fetch trending data' })
+      body: JSON.stringify({ error: error.message || 'Failed to fetch trending data' }),
     };
   }
 };
