@@ -2,12 +2,24 @@ const { google } = require('googleapis');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 const TENANT_ID = '36f1a3fc-726b-4a30-b1c2-16e32be129b1';
-const ARTIST_ID = 'ff5d2df5-b405-4b93-998d-60ae5b8b7926';
+
+// Configure both artists' Google Calendar IDs and Supabase artist UUIDs
+const ARTIST_CALENDARS = [
+  {
+    name: 'Liz Wendy Cedeño',
+    artistId: process.env.ARTIST_ID_WENDY || 'ff5d2df5-b405-4b93-998d-60ae5b8b7926',
+    calendarId: process.env.GOOGLE_CALENDAR_ID,
+  },
+  {
+    name: 'Johanna',
+    artistId: process.env.ARTIST_ID_JOHANNA, // Set Johanna's UUID from public.artists in Netlify Env
+    calendarId: process.env.GOOGLE_CALENDAR_ID_JOHANNA, // Set Johanna's GCal ID in Netlify Env
+  },
+].filter((a) => a.calendarId && a.artistId);
 
 function toE164(raw) {
   const digits = String(raw || '').replace(/\D/g, '');
@@ -26,12 +38,12 @@ async function supabaseFetch(endpoint, options = {}) {
   const res = await fetch(url, {
     ...options,
     headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=representation',
-      ...(options.headers || {})
-    }
+      Prefer: 'resolution=merge-duplicates,return=representation',
+      ...(options.headers || {}),
+    },
   });
   if (!res.ok) {
     const text = await res.text();
@@ -58,103 +70,117 @@ exports.handler = async (event) => {
 
     const calendar = google.calendar({ version: 'v3', auth });
 
-    const calRes = await calendar.events.list({
-      calendarId: CALENDAR_ID,
-      timeMin: new Date(fromDate).toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 250,
-    });
-
-    const items = calRes.data.items || [];
-    
     const customersToUpsert = [];
     const bookingsToUpsert = [];
     const skipped = [];
+    const perArtistStats = {};
 
-    for (const ev of items) {
-      if (!ev.start?.dateTime) {
-        skipped.push({ summary: ev.summary, reason: 'All-day or no start time' });
-        continue;
-      }
-
-      const summary = ev.summary || '';
-      const description = ev.description || '';
-      const creatorEmail = ev.creator?.email || '';
-      const extProps = ev.extendedProperties?.private || {};
-
-      const isSystemBooking =
-        summary.startsWith('💅') ||
-        description.includes('Booked via lizwendybeautystudiollc.com') ||
-        creatorEmail.includes('gserviceaccount.com') ||
-        Boolean(extProps.cancelToken || extProps.ledgerRef);
-
-      if (!isSystemBooking) {
-        skipped.push({ summary, reason: 'Manual or personal block' });
-        continue;
-      }
-
-      const externalRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
-
-      let name = extProps.customerFirst || '';
-      if (!name) {
-        const nameMatch = description.match(/Client:\s*([^\n\r]+)/i);
-        name = nameMatch ? nameMatch[1].trim() : summary.replace(/^💅\s*/, '').split('—')[0].split('-')[0].trim();
-      }
-
-      let phone = extProps.customerPhone || '';
-      if (!phone) {
-        const phoneMatch = description.match(/Phone:\s*([^\n\r]+)/i);
-        phone = phoneMatch ? phoneMatch[1].trim() : '';
-      }
-      const normalizedPhone = phone ? toE164(phone) : `+1000${ev.id.slice(-7)}`;
-
-      let email = extProps.customerEmail || '';
-      if (!email) {
-        const emailMatch = description.match(/Email:\s*([^\n\r\s]+@[^\n\r\s]+)/i);
-        email = emailMatch ? emailMatch[1].trim() : null;
-      }
-
-      let priceCents = 0;
-      if (extProps.priceCents) {
-        priceCents = parseInt(extProps.priceCents, 10) || 0;
-      } else {
-        const totalMatch = description.match(/Estimated Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i) ||
-                           description.match(/Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i);
-        if (totalMatch) priceCents = toCents(parseFloat(totalMatch[1]));
-      }
-
-      const startTime = new Date(ev.start.dateTime);
-      const endTime = new Date(ev.end.dateTime);
-      const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
-
-     if (normalizedPhone) {
-        customersToUpsert.push({
-          tenant_id: TENANT_ID,
-          phone: normalizedPhone,
-          display_name: name || 'Client', // <-- Changed this line
-          email: email,
-        });
-      }
-
-      bookingsToUpsert.push({
-        tenant_id: TENANT_ID,
-        external_ref: externalRef,
-        customer_phone: normalizedPhone,
-        artist_id: ARTIST_ID,
-        channel: 'web',
-        locale: 'es',
-        price_cents: priceCents,
-        status: 'booked',
-        appointment_at: startTime.toISOString(),
-        duration_minutes: durationMinutes,
-        reschedule_count: 0,
-        was_deflected: false,
+    for (const artist of ARTIST_CALENDARS) {
+      const calRes = await calendar.events.list({
+        calendarId: artist.calendarId,
+        timeMin: new Date(fromDate).toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
+        maxResults: 250,
       });
+
+      const items = calRes.data.items || [];
+      let insertedForArtist = 0;
+
+      for (const ev of items) {
+        if (!ev.start?.dateTime) {
+          skipped.push({ artist: artist.name, summary: ev.summary, reason: 'All-day or no start time' });
+          continue;
+        }
+
+        const summary = ev.summary || '';
+        const description = ev.description || '';
+        const creatorEmail = ev.creator?.email || '';
+        const extProps = ev.extendedProperties?.private || {};
+
+        const isSystemBooking =
+          summary.startsWith('💅') ||
+          description.includes('Booked via lizwendybeautystudiollc.com') ||
+          creatorEmail.includes('gserviceaccount.com') ||
+          Boolean(extProps.cancelToken || extProps.ledgerRef);
+
+        if (!isSystemBooking) {
+          skipped.push({ artist: artist.name, summary, reason: 'Manual or personal block' });
+          continue;
+        }
+
+        const externalRef = extProps.cancelToken || extProps.ledgerRef || `gcal_${ev.id}`;
+
+        let name = extProps.customerFirst || '';
+        if (!name) {
+          const nameMatch = description.match(/Client:\s*([^\n\r]+)/i);
+          name = nameMatch
+            ? nameMatch[1].trim()
+            : summary.replace(/^💅\s*/, '').split('—')[0].split('-')[0].trim();
+        }
+
+        let phone = extProps.customerPhone || '';
+        if (!phone) {
+          const phoneMatch = description.match(/Phone:\s*([^\n\r]+)/i);
+          phone = phoneMatch ? phoneMatch[1].trim() : '';
+        }
+        const normalizedPhone = phone ? toE164(phone) : `+1000${ev.id.slice(-7)}`;
+
+        let email = extProps.customerEmail || '';
+        if (!email) {
+          const emailMatch = description.match(/Email:\s*([^\n\r\s]+@[^\n\r\s]+)/i);
+          email = emailMatch ? emailMatch[1].trim() : null;
+        }
+
+        let priceCents = 0;
+        if (extProps.priceCents) {
+          priceCents = parseInt(extProps.priceCents, 10) || 0;
+        } else {
+          const totalMatch =
+            description.match(/Estimated Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i) ||
+            description.match(/Total:\s*\$?([0-9]+(?:\.[0-9]{2})?)/i);
+          if (totalMatch) priceCents = toCents(parseFloat(totalMatch[1]));
+        }
+
+        const startTime = new Date(ev.start.dateTime);
+        const endTime = new Date(ev.end.dateTime);
+        const durationMinutes = Math.max(15, Math.round((endTime - startTime) / (1000 * 60)));
+
+        if (normalizedPhone) {
+          customersToUpsert.push({
+            tenant_id: TENANT_ID,
+            phone: normalizedPhone,
+            display_name: name || 'Client',
+            email: email,
+          });
+        }
+
+        bookingsToUpsert.push({
+          tenant_id: TENANT_ID,
+          external_ref: externalRef,
+          customer_phone: normalizedPhone,
+          artist_id: artist.artistId, // Dynamic per-calendar Artist UUID
+          channel: 'web',
+          locale: 'es',
+          price_cents: priceCents,
+          status: 'booked',
+          appointment_at: startTime.toISOString(),
+          duration_minutes: durationMinutes,
+          reschedule_count: 0,
+          was_deflected: false,
+        });
+
+        insertedForArtist++;
+      }
+
+      perArtistStats[artist.name] = {
+        scanned: items.length,
+        synced: insertedForArtist,
+      };
     }
 
     if (!isDryRun) {
-      const uniqueCustomers = Array.from(new Map(customersToUpsert.map(c => [c.phone, c])).values());
+      const uniqueCustomers = Array.from(new Map(customersToUpsert.map((c) => [c.phone, c])).values());
 
       if (uniqueCustomers.length > 0) {
         await supabaseFetch('customers?on_conflict=tenant_id,phone', {
@@ -174,12 +200,16 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        mode: isDryRun ? 'DRY_RUN' : 'BULK_SUPABASE_INSERT_COMPLETE',
-        total_scanned: items.length,
-        total_inserted: bookingsToUpsert.length,
-        skipped_blocks: skipped.length,
-      }, null, 2),
+      body: JSON.stringify(
+        {
+          mode: isDryRun ? 'DRY_RUN' : 'MULTI_ARTIST_SYNC_COMPLETE',
+          artists: perArtistStats,
+          total_inserted: bookingsToUpsert.length,
+          skipped_blocks: skipped.length,
+        },
+        null,
+        2
+      ),
     };
   } catch (err) {
     console.error('sync-calendar fatal error:', err);
