@@ -16,8 +16,8 @@ const ARTIST_CALENDARS = [
   },
   {
     name: 'Johanna',
-    artistId: process.env.ARTIST_ID_JOHANNA, // Set Johanna's UUID from public.artists in Netlify Env
-    calendarId: process.env.GOOGLE_CALENDAR_ID_JOHANNA, // Set Johanna's GCal ID in Netlify Env
+    artistId: process.env.ARTIST_ID_JOHANNA || 'johanna',
+    calendarId: process.env.JOHANNA_CALENDAR_ID || process.env.GOOGLE_CALENDAR_ID_JOHANNA,
   },
 ].filter((a) => a.calendarId && a.artistId);
 
