@@ -9,13 +9,6 @@
  *   total: number,
  *   artist: string
  * }
- *
- * Actions:
- * 1. Double-check slot is still free on Google Calendar
- * 2. Create Google Calendar event (blocks the slot)
- * 3. Save appointment ledger entry in Supabase (appointments table)
- * 4. Send confirmation email to customer via EmailJS
- * 5. Send notification email to Wendy/Ramon via EmailJS
  */
 
 const { google } = require('googleapis');
@@ -139,7 +132,6 @@ function computeDurationFromServices(services) {
   return Math.ceil(total / 15) * 15;
 }
 
-// Fallback schedules in case of filesystem reading
 let SCHEDULES = null;
 try {
   SCHEDULES = require('./schedules.json');
@@ -262,7 +254,7 @@ exports.handler = async (event) => {
 
     // ── 2. DOUBLE-CHECK SLOT IS FREE ──
     const [slotH, slotM = 0] = time.split(':').map(Number);
-    
+
     function getNYOffset(dStr) {
       const d = new Date(`${dStr}T12:00:00Z`);
       const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
@@ -271,14 +263,14 @@ exports.handler = async (event) => {
       if (diff > 0) diff -= 24;
       return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
     }
-    
+
     const offset = getNYOffset(date);
     const eventStart = new Date(`${date}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00${offset}`);
 
     const safeDuration = (Number.isFinite(durationMinutes) && durationMinutes > 0)
       ? durationMinutes
       : computeDurationFromServices(services);
-    
+
     const roundedDuration = safeDuration;
     const eventEnd = new Date(eventStart.getTime() + roundedDuration * 60 * 1000);
 
@@ -298,16 +290,22 @@ exports.handler = async (event) => {
     }
 
     // ── 3. CREATE CALENDAR EVENT ──
-    const serviceList = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
-    const totalStr    = total > 0 ? `$${total}` : 'TBD (consultation)';
-    const dateObj     = new Date(date + 'T12:00:00');
+    const serviceList  = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
+    const totalStr     = total > 0 ? `$${total}` : 'TBD (consultation)';
+    const dateObj      = new Date(date + 'T12:00:00');
     const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
     const timeReadable = formatTime(time);
-    const fullName     = lastName ? `${firstName} ${lastName}` : firstName;
+
+    // Avoid duplicate first name if mobile autofill put full name into lastName
+    const cleanFirst = String(firstName || '').trim();
+    const cleanLast  = String(lastName || '').trim();
+    const fullName   = (cleanLast && !cleanLast.toLowerCase().startsWith(cleanFirst.toLowerCase() + ' '))
+      ? `${cleanFirst} ${cleanLast}`
+      : (cleanLast || cleanFirst);
 
     const cancelToken = crypto.randomBytes(16).toString('hex');
-    const artistId = ARTIST_IDS[artist] || 'liz';
-    const cancelUrl = `${SITE_URL}/cancel.html?token=${cancelToken}&artist=${artistId}`;
+    const artistId    = ARTIST_IDS[artist] || 'liz';
+    const cancelUrl   = `${SITE_URL}/cancel.html?token=${cancelToken}&artist=${artistId}`;
 
     const calEvent = {
       summary: `💅 ${fullName} — ${serviceList}`,
@@ -327,7 +325,7 @@ exports.handler = async (event) => {
       extendedProperties: {
         private: {
           cancelToken:     cancelToken,
-          customerFirst:   firstName,
+          customerFirst:   cleanFirst,
           customerEmail:   email || '',
           customerPhone:   phone || '',
           artistName:      artist || 'Liz Wendy Cedeño',
@@ -384,13 +382,13 @@ exports.handler = async (event) => {
       actor:            'customer',
     });
 
-    // ── 6. SEND NOTIFICATIONS ──
+    // ── 6. SEND NOTIFICATIONS IN PARALLEL WITH 4.5s TIMEOUT ──
     try {
       const customerConfirmation = email
-        ? sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang })
-        : sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeReadable, serviceList, totalStr, artist, cancelUrl });
+        ? sendCustomerEmail({ firstName: cleanFirst, fullName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang })
+        : sendWhatsAppConfirmation({ firstName: cleanFirst, phone, dateReadable, timeReadable, serviceList, totalStr, artist, cancelUrl });
 
-      await Promise.all([
+      await Promise.allSettled([
         customerConfirmation,
         sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }),
       ]);
@@ -398,8 +396,7 @@ exports.handler = async (event) => {
       console.error('Customer/studio notification failed (booking confirmed):', notifyErr);
     }
 
-    // Await background records before serverless response freeze
-    await Promise.all([ledgerPromise, supabaseInsertPromise]);
+    await Promise.allSettled([ledgerPromise, supabaseInsertPromise]);
 
     return {
       statusCode: 200,
@@ -418,7 +415,7 @@ exports.handler = async (event) => {
 };
 
 /* ── EMAIL: Customer Confirmation (via EmailJS) ── */
-async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang }) {
+async function sendCustomerEmail({ firstName, fullName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang }) {
   const artistDisplay = artist || 'Liz Wendy Cedeño';
   const isEs = lang === 'es';
 
@@ -438,6 +435,7 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
 
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
+    signal: AbortSignal.timeout(4500),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       service_id:  EMAILJS_SERVICE_ID,
@@ -446,22 +444,31 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
       accessToken: EMAILJS_PRIVATE_KEY,
       template_params: {
         to_email:         email,
+        // Template variables used in HTML template:
+        client_name:      firstName,
+        artist:           artistDisplay,
+        appointment_date: dateReadable,
+        appointment_time: timeReadable,
+        services:         serviceList,
+        cancel_link:      cancelUrl,
+        // Extra aliases for compatibility:
         first_name:       firstName,
+        full_name:        fullName,
+        artist_name:      artistDisplay,
+        date:             dateReadable,
+        time:             timeReadable,
+        total:            totalStr,
+        notes_line:       notes || '',
+        cancel_url:       cancelUrl,
         subject_override: emailCopy.subject,
         intro_override:   emailCopy.intro,
         outro_override:   emailCopy.outro,
-        date:             dateReadable,
-        time:             timeReadable,
-        services:         serviceList,
-        total:            totalStr,
-        notes_line:       '',
-        artist_name:      artistDisplay,
-        cancel_url:       cancelUrl,
       },
     }),
   });
 
   const text = await res.text();
+  if (!res.ok) console.error('sendCustomerEmail error:', res.status, text);
   return { ok: res.ok, status: res.status, response: text };
 }
 
@@ -493,6 +500,7 @@ async function sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeRe
     `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
     {
       method: 'POST',
+      signal: AbortSignal.timeout(4500),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
@@ -507,15 +515,16 @@ async function sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeRe
 
 /* ── EMAIL: Studio Notification (via EmailJS) ── */
 async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
-  const notesLine = [
-    notes ? `📝 Notes: ${notes}` : '',
-  ].filter(Boolean).join('\n');
+  const artistDisplay = artist || 'Liz Wendy Cedeño';
+  const notesText = notes ? notes : 'None';
+  const notesLine = notes ? `📝 Notes: ${notes}` : '';
 
-  const recipientEmail = ARTIST_EMAILS[artist] || STUDIO_EMAIL;
+  const recipientEmail = ARTIST_EMAILS[artistDisplay] || STUDIO_EMAIL;
   const ccEmail = (recipientEmail !== STUDIO_EMAIL) ? STUDIO_EMAIL : '';
 
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
+    signal: AbortSignal.timeout(4500),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       service_id:  EMAILJS_SERVICE_ID,
@@ -525,20 +534,29 @@ async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReada
       template_params: {
         to_email:       recipientEmail,
         cc_email:       ccEmail,
+        // Template variables used in HTML template:
         full_name:      fullName,
-        customer_email: email,
-        phone:          phone,
+        client_phone:   phone,
+        client_email:   email || 'Not provided (Phone/WhatsApp)',
+        artist:         artistDisplay,
         date:           dateReadable,
         time:           timeReadable,
         services:       serviceList,
+        client_notes:   notesText,
+        // Extra aliases for compatibility:
+        customer_email: email || 'Not provided',
+        phone:          phone,
+        artist_name:    artistDisplay,
         total:          totalStr,
         notes_line:     notesLine,
         cancel_url:     cancelUrl,
+        cancelUrl:      cancelUrl,
       },
     }),
   });
 
   const text = await res.text();
+  if (!res.ok) console.error('sendStudioEmail error:', res.status, text);
   return { ok: res.ok, status: res.status, response: text };
 }
 
