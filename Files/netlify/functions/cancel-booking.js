@@ -168,11 +168,16 @@ exports.handler = async (event) => {
       actor:           'customer',
     };
 
+    // Derive duration from event start/end or stored extendedProperties
+    const evEndIso = (booking.end && booking.end.dateTime) || null;
+    let durationMinutes = parseInt(props.durationMinutes, 10) || 60;
+    if (appointmentStart && evEndIso) {
+      const diffMin = Math.round((Date.parse(evEndIso) - Date.parse(appointmentStart)) / 60000);
+      if (diffMin > 0) durationMinutes = diffMin;
+    }
+
     // ── STEP 1: LOOKUP ONLY ──
     if (action === 'lookup') {
-      // Manage-page opened. Recorded once per booking version (idempotent on the
-      // token) so page reloads don't inflate it. Short timeout, no retry: this
-      // sits on the page-load path and is the least important event.
       await recordLedgerEvent(
         { ...ledgerBase, event_type: 'cancel_intent', idempotency_key: `intent:${token}` },
         { timeoutMs: 1500, retries: 0 }
@@ -181,7 +186,7 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, booking: details, appointmentStart }),
+        body: JSON.stringify({ success: true, booking: details, appointmentStart, durationMinutes }),
       };
     }
 
@@ -295,19 +300,22 @@ async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outr
       template_params: {
         to_email:         toEmail,
         cc_email:         cc || '',
+        client_name:      details.firstName || 'Valued Client',
+        artist:           details.artistName || 'Liz Wendy Cedeño',
+        appointment_date: details.date,
+        appointment_time: details.time,
+        services:         details.services,
+        cancel_link:      SITE_URL,
         subject_override: subjectLine,
         intro_override:   introLine,
         outro_override:   outroLine,
         date:             details.date,
         time:             details.time,
-        services:         details.services,
         artist_name:      details.artistName,
-        // Unused by cancellation but required fields in the template —
-        // pass empty strings so EmailJS doesn't reject missing variables.
-        first_name:  '',
-        total:       '',
-        notes_line:  '',
-        cancel_url:  '',
+        first_name:       details.firstName || '',
+        total:            'Cancelled',
+        notes_line:       '',
+        cancel_url:       SITE_URL,
       },
     }),
   });
