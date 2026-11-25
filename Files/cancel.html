@@ -374,6 +374,7 @@ body {
   }
   .modal-box .status-icon { font-size: 32px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="lang-en">
 
@@ -578,27 +579,81 @@ const artist  = params.get('artist') || '';
 
 const WHATSAPP_NUMBER = '18483891934';
 
-/* ── RESCHEDULE STATE ── */
-let selectedDate = null;
-let selectedSlot = null;
-let takenSlots   = [];
-let isSubmitting = false;
+/* ── SUPABASE LIVE SCHEDULE SYNC ── */
+const SUPABASE_URL = 'https://dayyxufmvxqxobjxdxzv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXl4dWZtdnhxeG9ianhkeHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3ODAxNjQsImV4cCI6MjEwNTM1NjE2NH0.Oaqg-UIEYlob64MYMypadVjRcMSDowZ9BshhJKO6PEc';
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-/* ── SCHEDULES ── */
-const DEFAULT_SCHEDULE = { 1:[9,19], 3:[9,19], 4:[9,19], 5:[9,19], 6:[7,16] };
+/* ── RESCHEDULE STATE ── */
+let selectedDate        = null;
+let selectedSlot        = null;
+let currentAvailability = null;
+let bookingDurationMin  = 60;
+let currentApptStartMs  = null;
+let currentApptEndMs    = null;
+let isSubmitting        = false;
+
+/* ── SCHEDULES (live Supabase first, schedules.json fallback) ── */
+const DEFAULT_SCHEDULE = { 0:[9,17], 1:[9,19], 2:[9,19], 3:[9,19], 4:[9,19], 5:[9,19], 6:[7,16] };
 let ARTIST_SCHEDULES = null;
 
 async function loadSchedules() {
+  let merged = {};
   try {
     const res = await fetch('schedules.json');
-    if (res.ok) ARTIST_SCHEDULES = await res.json();
-  } catch (e) { ARTIST_SCHEDULES = null; }
+    if (res.ok) merged = await res.json();
+  } catch (e) { merged = {}; }
+
+  if (supabaseClient) {
+    try {
+      const todayIso = new Date().toISOString().split('T')[0];
+      const [{ data: dbScheds, error: scErr }, { data: dbBlackouts, error: boErr }] = await Promise.all([
+        supabaseClient.from('artist_schedules').select('artist_id, day_of_week, start_hour, end_hour, is_active'),
+        supabaseClient.from('artist_blackouts').select('artist_id, start_date, end_date, start_time').gte('end_date', todayIso),
+      ]);
+
+      if (!scErr && Array.isArray(dbScheds) && dbScheds.length > 0) {
+        const byArtist = {};
+        dbScheds.forEach((row) => {
+          const aid = String(row.artist_id || '').toLowerCase().trim();
+          if (!aid) return;
+          if (!byArtist[aid]) byArtist[aid] = {};
+          if (row.is_active) {
+            byArtist[aid][row.day_of_week] = [Number(row.start_hour), Number(row.end_hour)];
+          }
+        });
+        Object.keys(byArtist).forEach((aid) => {
+          merged[aid] = { ...(merged[aid] || {}), ...byArtist[aid] };
+          [0, 1, 2, 3, 4, 5, 6].forEach((d) => {
+            if (!byArtist[aid][d]) delete merged[aid][d];
+          });
+        });
+      }
+
+      if (!boErr && Array.isArray(dbBlackouts)) {
+        dbBlackouts.forEach((b) => {
+          if (b.start_time) return;
+          const aid = String(b.artist_id || '').toLowerCase().trim();
+          if (!aid) return;
+          if (!merged[aid]) merged[aid] = { ...DEFAULT_SCHEDULE };
+          if (!Array.isArray(merged[aid].blackout)) merged[aid].blackout = [];
+          merged[aid].blackout.push({ from: b.start_date, to: b.end_date });
+        });
+      }
+    } catch (sbErr) {
+      console.warn('Supabase schedule sync skipped:', sbErr);
+    }
+  }
+
+  ARTIST_SCHEDULES = Object.keys(merged).length > 0 ? merged : null;
 }
+
 function getSchedule(artistId) {
-  const id = artistId || 'liz';
+  const id = (artistId || 'liz').toLowerCase().trim();
   if (ARTIST_SCHEDULES && ARTIST_SCHEDULES[id]) return ARTIST_SCHEDULES[id];
   return DEFAULT_SCHEDULE;
 }
+
 function isBlackedOut(schedule, dateStr) {
   if (!schedule || !Array.isArray(schedule.blackout)) return false;
   return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
@@ -611,6 +666,15 @@ const DOW_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 function formatDateISO(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function getNYOffset(dStr) {
+  const d = new Date(dStr + 'T12:00:00Z');
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
+  const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  let diff = nyHour - 12;
+  if (diff > 0) diff -= 24;
+  return (diff < 0 ? '-' : '+') + String(Math.abs(diff)).padStart(2, '0') + ':00';
 }
 
 /* ── VIEW SWITCHER ── */
@@ -636,6 +700,8 @@ async function lookupBooking() {
     const b = data.booking || {};
     const es = isEs();
 
+    bookingDurationMin = Math.max(15, Number(data.durationMinutes) || 60);
+
     document.getElementById('bookingDetails').innerHTML =
       '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">' +
       (es ? 'Tu cita actual' : 'Your current appointment') + '</div>' +
@@ -645,6 +711,8 @@ async function lookupBooking() {
       '💅 ' + (es ? 'Con' : 'With') + ': ' + escapeHtml(b.artistName);
 
     const startMs = data.appointmentStart ? Date.parse(data.appointmentStart) : NaN;
+    currentApptStartMs = !isNaN(startMs) ? startMs : null;
+    currentApptEndMs   = currentApptStartMs ? currentApptStartMs + bookingDurationMin * 60000 : null;
     const within24h = !isNaN(startMs) && (startMs - Date.now() < 24 * 60 * 60 * 1000);
 
     if (within24h) {
@@ -666,7 +734,7 @@ async function lookupBooking() {
   }
 }
 
-/* ── BUILD DATE STRIP ── */
+/* ── BUILD DATE STRIP (30 upcoming working days) ── */
 function buildDateStrip() {
   const schedule = getSchedule(artist);
   const strip = document.getElementById('dateStrip');
@@ -680,7 +748,7 @@ function buildDateStrip() {
   cursor.setHours(0,0,0,0);
   cursor.setDate(cursor.getDate() + 1);
   let guard = 0;
-  while (out.length < 21 && guard < 120) {
+  while (out.length < 30 && guard < 150) {
     guard++;
     const dow = cursor.getDay();
     const iso = formatDateISO(cursor);
@@ -711,6 +779,7 @@ function buildDateStrip() {
 async function selectDate(date, chipEl) {
   selectedDate = date;
   selectedSlot = null;
+  currentAvailability = null;
   updateRescheduleBtn();
   document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('selected'));
   if (chipEl) chipEl.classList.add('selected');
@@ -723,55 +792,69 @@ async function selectDate(date, chipEl) {
   try {
     const iso = formatDateISO(date);
     const res = await fetch('/.netlify/functions/get-availability?date=' + iso + '&artistId=' + encodeURIComponent(artist));
-    takenSlots = res.ok ? ((await res.json()).takenSlots || []) : [];
+    if (res.ok) currentAvailability = await res.json();
   } catch (e) {
-    takenSlots = [];
+    currentAvailability = { isFullyBlocked: true, busyIntervals: [] };
   }
   renderSlots(date);
 }
 
-/* ── RENDER TIME SLOTS ── */
+/* ── RENDER TIME SLOTS (15-min grid + full duration busyIntervals check) ── */
 function renderSlots(date) {
   const es = isEs();
-  const schedule = getSchedule(artist);
-  const hrs = schedule[date.getDay()];
   const slotsArea = document.getElementById('slotsArea');
 
-  if (!hrs) {
+  if (!currentAvailability || currentAvailability.isFullyBlocked) {
     slotsArea.innerHTML = '<div class="slots-placeholder">' +
       (es ? 'Sin disponibilidad este día.' : 'No availability this day.') + '</div>';
     return;
   }
 
-  const [start, end] = hrs;
-  const step = (artist === 'liz') ? 60 : 30;
-  const slots = [];
-  for (let mins = start * 60; mins < end * 60; mins += step) {
-    slots.push(String(Math.floor(mins/60)).padStart(2,'0') + ':' + String(mins%60).padStart(2,'0'));
+  const reqMinutes = Math.ceil(bookingDurationMin / 15) * 15;
+  const stepMinutes = 15;
+  const dateISO = formatDateISO(date);
+  const offset = getNYOffset(dateISO);
+
+  const shiftStartMs = new Date(`${dateISO}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00${offset}`).getTime();
+  const shiftEndMs   = new Date(`${dateISO}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00${offset}`).getTime();
+
+  // Exclude the customer's own existing appointment window so they can move 30m earlier/later on the same day
+  const otherBusy = (currentAvailability.busyIntervals || []).filter(b => {
+    if (currentApptStartMs && currentApptEndMs) {
+      if (Math.abs(b.start - currentApptStartMs) < 60000 && Math.abs(b.end - currentApptEndMs) < 60000) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const openSlots = [];
+  for (let timeMs = shiftStartMs; timeMs + reqMinutes * 60000 <= shiftEndMs; timeMs += stepMinutes * 60000) {
+    const slotEndMs = timeMs + reqMinutes * 60000;
+    const hasCollision = otherBusy.some(busy => (timeMs < busy.end && slotEndMs > busy.start));
+    const isTooSoon = (timeMs < Date.now() + 30 * 60000);
+    if (!hasCollision && !isTooSoon) {
+      const d = new Date(timeMs);
+      openSlots.push(String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'));
+    }
+  }
+
+  slotsArea.innerHTML = '';
+  if (openSlots.length === 0) {
+    slotsArea.innerHTML = '<div class="slots-placeholder">' +
+      (es ? 'No hay suficiente tiempo continuo para tu servicio este día. Prueba otra fecha.' : 'Not enough continuous time for your service this day. Try another date.') + '</div>';
+    return;
   }
 
   const grid = document.createElement('div');
   grid.className = 'slots-grid';
-  let anyOpen = false;
-  slots.forEach(slot => {
+  openSlots.forEach(slot => {
     const btn = document.createElement('button');
     btn.className = 'slot-btn';
     btn.textContent = to12h(slot);
-    if (takenSlots.includes(slot)) {
-      btn.disabled = true;
-    } else {
-      anyOpen = true;
-      btn.onclick = () => selectSlot(slot, btn);
-    }
+    btn.onclick = () => selectSlot(slot, btn);
     grid.appendChild(btn);
   });
-
-  slotsArea.innerHTML = '';
-  if (!anyOpen) {
-    slotsArea.innerHTML = '<div class="slots-placeholder">' +
-      (es ? 'No quedan horarios este día. Prueba otra fecha.' : 'No times left this day. Try another date.') + '</div>';
-    return;
-  }
   slotsArea.appendChild(grid);
 }
 
