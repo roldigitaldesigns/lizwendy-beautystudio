@@ -201,10 +201,9 @@ tr:hover td { background: rgba(255,255,255,.015); }
   font-family: var(--serif); font-size: 16px; color: var(--gold);
   position: sticky; top: 0; z-index: 10;
 }
-.cal-canvas { position: relative; height: 960px; /* 16 hours * 60px */ background: rgba(0,0,0,0.2); }
+.cal-canvas { position: relative; height: 960px; background: rgba(0,0,0,0.2); }
 .cal-slot-grid-line { height: 60px; border-top: 1px dashed rgba(255,255,255,0.06); }
 
-/* High-Contrast, Readable Appointment Cards */
 .cal-event-card {
   position: absolute; 
   left: 6px; 
@@ -261,7 +260,6 @@ tr:hover td { background: rgba(255,255,255,.015); }
   z-index: 3; display: flex; align-items: center; justify-content: center;
   color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
 }
-  
 </style>
 </head>
 <body>
@@ -283,14 +281,14 @@ tr:hover td { background: rgba(255,255,255,.015); }
 
 <!-- ── 1. LOGIN SCREEN ── -->
 <div id="loginView">
-  <div class="login-card">
+  <form class="login-card" onsubmit="event.preventDefault(); handleLogin();">
     <div style="font-size:32px; margin-bottom: 12px;">✦</div>
     <h1 class="login-title">Staff Portal</h1>
     <p class="login-sub">Sign in with your studio account to manage services, hours & bookings.</p>
     
     <div class="form-group">
-      <label class="form-label">Email Address</label>
-      <input type="email" class="form-input" id="authEmail" placeholder="wendy@email.com" autocomplete="email"/>
+      <label class="form-label">Username or Email</label>
+      <input type="text" class="form-input" id="authEmail" placeholder="Wendy" autocomplete="username" autocapitalize="none"/>
     </div>
     
     <div class="form-group">
@@ -298,9 +296,9 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <input type="password" class="form-input" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
     </div>
     
-    <button class="btn-gold" id="loginBtn" onclick="handleLogin()" style="width:100%;">Sign In ✦</button>
+    <button type="submit" class="btn-gold" id="loginBtn" style="width:100%;">Sign In ✦</button>
     <div class="auth-error" id="authError"></div>
-  </div>
+  </form>
 </div>
 
 <!-- ── 2. DASHBOARD SCREEN ── -->
@@ -342,7 +340,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 
-<!-- TAB 2: SCHEDULES -->
+  <!-- TAB 2: SCHEDULES -->
   <div class="tab-pane" id="tab-schedules">
     <div class="panel-header">
       <div>
@@ -384,11 +382,9 @@ tr:hover td { background: rgba(255,255,255,.015); }
     <!-- Calendar Timeline Board -->
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; padding:20px;">
       <div id="calendarColumnsContainer" style="display:grid; grid-template-columns: 80px repeat(2, minmax(260px, 1fr)); gap:16px; min-width:620px;">
-        <!-- Filled dynamically: Time labels column + Artist columns -->
       </div>
     </div>
   </div>
-  
 
   <!-- TAB 3: APPOINTMENTS -->
   <div class="tab-pane" id="tab-appointments">
@@ -447,7 +443,6 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <input type="text" class="form-input" id="editNameEs"/>
     </div>
 
-  <!-- Pricing Row: Base Price + Customer Display String -->
     <div style="display:flex; gap:12px;">
       <div class="form-group" style="flex:1;">
         <label class="form-label">Min / Base Price ($)</label>
@@ -464,7 +459,6 @@ tr:hover td { background: rgba(255,255,255,.015); }
       </div>
     </div>
 
-    <!-- Duration Row: Calendar Block Time + Customer Display String -->
     <div style="display:flex; gap:12px;">
       <div class="form-group" style="flex:1;">
         <label class="form-label">Calendar Block (Minutes)</label>
@@ -560,6 +554,7 @@ tr:hover td { background: rgba(255,255,255,.015); }
     </div>
   </div>
 </div>
+
 <!-- ── TIME OFF / BLACKOUT MODAL ── -->
 <div class="modal-overlay" id="timeOffModal">
   <div class="modal-card" style="max-width:540px;">
@@ -593,15 +588,11 @@ tr:hover td { background: rgba(255,255,255,.015); }
     <div id="timeOffHourlyContainer" style="display:none; gap:12px; margin-bottom:16px; background:var(--card2); border:1px solid var(--border); padding:12px; border-radius:4px;">
       <div style="flex:1;">
         <label class="form-label">Block From</label>
-        <select class="form-input" id="timeOffStartHour">
-          <!-- Filled via JS -->
-        </select>
+        <select class="form-input" id="timeOffStartHour"></select>
       </div>
       <div style="flex:1;">
         <label class="form-label">Block Until</label>
-        <select class="form-input" id="timeOffEndHour">
-          <!-- Filled via JS -->
-        </select>
+        <select class="form-input" id="timeOffEndHour"></select>
       </div>
     </div>
 
@@ -617,7 +608,6 @@ tr:hover td { background: rgba(255,255,255,.015); }
     <input type="hidden" id="hoursArtistId"/>
 
     <div id="hoursRowsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
-      <!-- Populated via JS -->
     </div>
 
     <button class="btn-gold" id="saveHoursBtn" onclick="saveHoursChanges()" style="width:100%;">Save Working Hours ✦</button>
@@ -631,6 +621,11 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Username-to-email aliases so staff can sign in with simple usernames
+const USERNAME_ALIASES = {
+  wendy: 'wendy@lizwendybeautystudiollc.com',
+};
+
 let ALL_SERVICES = [];
 let ALL_ARTISTS = [];
 let ALL_SCHEDS = [];
@@ -639,8 +634,8 @@ const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 // ── ROLE-BASED ACCESS CONTROL ──
 let CURRENT_USER_EMAIL = '';
-let CURRENT_USER_ROLE = 'admin'; // 'admin' or 'staff'
-let CURRENT_ARTIST_ID = null;    // null for admin, or 'johanna'
+let CURRENT_USER_ROLE = 'admin';
+let CURRENT_ARTIST_ID = null;
 
 function applyUserRole(email) {
   CURRENT_USER_EMAIL = (email || '').toLowerCase();
@@ -653,7 +648,6 @@ function applyUserRole(email) {
     CURRENT_ARTIST_ID = null;
   }
 
-  // Adjust Tab Visibility
   const svcTabBtn = document.querySelector('[onclick="switchTab(\'services\')"]');
   const schedTabBtn = document.querySelector('[onclick="switchTab(\'schedules\')"]');
   const apptFilter = document.getElementById('apptArtistFilter');
@@ -665,7 +659,6 @@ function applyUserRole(email) {
       apptFilter.value = CURRENT_ARTIST_ID;
       apptFilter.disabled = true;
     }
-    // Default staff straight to Studio Calendar
     switchTab('calendar');
   } else {
     if (svcTabBtn) svcTabBtn.style.display = 'inline-block';
@@ -674,9 +667,8 @@ function applyUserRole(email) {
       apptFilter.disabled = false;
     }
   }
-} // <- THIS BRACE FIXED THE SYNTAX ERROR
+}
 
-  
 // ── AUTH CHECK ──
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -715,22 +707,32 @@ function showDashboard() {
 }
 
 async function handleLogin() {
-  const email = document.getElementById('authEmail').value.trim();
+  const rawLogin = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   const errEl = document.getElementById('authError');
   const btn = document.getElementById('loginBtn');
 
   errEl.style.display = 'none';
+
+  if (!rawLogin || !password) {
+    errEl.textContent = 'Please enter your username and password.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const normalized = rawLogin.toLowerCase();
+  const email = USERNAME_ALIASES[normalized] || (normalized.includes('@') ? normalized : `${normalized}@lizwendybeautystudiollc.com`);
+
   btn.disabled = true;
   btn.textContent = 'Signing in...';
 
   const { error } = await sbClient.auth.signInWithPassword({ email, password });
   if (error) {
-    errEl.textContent = error.message;
+    errEl.textContent = 'Invalid username or password. Please try again.';
     errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Sign In ✦';
   }
+  btn.disabled = false;
+  btn.textContent = 'Sign In ✦';
 }
 
 async function handleLogout() {
@@ -748,7 +750,6 @@ function switchTab(tabId) {
   const targetPane = document.getElementById('tab-' + tabId);
   if (targetPane) targetPane.classList.add('active');
 
-  // If switching to calendar, preserve the selected date (only set today if blank)
   if (tabId === 'calendar') {
     const calInput = document.getElementById('calendarViewDate');
     if (calInput && !calInput.value) {
@@ -759,6 +760,7 @@ function switchTab(tabId) {
     }
   }
 }
+
 // ── SERVICES TAB ──
 async function loadServices() {
   const tbody = document.getElementById('servicesTableBody');
@@ -1042,7 +1044,7 @@ async function deleteArtist() {
   }
 }
 
-  // ── TIME OFF & BLACKOUTS LOGIC ──
+// ── TIME OFF & BLACKOUTS LOGIC ──
 function toggleTimeOffHourly(check) {
   const container = document.getElementById('timeOffHourlyContainer');
   container.style.display = check.checked ? 'none' : 'flex';
@@ -1055,7 +1057,6 @@ function openTimeOffModal() {
   document.getElementById('timeOffAllDay').checked = true;
   document.getElementById('timeOffHourlyContainer').style.display = 'none';
 
-  // Dynamically populate artist dropdown from database roster
   const artistSelect = document.getElementById('timeOffArtistId');
   if (ALL_ARTISTS.length) {
     artistSelect.innerHTML = ALL_ARTISTS
@@ -1378,8 +1379,8 @@ function renderAppointmentsTable(list) {
     const artistBadgeColor = app.artist_id === 'johanna' ? '#E8C84A' : 'var(--gold)';
     const displayEmail = app.customer_email ? `<div style="font-size:11px; color:var(--muted);">${app.customer_email}</div>` : '';
     const statusBadge = app.status === 'cancelled' 
-  ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid #ef4444;">Cancelled</span>` 
-  : `<span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">${app.deposit_paid ? 'Paid' : 'Waived/None'}</span>`;
+      ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid #ef4444;">Cancelled</span>` 
+      : `<span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">${app.deposit_paid ? 'Paid' : 'Waived/None'}</span>`;
 
     return `
       <tr>
@@ -1394,9 +1395,9 @@ function renderAppointmentsTable(list) {
             ${app.artist_id}
           </span>
         </td>
-         <td style="max-width:240px; font-size:12px;">${svcNames}</td>
-         <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
-       <td>
+        <td style="max-width:240px; font-size:12px;">${svcNames}</td>
+        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
+        <td>
           ${statusBadge}
         </td>
       </tr>
@@ -1405,9 +1406,9 @@ function renderAppointmentsTable(list) {
 }
 
 // ── STUDIO CALENDAR TIMELINE ──
-const CAL_START_HOUR = 6;  // 6:00 AM covers earliest opening/early slots
-const CAL_END_HOUR = 21;   // 9:00 PM
-const SLOT_HEIGHT = 60;    // 60px per hour = exactly 1px per minute
+const CAL_START_HOUR = 6;
+const CAL_END_HOUR = 21;
+const SLOT_HEIGHT = 60;
 
 function setCalendarToday() {
   const today = new Date().toISOString().split('T')[0];
@@ -1429,7 +1430,6 @@ function shiftCalendarDay(offset) {
 function getEndTimeString(timeStr, durationMin) {
   if (!timeStr) return '';
 
-  // Matches "11:00 AM", "11:00AM", or 24-hr style "11:00" without AM/PM
   const match = timeStr.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
   if (!match) return '';
 
@@ -1441,9 +1441,7 @@ function getEndTimeString(timeStr, durationMin) {
     if (ampm === 'PM' && hours !== 12) hours += 12;
     if (ampm === 'AM' && hours === 12) hours = 0;
   } else {
-    // If no AM/PM provided, assume standard daytime business hours
-    // (e.g. 8 to 11 are AM; 12 is PM; 1 to 7 are PM)
-    if (hours < 8) hours += 12; // e.g. "1:00" -> 13:00 (1 PM)
+    if (hours < 8) hours += 12;
   }
 
   const totalMinutes = hours * 60 + minutes + (parseInt(durationMin, 10) || 60);
@@ -1454,7 +1452,8 @@ function getEndTimeString(timeStr, durationMin) {
   const endDisplayHour = endHour24 % 12 || 12;
 
   return `${endDisplayHour}:${endMin} ${endAmpm}`;
-}  
+}
+
 async function renderCalendarTimeline() {
   const dateInput = document.getElementById('calendarViewDate');
   if (!dateInput) return;
@@ -1467,7 +1466,6 @@ async function renderCalendarTimeline() {
   const container = document.getElementById('calendarColumnsContainer');
   if (!container) return;
 
-  // 1. Ensure Artists and Schedules are loaded
   if (!window.ALL_ARTISTS || window.ALL_ARTISTS.length === 0) {
     const { data: arts } = await sbClient.from('artists').select('*').order('name');
     window.ALL_ARTISTS = arts || [];
@@ -1477,36 +1475,30 @@ async function renderCalendarTimeline() {
     window.ALL_SCHEDS = scs || [];
   }
 
-  // 2. Filter Active Artists by Role (Staff vs Admin)
   let visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
   if (typeof CURRENT_USER_ROLE !== 'undefined' && CURRENT_USER_ROLE === 'staff' && CURRENT_ARTIST_ID) {
     visibleArtists = visibleArtists.filter(a => a.id === CURRENT_ARTIST_ID);
   }
 
-  // Fallback: If no artists found or filtered out, show all active
   if (visibleArtists.length === 0) {
     visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
   }
 
-  // Set CSS Grid template columns
   container.style.display = 'grid';
   container.style.gridTemplateColumns = `80px repeat(${Math.max(1, visibleArtists.length)}, minmax(280px, 1fr))`;
   container.style.gap = '16px';
 
-  // 3. Fetch Day's Appointments & Blackouts from Supabase
   const [{ data: dayAppts }, { data: dayBlackouts }] = await Promise.all([
     sbClient.from('appointments').select('*').eq('appointment_date', dateStr).neq('status', 'cancelled'),
     sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
   ]);
 
-  // 4. Build Left Time Labels Column (6 AM to 9 PM)
   let timeColHtml = '<div class="cal-time-col">';
   for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
     timeColHtml += `<div class="cal-time-slot">${formatHour12(h)}</div>`;
   }
   timeColHtml += '</div>';
 
-  // 5. Build Column for Each Visible Artist
   const artistColsHtml = visibleArtists.map(art => {
     const artSched = (window.ALL_SCHEDS || []).find(s => s.artist_id === art.id && s.day_of_week === dow);
     const isWorkingToday = artSched && artSched.is_active;
@@ -1578,33 +1570,7 @@ async function renderCalendarTimeline() {
         m = stDate.getMinutes();
       }
 
-      let dur = 0;
-      if (a.start_time && a.end_time) {
-        const st = new Date(a.start_time).getTime();
-        const et = new Date(a.end_time).getTime();
-        if (!isNaN(st) && !isNaN(et) && et > st) {
-          dur = Math.round((et - st) / 60000);
-        }
-      }
-
-      if (!dur && Array.isArray(a.services) && a.services.length > 0 && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
-        dur = a.services.reduce((total, s) => {
-          if (typeof s === 'object' && (s.duration || s.duration_minutes)) {
-            return total + Number(s.duration || s.duration_minutes || 0);
-          }
-          const rawName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-          const match = window.ALL_SERVICES.find(m => {
-            const mEn = (m.name_en || m.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            const mEs = (m.name_es || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            return (mEn && (rawName.includes(mEn) || mEn.includes(rawName))) ||
-                   (mEs && (rawName.includes(mEs) || mEs.includes(rawName)));
-          });
-          return total + (match ? Number(match.duration_minutes || match.duration || 0) : 0);
-        }, 0);
-      }
-
-      // Check database duration first if valid
-      dur = Number(a.duration_minutes);
+      let dur = Number(a.duration_minutes);
 
       if (!dur || isNaN(dur) || dur <= 0) {
         const rawBlob = [
@@ -1626,7 +1592,7 @@ async function renderCalendarTimeline() {
         } else if (rawBlob.includes('manicure') || rawBlob.includes('mani')) {
           dur = 30;
         } else {
-          dur = 60; // Absolute fallback default
+          dur = 60;
         }
       }
       const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
@@ -1636,14 +1602,13 @@ async function renderCalendarTimeline() {
       const ampm = h >= 12 ? 'PM' : 'AM';
       const dispH = h % 12 || 12;
       const dispM = m < 10 ? '0' + m : m;
-      // Always enforce standard 12-hour display format:
       const cleanTime = `${dispH}:${dispM} ${ampm}`;
 
       const finishTime = getEndTimeString(cleanTime, dur);
       const timeRangeDisplay = `${cleanTime} – ${finishTime}`;
 
       itemsHtml += `
-          <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;" onclick="openAppointmentModal('${a.id}')">
+        <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;" onclick="openAppointmentModal('${a.id}')">
           <div class="card-title">${cleanClientName(a.customer_name)}</div>
           <div class="card-svc">${svcs || 'Appointment'}</div>
           <div class="card-meta">✦ ${timeRangeDisplay}</div>
@@ -1665,7 +1630,7 @@ async function renderCalendarTimeline() {
 }
 </script>
 
-<!-- Interactive Edit / Reschedule Modal (Phase 2) -->
+<!-- Interactive Edit / Reschedule Modal -->
 <div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--card, #1a1a1a); border:1px solid var(--border, #333); border-radius:12px; width:100%; max-width:460px; padding:24px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
     
@@ -1678,11 +1643,9 @@ async function renderCalendarTimeline() {
     </div>
 
     <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-      <!-- Service Dropdown -->
       <div>
         <label style="display:block; margin-bottom:4px; color:#aaa;">Service</label>
         <select id="modalApptService" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-          <!-- Dynamically populated -->
         </select>
       </div>
 
@@ -1699,7 +1662,6 @@ async function renderCalendarTimeline() {
         <div>
           <label style="display:block; margin-bottom:4px; color:#aaa;">Artist</label>
           <select id="modalApptArtist" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-            <!-- Dynamically populated -->
           </select>
         </div>
       </div>
@@ -1710,7 +1672,6 @@ async function renderCalendarTimeline() {
       </div>
     </div>
 
-    <!-- Modal Actions -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
       <button onclick="cancelCurrentAppointment()" style="padding:8px 14px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; font-weight:600; cursor:pointer;">Cancel Booking</button>
       
@@ -1723,7 +1684,6 @@ async function renderCalendarTimeline() {
   </div>
 </div>
 <script>
-// --- Interactive Appointment Modal (Phase 2) ---
 let currentModalAppt = null;
 
 async function openAppointmentModal(apptId) {
@@ -1742,7 +1702,6 @@ async function openAppointmentModal(apptId) {
 
   currentModalAppt = appt;
 
-  // 1. Populate the artist dropdown using live database IDs
   const artistSelect = document.getElementById('modalApptArtist');
   if (artistSelect && window.ALL_ARTISTS && window.ALL_ARTISTS.length > 0) {
     artistSelect.innerHTML = window.ALL_ARTISTS
@@ -1752,14 +1711,12 @@ async function openAppointmentModal(apptId) {
     artistSelect.value = appt.artist_id;
   }
 
-  // 2. Populate the services dropdown
   const serviceSelect = document.getElementById('modalApptService');
   if (serviceSelect && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
     serviceSelect.innerHTML = window.ALL_SERVICES
       .map(s => `<option value="${s.id || s.name_en}">${s.name_en || s.name} (${s.duration_minutes || s.duration || 60}m)</option>`)
       .join('');
 
-    // Pre-select current service if matched
     const currentSvc = Array.isArray(appt.services) && appt.services[0] 
       ? (typeof appt.services[0] === 'object' ? (appt.services[0].id || appt.services[0].name) : appt.services[0])
       : '';
@@ -1769,7 +1726,6 @@ async function openAppointmentModal(apptId) {
     }
   }
 
-  // 3. Populate modal inputs
   const finishTime = getEndTimeString(appt.appointment_time, appt.duration_minutes);
   document.getElementById('modalApptClient').textContent = cleanClientName(appt.customer_name);
   document.getElementById('modalApptTimeSpan').textContent = `${appt.appointment_time} – ${finishTime}`;
@@ -1796,7 +1752,6 @@ async function saveAppointmentChanges() {
   const updatedNotes = document.getElementById('modalApptNotes').value;
   const selectedSvcVal = document.getElementById('modalApptService').value;
 
-  // Derive updated service object & duration
   let updatedServices = currentModalAppt.services;
   let updatedDuration = currentModalAppt.duration_minutes;
 
@@ -1854,7 +1809,6 @@ async function cancelCurrentAppointment() {
   }
 }
 
-// Start
 initAuth();
 </script>
 </body>
