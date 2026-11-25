@@ -2396,21 +2396,68 @@ let takenSlots     = [];
 let calYear, calMonth;
 
 const DEFAULT_SCHEDULE = {
-  1: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [7, 16],
+  0: [9, 17], 1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19], 6: [7, 16],
 };
 let ARTIST_SCHEDULES = null;
 let schedulesLoadPromise = null;
 
 async function loadArtistSchedules() {
+  // 1. Load schedules.json as baseline fallback
+  let merged = {};
   try {
     const res = await fetch('schedules.json');
     if (res.ok) {
-      const data = await res.json();
-      ARTIST_SCHEDULES = data;
+      merged = await res.json();
     }
   } catch (e) {
-    ARTIST_SCHEDULES = null;
+    merged = {};
   }
+
+  // 2. Override with live Supabase artist_schedules & all-day artist_blackouts so admin.html has 100% control
+  if (supabaseClient) {
+    try {
+      const todayIso = new Date().toISOString().split('T')[0];
+      const [{ data: dbScheds, error: scErr }, { data: dbBlackouts, error: boErr }] = await Promise.all([
+        supabaseClient.from('artist_schedules').select('artist_id, day_of_week, start_hour, end_hour, is_active'),
+        supabaseClient.from('artist_blackouts').select('artist_id, start_date, end_date, start_time').gte('end_date', todayIso),
+      ]);
+
+      if (!scErr && Array.isArray(dbScheds) && dbScheds.length > 0) {
+        const byArtist = {};
+        dbScheds.forEach((row) => {
+          const aid = String(row.artist_id || '').toLowerCase().trim();
+          if (!aid) return;
+          if (!byArtist[aid]) byArtist[aid] = {};
+          if (row.is_active) {
+            byArtist[aid][row.day_of_week] = [Number(row.start_hour), Number(row.end_hour)];
+          }
+        });
+        Object.keys(byArtist).forEach((aid) => {
+          merged[aid] = { ...(merged[aid] || {}), ...byArtist[aid] };
+          // Remove days explicitly marked inactive in Supabase
+          [0, 1, 2, 3, 4, 5, 6].forEach((d) => {
+            if (!byArtist[aid][d]) delete merged[aid][d];
+          });
+        });
+      }
+
+      if (!boErr && Array.isArray(dbBlackouts)) {
+        dbBlackouts.forEach((b) => {
+          // Only grey out the calendar date if it's an all-day blackout (no start_time)
+          if (b.start_time) return;
+          const aid = String(b.artist_id || '').toLowerCase().trim();
+          if (!aid) return;
+          if (!merged[aid]) merged[aid] = { ...DEFAULT_SCHEDULE };
+          if (!Array.isArray(merged[aid].blackout)) merged[aid].blackout = [];
+          merged[aid].blackout.push({ from: b.start_date, to: b.end_date });
+        });
+      }
+    } catch (sbErr) {
+      console.warn('Supabase schedule sync skipped, using schedules.json fallback:', sbErr);
+    }
+  }
+
+  ARTIST_SCHEDULES = Object.keys(merged).length > 0 ? merged : null;
 }
 schedulesLoadPromise = loadArtistSchedules();
 
