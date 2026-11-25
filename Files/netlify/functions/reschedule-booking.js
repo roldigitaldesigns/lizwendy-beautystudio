@@ -191,20 +191,21 @@ exports.handler = async (event) => {
       ? Math.max(30, Math.round((oldEnd.getTime() - oldStart.getTime()) / 60000))
       : 60; // safe fallback if end is somehow missing
 
-    // ── BUILD THE NEW EVENT TIMES ──
-    // Preserve the existing hardcoded -04:00 convention used across the
-    // codebase (create-booking.js / get-availability.js). NOTE: this shares
-    // the known DST limitation flagged for the October fix — kept identical
-    // here on purpose so reschedule and fresh bookings behave the same until
-    // that fix lands in one coordinated pass.
+    // ── BUILD THE NEW EVENT TIMES (with dynamic America/New_York EST/EDT offset) ──
+    function getNYOffset(dStr) {
+      const d = new Date(`${dStr}T12:00:00Z`);
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
+      const nyHour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      let diff = nyHour - 12;
+      if (diff > 0) diff -= 24;
+      return `${diff < 0 ? '-' : '+'}${String(Math.abs(diff)).padStart(2, '0')}:00`;
+    }
     const [slotH, slotM = 0] = newTime.split(':').map(Number);
-    const newStart = new Date(`${newDate}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00-04:00`);
+    const offset = getNYOffset(newDate);
+    const newStart = new Date(`${newDate}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00${offset}`);
 
-    // Per-artist rounding: Wendy → whole-hour block, Johanna → exact. Matches
-    // create-booking.js exactly.
-    const roundedDuration = artistId === 'liz'
-      ? Math.ceil(originalDurationMin / 60) * 60
-      : originalDurationMin;
+    // Keep exact 15-minute aligned duration matching index.html and create-booking.js
+    const roundedDuration = Math.ceil(originalDurationMin / 15) * 15;
     const newEnd = new Date(newStart.getTime() + roundedDuration * 60 * 1000);
 
     // ── CHECK THE NEW SLOT IS FREE ──
@@ -444,19 +445,22 @@ async function sendRescheduleEmail({ toEmail, cc, subjectLine, introLine, outroL
       template_params: {
         to_email:         toEmail,
         cc_email:         cc || '',
+        client_name:      details.firstName || 'Valued Client',
+        artist:           details.artistName || 'Liz Wendy Cedeño',
+        appointment_date: details.date,
+        appointment_time: details.time,
+        services:         details.services,
+        cancel_link:      manageUrl || '',
         subject_override: subjectLine,
         intro_override:   introLine,
         outro_override:   outroLine,
         date:             details.date,
         time:             details.time,
-        services:         details.services,
         artist_name:      details.artistName,
-        // Template requires these — pass empty when unused so EmailJS doesn't
-        // reject missing variables.
-        first_name:  details.firstName || '',
-        total:       '',
-        notes_line:  '',
-        cancel_url:  manageUrl || '',
+        first_name:       details.firstName || '',
+        total:            'Deposit Applied',
+        notes_line:       '',
+        cancel_url:       manageUrl || '',
       },
     }),
   });
