@@ -9,107 +9,238 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --bg:        #0A0908;
-  --surface:   #111009;
-  --card:      #181410;
-  --card2:     #1F1A14;
-  --border:    #2E2820;
-  --gold:      #D4AF37;
-  --gold-lt:   #E8C84A;
-  --gold-dim:  #A8891F;
-  --gold-pale: rgba(212,175,55,.09);
-  --white:     #FAF7F2;
-  --text:      #EDE8DF;
+  --bg:        #FCFBF8;
+  --surface:   #F7F4EE;
+  --card:      #FFFFFF;
+  --card2:     #F7F4EE;
+  --border:    #E8DEC8;
+  --gold:      #B5904B;
+  --gold-lt:   #D6B26C;
+  --gold-dim:  #947234;
+  --gold-pale: rgba(181, 144, 75, 0.08);
+  --gold-glow: rgba(181, 144, 75, 0.22);
+  --white:     #2B2620;
+  --text:      #2B2620;
   --muted:     #7A7060;
-  --muted-lt:  #A09080;
+  --muted-lt:  #8E8270;
   --danger:    #c0392b;
-  --success:   #2ea043;
+  --success:   #2e7d32;
   --serif:     'Playfair Display', Georgia, serif;
   --sans:      'Montserrat', sans-serif;
-  --radius:    4px;
+  --radius:    10px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: var(--bg);
+  background-color: #FCFBF8;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(232, 222, 200, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(232, 222, 200, 0.4) 0%, transparent 50%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--sans);
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 100vh;
 }
 
-/* ── NAV BAR ── */
+/* ── NAV BAR (MOBILE-FIRST PORTRAIT SAFE) ── */
 .admin-nav {
-  height: 64px;
-  background: rgba(10,9,8,.95);
+  min-height: 64px;
+  background: rgba(252, 251, 248, 0.95);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px;
-  position: sticky; top: 0; z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand img { height: 38px; width: 38px; border-radius: 50%; object-fit: contain; }
-.brand-title { font-family: var(--serif); font-size: 18px; color: var(--gold); }
-.brand-sub { font-size: 9px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
-
-.nav-actions { display: flex; align-items: center; gap: 14px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  min-width: 0;
+  flex: 1;
+}
+.brand img {
+  height: 38px;
+  width: 38px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.brand-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-sub {
+  font-size: 8px;
+  letter-spacing: .16em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.nav-live-link {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  white-space: nowrap;
+}
+.nav-live-link:hover { border-color: var(--gold); color: var(--gold); }
 .btn-logout {
-  background: transparent; border: 1px solid var(--border); color: var(--muted-lt);
-  padding: 6px 14px; border-radius: var(--radius); font-size: 10px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
 }
-.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); background: #FFF8F8; }
+
+@media (max-width: 480px) {
+  .admin-nav { padding: 8px 12px; gap: 8px; }
+  .brand img { height: 34px; width: 34px; }
+  .brand-title { font-size: 15px; }
+  .brand-sub { font-size: 7.5px; letter-spacing: .12em; }
+  .nav-live-link { padding: 6px 8px; font-size: 9px; }
+  .nav-live-link .live-label-full { display: none; }
+  .btn-logout { padding: 6px 9px; font-size: 9px; }
+}
+@media (min-width: 481px) {
+  .nav-live-link .live-label-short { display: none; }
+  .admin-nav { padding: 10px 24px; }
+  .brand-title { font-size: 18px; }
+}
 
 /* ── LOGIN VIEW ── */
 #loginView {
   min-height: calc(100vh - 64px);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
 }
 .login-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 36px 32px;
-  max-width: 400px; width: 100%; text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(43, 38, 32, 0.05);
 }
-.login-title { font-family: var(--serif); font-size: 24px; color: var(--white); margin-bottom: 8px; }
-.login-sub { font-size: 12px; color: var(--muted-lt); margin-bottom: 24px; }
+.login-title { font-family: var(--serif); font-size: 24px; color: var(--text); margin-bottom: 8px; }
+.login-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
 .form-group { text-align: left; margin-bottom: 16px; }
-.form-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 6px; }
+.form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 6px;
+}
 .form-input {
-  width: 100%; background: var(--card2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 11px 14px; color: var(--text);
-  font-family: var(--sans); font-size: 13px; transition: border-color .2s;
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  transition: border-color .2s, background .2s;
 }
-.form-input:focus { outline: none; border-color: var(--gold); }
+.form-input:focus { outline: none; border-color: var(--gold); background: #FFFFFF; }
 .btn-gold {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 11px 20px;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  color: var(--bg); font-family: var(--sans); font-size: 11px; font-weight: 700;
-  letter-spacing: .16em; text-transform: uppercase; border: none; border-radius: var(--radius);
-  cursor: pointer; transition: filter .2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  background: var(--gold);
+  color: #FFFFFF;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .2s;
 }
-.btn-gold:hover { filter: brightness(1.1); }
+.btn-gold:hover { background: var(--gold-dim); }
 .auth-error {
-  background: rgba(192,57,43,.15); border: 1px solid var(--danger);
-  border-radius: var(--radius); padding: 10px; font-size: 11px; color: #ff7675;
-  margin-top: 14px; display: none;
+  background: #FFF3F3;
+  border: 1px solid #F5C6CB;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: #a93226;
+  margin-top: 14px;
+  display: none;
 }
 
 /* ── DASHBOARD VIEW ── */
-#dashboardView { display: none; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+#dashboardView { display: none; max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
 
 /* Tabs */
 .tabs-bar {
-  display: flex; gap: 8px; border-bottom: 1px solid var(--border);
-  margin-bottom: 28px; overflow-x: auto;
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .tab-btn {
-  background: transparent; border: none; padding: 12px 18px;
-  font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
-  transition: all .2s; white-space: nowrap;
+  background: transparent;
+  border: none;
+  padding: 12px 14px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
@@ -119,146 +250,350 @@ body {
 
 /* Tables & Lists */
 .panel-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-.panel-title { font-family: var(--serif); font-size: 22px; color: var(--white); }
+.panel-title { font-family: var(--serif); font-size: 22px; color: var(--text); }
 .search-input {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 8px 14px; color: var(--text);
-  font-family: var(--sans); font-size: 12px; width: 240px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  width: 100%;
+  max-width: 260px;
 }
+.search-input:focus { outline: none; border-color: var(--gold); }
 
 .table-wrap {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  box-shadow: 0 2px 10px rgba(43, 38, 32, 0.03);
 }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 th {
-  background: var(--surface); padding: 12px 16px;
-  font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted-lt); border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 12px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 td {
-  padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text);
 }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,.015); }
+tr:hover td { background: var(--gold-pale); }
 
 /* Badges & Actions */
 .badge {
-  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .08em;
-  padding: 3px 8px; border-radius: 2px; text-transform: uppercase;
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
-.badge-active { background: rgba(46,160,67,.15); color: #6fcf7a; border: 1px solid rgba(46,160,67,.3); }
-.badge-hidden { background: rgba(122,112,96,.2); color: var(--muted-lt); border: 1px solid var(--border); }
+.badge-active { background: #EBF7EE; color: #237A37; border: 1px solid #BCE3C5; }
+.badge-hidden { background: var(--card2); color: var(--muted); border: 1px solid var(--border); }
 .action-link {
-  font-size: 11px; font-weight: 600; color: var(--gold); text-decoration: none;
-  cursor: pointer; margin-right: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold-dim);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card2);
+  white-space: nowrap;
+  display: inline-block;
 }
-.action-link:hover { text-decoration: underline; }
+.action-link:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-pale); }
 
 /* ── MODALS ── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
-  display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 38, 32, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 12px;
 }
 .modal-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 28px; max-width: 520px; width: 100%;
-  max-height: 90vh; overflow-y: auto; position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 18px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 12px 36px rgba(43, 38, 32, 0.16);
 }
 .modal-close {
-  position: absolute; top: 18px; right: 20px; background: none; border: none;
-  color: var(--muted); font-size: 20px; cursor: pointer;
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
 }
-.modal-title { font-family: var(--serif); font-size: 20px; color: var(--white); margin-bottom: 16px; }
+.modal-close:hover { border-color: var(--gold); color: var(--gold); }
+.modal-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-right: 34px;
+}
 
-/* Schedule Grid */
-.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.schedule-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 20px; display: flex; flex-direction: column; gap: 14px; position: relative;
+/* ── SCHEDULE GRID & PORTRAIT CARD LAYOUT ── */
+.schedule-actions-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
 }
-.card-header-actions { display: flex; justify-content: space-between; align-items: flex-start; }
-.day-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+@media (min-width: 640px) {
+  .schedule-actions-bar { width: auto; }
+}
+@media (max-width: 639px) {
+  .schedule-actions-bar button { flex: 1 1 45%; text-align: center; }
+}
+
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.schedule-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(43, 38, 32, 0.03);
+}
+.card-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.card-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--card2);
+  font-size: 13px;
+}
 .day-row:last-child { border-bottom: none; }
+
+/* ── HOURS MODAL ROWS (NO HORIZONTAL CLIPPING ON MOBILE PORTRAIT) ── */
+.hours-day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  padding: 11px 12px;
+  border-radius: 8px;
+}
+.hours-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hours-day-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+.hours-day-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hours-day-inputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.hours-time-input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--text);
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.hours-time-input:focus { outline: none; border-color: var(--gold); }
+.hours-time-input:disabled { opacity: 0.4; background: var(--card2); }
+
+@media (min-width: 560px) {
+  .hours-day-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .hours-day-top { min-width: 175px; }
+  .hours-day-inputs { width: 280px; flex-shrink: 0; }
+}
 
 /* ── CALENDAR TIMELINE ── */
 .cal-time-col { display: flex; flex-direction: column; padding-top: 50px; }
-.cal-time-slot { 
-  height: 60px; font-size: 11px; font-weight: 600; color: var(--muted-lt); 
-  border-top: 1px dashed var(--border); padding-top: 4px; text-align: right; padding-right: 10px;
+.cal-time-slot {
+  height: 60px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+  text-align: right;
+  padding-right: 10px;
 }
 .cal-artist-col {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); position: relative;
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.cal-artist-header {
-  height: 50px; display: flex; align-items: center; justify-content: center;
-  border-bottom: 1px solid var(--border); background: var(--card2);
-  font-family: var(--serif); font-size: 16px; color: var(--gold);
-  position: sticky; top: 0; z-index: 10;
-}
-.cal-canvas { position: relative; height: 960px; background: rgba(0,0,0,0.2); }
-.cal-slot-grid-line { height: 60px; border-top: 1px dashed rgba(255,255,255,0.06); }
-
-.cal-event-card {
-  position: absolute; 
-  left: 6px; 
-  right: 6px; 
-  border-radius: 6px;
-  padding: 5px 8px; 
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6); 
-  z-index: 5;
-  display: flex; 
-  flex-direction: column; 
-  justify-content: flex-start;
-  box-sizing: border-box; 
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
-
-.cal-event-booking {
-  background: #231E12; 
-  border: 1px solid var(--gold); 
-  border-left: 4px solid var(--gold); 
-  color: var(--white);
+.cal-artist-header {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold-dim);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
+.cal-canvas { position: relative; height: 960px; background: #FCFBF8; }
+.cal-slot-grid-line { height: 60px; border-top: 1px dashed var(--border); }
 
+.cal-event-card {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  box-shadow: 0 2px 8px rgba(43, 38, 32, 0.12);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: pointer;
+}
+.cal-event-booking {
+  background: #FFFDF7;
+  border: 1px solid var(--gold);
+  border-left: 4px solid var(--gold);
+  color: var(--text);
+}
 .cal-event-booking .card-title {
-  font-size: 12px; 
-  font-weight: 700; 
-  color: #FFE382; 
-  line-height: 1.25; 
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
   margin-bottom: 0;
 }
-
 .cal-event-booking .card-svc {
-  font-size: 11px; 
-  color: #EDE8DF; 
-  line-height: 1.25; 
-  white-space: nowrap; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 1px;
 }
-
 .cal-event-booking .card-meta {
-  font-size: 10px; 
-  color: #C5A059; 
-  line-height: 1.25; 
-  font-weight: 600;
+  font-size: 10px;
+  color: var(--gold-dim);
+  line-height: 1.25;
+  font-weight: 700;
 }
 .cal-event-blackout {
-  background: #2A1414; border: 1px solid rgba(220, 53, 69, 0.4);
-  border-left: 4px solid #E74C3C; color: #FFA8A8;
+  background: #FFF5F5;
+  border: 1px solid #F5C6CB;
+  border-left: 4px solid #c0392b;
+  color: #922B21;
 }
 .cal-shift-off-overlay {
-  position: absolute; inset: 0; 
-  background: repeating-linear-gradient(45deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4) 10px, rgba(0,0,0,0.6) 10px, rgba(0,0,0,0.6) 20px);
-  z-index: 3; display: flex; align-items: center; justify-content: center;
-  color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(232,222,200,0.2), rgba(232,222,200,0.2) 10px, rgba(232,222,200,0.4) 10px, rgba(232,222,200,0.4) 20px);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 </style>
 </head>
@@ -268,13 +603,16 @@ tr:hover td { background: rgba(255,255,255,.015); }
 <nav class="admin-nav">
   <a href="/" class="brand">
     <img src="Images/logo.png" alt="Logo"/>
-    <div>
+    <div style="min-width:0;">
       <div class="brand-title">Liz Wendy Studio</div>
       <div class="brand-sub">Management Portal</div>
     </div>
   </a>
   <div class="nav-actions">
-    <a href="/" style="font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); text-decoration: none;">← View Live Site</a>
+    <a href="/" class="nav-live-link">
+      <span class="live-label-full">← Live Site</span>
+      <span class="live-label-short">← Site</span>
+    </a>
     <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="handleLogout()">Sign Out</button>
   </div>
 </nav>
@@ -347,9 +685,9 @@ tr:hover td { background: rgba(255,255,255,.015); }
         <h2 class="panel-title">Working Hours & Staff</h2>
         <p style="font-size:12px; color:var(--muted-lt);">Manage active team members and customize daily availability shifts.</p>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-logout" onclick="openTimeOffModal()" style="border-color:var(--gold); color:var(--gold);">+ Schedule Time Off / Block</button>
-        <button class="btn-gold" onclick="openAddArtistModal()">+ Add Team Member</button>
+     <div class="schedule-actions-bar">
+        <button class="btn-logout" onclick="openTimeOffModal()" style="border-color:var(--gold); color:var(--gold-dim);">+ Time Off / Block</button>
+        <button class="btn-gold" onclick="openAddArtistModal()">+ Add Member</button>
       </div>
     </div>
     
@@ -585,14 +923,14 @@ tr:hover td { background: rgba(255,255,255,.015); }
       <label for="timeOffAllDay" style="font-size:12px; color:var(--text); cursor:pointer;">All-Day Block (Completely unavailable)</label>
     </div>
 
-    <div id="timeOffHourlyContainer" style="display:none; gap:12px; margin-bottom:16px; background:var(--card2); border:1px solid var(--border); padding:12px; border-radius:4px;">
+    <div id="timeOffHourlyContainer" style="display:none; gap:12px; margin-bottom:16px; background:var(--card2); border:1px solid var(--border); padding:12px; border-radius:8px;">
       <div style="flex:1;">
         <label class="form-label">Block From</label>
-        <select class="form-input" id="timeOffStartHour"></select>
+        <input type="time" class="form-input" id="timeOffStartHour" value="09:00"/>
       </div>
       <div style="flex:1;">
         <label class="form-label">Block Until</label>
-        <select class="form-input" id="timeOffEndHour"></select>
+        <input type="time" class="form-input" id="timeOffEndHour" value="17:00"/>
       </div>
     </div>
 
@@ -894,6 +1232,40 @@ async function saveServiceChanges() {
   }
 }
 
+// ── MINUTE-PRECISION TIME HELPERS (supports both integer hours like 19 and strings like "19:15") ──
+function parseTimeToMinutes(val, fallbackMinutes = 540) {
+  if (val === null || val === undefined || val === '') return fallbackMinutes;
+  const str = String(val).trim();
+  if (str.includes(':')) {
+    const [hStr, mStr] = str.split(':');
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr, 10) || 0;
+    if (!Number.isNaN(h)) return h * 60 + m;
+  }
+  const num = Number(str);
+  if (!Number.isNaN(num)) {
+    // Values >= 24 are already stored as total minutes from midnight (e.g., 1155 = 19:15)
+    return num >= 24 ? Math.round(num) : Math.round(num * 60);
+  }
+  return fallbackMinutes;
+}
+
+function minutesToInputVal(totalMinutes) {
+  const mins = Math.max(0, Math.min(23 * 60 + 59, Number(totalMinutes) || 0));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatMinutes12(totalMinutes) {
+  const mins = Number(totalMinutes) || 0;
+  const h24 = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = h24 % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 // ── SCHEDULES & TEAM TAB ──
 async function loadSchedules() {
   const wrap = document.getElementById('scheduleCardsWrap');
@@ -911,18 +1283,20 @@ async function loadSchedules() {
 
   wrap.innerHTML = ALL_ARTISTS.map(art => {
     const artScheds = ALL_SCHEDS.filter(s => s.artist_id === art.id);
-    
+
     const rows = [0,1,2,3,4,5,6].map(d => {
       const entry = artScheds.find(s => s.day_of_week === d);
       const isWork = entry && entry.is_active;
-      const hoursText = isWork 
-        ? `${entry.start_hour > 12 ? entry.start_hour-12 : entry.start_hour}:00 ${entry.start_hour >= 12 ? 'PM' : 'AM'} – ${entry.end_hour > 12 ? entry.end_hour-12 : entry.end_hour}:00 ${entry.end_hour >= 12 ? 'PM' : 'AM'}`
+      const startMins = isWork ? parseTimeToMinutes(entry.start_hour, 540) : 0;
+      const endMins   = isWork ? parseTimeToMinutes(entry.end_hour, 1140) : 0;
+      const hoursText = isWork
+        ? `${formatMinutes12(startMins)} – ${formatMinutes12(endMins)}`
         : 'Off';
 
       return `
         <div class="day-row">
-          <span style="font-weight:600;">${DOW_NAMES[d]}</span>
-          <span style="color:${isWork ? 'var(--gold)' : 'var(--muted)'}; font-size:12px;">${hoursText}</span>
+          <span style="font-weight:600; color:var(--text);">${DOW_NAMES[d]}</span>
+          <span style="color:${isWork ? 'var(--gold-dim)' : 'var(--muted)'}; font-weight:${isWork ? '600' : '400'}; font-size:12px;">${hoursText}</span>
         </div>
       `;
     }).join('');
@@ -930,14 +1304,14 @@ async function loadSchedules() {
     return `
       <div class="schedule-card">
         <div class="card-header-actions">
-          <div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <h3 style="font-family:var(--serif); color:var(--white); font-size:17px;">${art.name}</h3>
-              <span class="badge ${art.is_active ? 'badge-active' : 'badge-hidden'}">${art.is_active ? 'Active' : 'Inactive'}</span>
+          <div class="card-title-row">
+            <div>
+              <h3 style="font-family:var(--serif); color:var(--text); font-size:18px;">${art.name}</h3>
+              <p style="font-size:11px; color:var(--muted);">${art.title_en || ''}</p>
             </div>
-            <p style="font-size:11px; color:var(--muted);">${art.title_en || ''}</p>
+            <span class="badge ${art.is_active ? 'badge-active' : 'badge-hidden'}">${art.is_active ? 'Active' : 'Inactive'}</span>
           </div>
-          <div style="display:flex; gap:8px;">
+          <div class="card-btn-row">
             <span class="action-link" onclick="openEditArtistModal('${art.id}')">Edit Info</span>
             <span class="action-link" onclick="openHoursModal('${art.id}')">Edit Hours</span>
           </div>
@@ -978,7 +1352,7 @@ function openEditArtistModal(artistId) {
   document.querySelectorAll('.artist-cat-check').forEach(c => {
     c.checked = cats.includes(c.value);
   });
-  
+
   document.getElementById('artistFieldIsActive').checked = art.is_active;
   document.getElementById('deleteArtistBtn').style.display = 'block';
   document.getElementById('artistModal').style.display = 'flex';
@@ -1011,13 +1385,13 @@ async function saveArtist() {
     ({ error } = await sbClient.from('artists').insert([payload]));
     if (!error) {
       const defaultShifts = [
-        { artist_id: id, day_of_week: 1, start_hour: 9, end_hour: 19, is_active: true },
-        { artist_id: id, day_of_week: 2, start_hour: 9, end_hour: 19, is_active: true },
-        { artist_id: id, day_of_week: 3, start_hour: 9, end_hour: 19, is_active: true },
-        { artist_id: id, day_of_week: 4, start_hour: 9, end_hour: 19, is_active: true },
-        { artist_id: id, day_of_week: 5, start_hour: 9, end_hour: 19, is_active: true },
-        { artist_id: id, day_of_week: 6, start_hour: 8, end_hour: 16, is_active: true },
-        { artist_id: id, day_of_week: 0, start_hour: 0, end_hour: 0, is_active: false }
+        { artist_id: id, day_of_week: 1, start_hour: 540, end_hour: 1140, is_active: true },
+        { artist_id: id, day_of_week: 2, start_hour: 540, end_hour: 1140, is_active: true },
+        { artist_id: id, day_of_week: 3, start_hour: 540, end_hour: 1140, is_active: true },
+        { artist_id: id, day_of_week: 4, start_hour: 540, end_hour: 1140, is_active: true },
+        { artist_id: id, day_of_week: 5, start_hour: 540, end_hour: 1140, is_active: true },
+        { artist_id: id, day_of_week: 6, start_hour: 480, end_hour: 960, is_active: true },
+        { artist_id: id, day_of_week: 0, start_hour: 540, end_hour: 1020, is_active: false }
       ];
       await sbClient.from('artist_schedules').insert(defaultShifts);
     }
@@ -1034,7 +1408,7 @@ async function saveArtist() {
 
 async function deleteArtist() {
   const id = document.getElementById('editArtistId').value;
-  if (!confirm(`Are you sure you want to toggle deactivation for this artist?`)) return;
+  if (!confirm(`Are you sure you want to deactivate this artist?`)) return;
 
   const { error } = await sbClient.from('artists').update({ is_active: false }).eq('id', id);
   if (error) alert('Error: ' + error.message);
@@ -1065,8 +1439,8 @@ function openTimeOffModal() {
       .join('');
   }
 
-  document.getElementById('timeOffStartHour').innerHTML = buildHourOptions(9);
-  document.getElementById('timeOffEndHour').innerHTML = buildHourOptions(17);
+  document.getElementById('timeOffStartHour').value = '09:00';
+  document.getElementById('timeOffEndHour').value = '17:00';
 
   document.getElementById('timeOffModal').style.display = 'flex';
 }
@@ -1095,18 +1469,18 @@ async function loadBlackouts() {
   wrapEl.style.display = 'block';
   listEl.innerHTML = data.map(b => {
     const isAllDay = !b.start_time;
-    const timeLabel = isAllDay 
-      ? 'All Day' 
-      : `${formatHour12(parseInt(b.start_time.split(':')[0], 10))} – ${formatHour12(parseInt(b.end_time.split(':')[0], 10))}`;
+    const timeLabel = isAllDay
+      ? 'All Day'
+      : `${formatMinutes12(parseTimeToMinutes(b.start_time, 540))} – ${formatMinutes12(parseTimeToMinutes(b.end_time, 1020))}`;
 
     return `
-      <div style="background:var(--card2); border:1px solid var(--border); padding:8px 14px; border-radius:4px; display:flex; align-items:center; gap:12px; font-size:12px;">
+      <div style="background:var(--card); border:1px solid var(--border); padding:8px 14px; border-radius:8px; display:flex; align-items:center; gap:12px; font-size:12px;">
         <div>
-          <span style="font-weight:700; color:var(--gold); text-transform:capitalize;">${b.artist_id}</span>
-          <span style="color:var(--white); margin:0 4px;">·</span>
-          <span>${b.start_date}</span>
-          <span style="color:var(--muted-lt);">(${timeLabel})</span>
-          <span style="color:var(--muted); font-size:11px; margin-left:4px;">"${b.reason || 'Off'}"</span>
+          <span style="font-weight:700; color:var(--gold-dim); text-transform:capitalize;">${b.artist_id}</span>
+          <span style="color:var(--muted); margin:0 4px;">·</span>
+          <span style="color:var(--text);">${b.start_date}</span>
+          <span style="color:var(--muted);">(${timeLabel})</span>
+          <span style="color:var(--muted-lt); font-size:11px; margin-left:4px;">"${b.reason || 'Off'}"</span>
         </div>
         <span onclick="deleteBlackout('${b.id}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:14px;" title="Remove Block">✕</span>
       </div>
@@ -1126,6 +1500,14 @@ async function saveTimeOff() {
     return;
   }
 
+  const startVal = document.getElementById('timeOffStartHour').value || '09:00';
+  const endVal   = document.getElementById('timeOffEndHour').value || '17:00';
+
+  if (!isAllDay && parseTimeToMinutes(endVal, 0) <= parseTimeToMinutes(startVal, 0)) {
+    alert('End time must be after start time.');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Saving...';
 
@@ -1134,8 +1516,8 @@ async function saveTimeOff() {
     start_date: date,
     end_date: date,
     reason: reason,
-    start_time: isAllDay ? null : `${String(document.getElementById('timeOffStartHour').value).padStart(2, '0')}:00:00`,
-    end_time: isAllDay ? null : `${String(document.getElementById('timeOffEndHour').value).padStart(2, '0')}:00:00`
+    start_time: isAllDay ? null : `${startVal}:00`,
+    end_time: isAllDay ? null : `${endVal}:00`
   };
 
   const { error } = await sbClient.from('artist_blackouts').insert([payload]);
@@ -1157,30 +1539,16 @@ async function deleteBlackout(id) {
   else loadBlackouts();
 }
 
-// ── HOURS EDITOR MODAL ──
+// ── HOURS EDITOR MODAL (TYPABLE MINUTE-PRECISION INPUTS) ──
 function formatHour12(h) {
-  const hour = Number(h);
-  if (hour === 0) return '12:00 AM';
-  if (hour === 12) return '12:00 PM';
-  if (hour > 12) return `${hour - 12}:00 PM`;
-  return `${hour}:00 AM`;
-}
-
-function buildHourOptions(selectedHour) {
-  let html = '';
-  for (let h = 7; h <= 22; h++) {
-    const isSel = Number(selectedHour) === h ? 'selected' : '';
-    html += `<option value="${h}" ${isSel}>${formatHour12(h)}</option>`;
-  }
-  return html;
+  return formatMinutes12(parseTimeToMinutes(h, 0));
 }
 
 function toggleDayInputs(checkbox) {
   const row = checkbox.closest('[data-dow]');
-  const selects = row.querySelectorAll('select');
-  selects.forEach(s => {
-    s.disabled = !checkbox.checked;
-    s.style.opacity = checkbox.checked ? '1' : '0.4';
+  const inputs = row.querySelectorAll('input[type="time"]');
+  inputs.forEach(inp => {
+    inp.disabled = !checkbox.checked;
   });
 }
 
@@ -1195,24 +1563,24 @@ function openHoursModal(artistId) {
   const artScheds = ALL_SCHEDS.filter(s => s.artist_id === artistId);
 
   container.innerHTML = [0,1,2,3,4,5,6].map(d => {
-    const entry = artScheds.find(s => s.day_of_week === d) || { start_hour: 9, end_hour: 19, is_active: false };
+    const entry = artScheds.find(s => s.day_of_week === d) || { start_hour: 540, end_hour: 1140, is_active: false };
     const isActive = entry.is_active;
+    const startVal = minutesToInputVal(parseTimeToMinutes(entry.start_hour, 540));
+    const endVal   = minutesToInputVal(parseTimeToMinutes(entry.end_hour, 1140));
 
     return `
-      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--border); padding:10px 14px; border-radius:4px;" data-dow="${d}">
-        <div style="width:90px; font-weight:600;">${DOW_NAMES[d]}</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" class="day-active-check" ${isActive ? 'checked' : ''} onchange="toggleDayInputs(this)" style="accent-color:var(--gold); width:15px; height:15px; cursor:pointer;"/>
-          <span style="font-size:11px; color:var(--muted-lt);">Working</span>
+      <div class="hours-day-card" data-dow="${d}">
+        <div class="hours-day-top">
+          <span class="hours-day-name">${DOW_NAMES[d]}</span>
+          <label class="hours-day-toggle">
+            <input type="checkbox" class="day-active-check" ${isActive ? 'checked' : ''} onchange="toggleDayInputs(this)" style="accent-color:var(--gold); width:16px; height:16px; cursor:pointer;"/>
+            <span>Working</span>
+          </label>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <select class="day-start-hour form-input" style="width:110px; padding:5px 8px; font-size:12px; ${!isActive ? 'opacity:0.4;' : ''}" ${!isActive ? 'disabled' : ''}>
-            ${buildHourOptions(entry.start_hour)}
-          </select>
-          <span style="color:var(--muted); font-size:11px;">to</span>
-          <select class="day-end-hour form-input" style="width:110px; padding:5px 8px; font-size:12px; ${!isActive ? 'opacity:0.4;' : ''}" ${!isActive ? 'disabled' : ''}>
-            ${buildHourOptions(entry.end_hour)}
-          </select>
+        <div class="hours-day-inputs">
+          <input type="time" class="day-start-hour hours-time-input" value="${startVal}" ${!isActive ? 'disabled' : ''}/>
+          <span style="color:var(--muted); font-size:11px; text-align:center;">to</span>
+          <input type="time" class="day-end-hour hours-time-input" value="${endVal}" ${!isActive ? 'disabled' : ''}/>
         </div>
       </div>
     `;
@@ -1233,20 +1601,31 @@ async function saveHoursChanges() {
   btn.textContent = 'Saving...';
 
   const updates = [];
-  rows.forEach(r => {
+  for (const r of rows) {
     const dow = parseInt(r.getAttribute('data-dow'), 10);
     const is_active = r.querySelector('.day-active-check').checked;
-    const start_hour = parseInt(r.querySelector('.day-start-hour').value, 10);
-    const end_hour = parseInt(r.querySelector('.day-end-hour').value, 10);
+    const startStr = r.querySelector('.day-start-hour').value || '09:00';
+    const endStr   = r.querySelector('.day-end-hour').value || '19:00';
 
+    const startMins = parseTimeToMinutes(startStr, 540);
+    const endMins   = parseTimeToMinutes(endStr, 1140);
+
+    if (is_active && endMins <= startMins) {
+      alert(`${DOW_NAMES[dow]}: Closing time must be after opening time.`);
+      btn.disabled = false;
+      btn.textContent = 'Save Working Hours ✦';
+      return;
+    }
+
+    // Store total minutes from midnight (e.g. 7:15 PM -> 1155) in existing integer columns
     updates.push({
       artist_id: artistId,
       day_of_week: dow,
-      start_hour,
-      end_hour,
+      start_hour: startMins,
+      end_hour: endMins,
       is_active
     });
-  });
+  }
 
   const { error } = await sbClient.from('artist_schedules').upsert(updates, { onConflict: 'artist_id,day_of_week' });
   if (error) {
@@ -1511,23 +1890,23 @@ async function renderCalendarTimeline() {
     let itemsHtml = '';
 
     if (!isWorkingToday) {
-      itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.02); pointer-events:none; z-index:1;"></div>`;
+      itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(232,222,200,0.25); pointer-events:none; z-index:1;"></div>`;
     } else {
-      const shiftStart = artSched.start_hour;
-      const shiftEnd = artSched.end_hour;
+      const shiftStartHr = parseTimeToMinutes(artSched.start_hour, 540) / 60;
+      const shiftEndHr   = parseTimeToMinutes(artSched.end_hour, 1140) / 60;
 
-      if (shiftStart > CAL_START_HOUR) {
-        const topH = (shiftStart - CAL_START_HOUR) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(0,0,0,0.45); pointer-events:none; z-index:1;"></div>`;
+      if (shiftStartHr > CAL_START_HOUR) {
+        const topH = (shiftStartHr - CAL_START_HOUR) * SLOT_HEIGHT;
+        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(43,38,32,0.08); pointer-events:none; z-index:1;"></div>`;
       }
-      if (shiftEnd < CAL_END_HOUR) {
-        const botTop = (shiftEnd - CAL_START_HOUR) * SLOT_HEIGHT;
-        const botH = (CAL_END_HOUR - shiftEnd) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(0,0,0,0.45); pointer-events:none; z-index:1;"></div>`;
+      if (shiftEndHr < CAL_END_HOUR) {
+        const botTop = (shiftEndHr - CAL_START_HOUR) * SLOT_HEIGHT;
+        const botH = (CAL_END_HOUR - shiftEndHr) * SLOT_HEIGHT;
+        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(43,38,32,0.08); pointer-events:none; z-index:1;"></div>`;
       }
     }
 
-    const myBlackouts = (dayBlackouts || []).filter(b => 
+    const myBlackouts = (dayBlackouts || []).filter(b =>
       String(b.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
     );
     
@@ -1631,58 +2010,57 @@ async function renderCalendarTimeline() {
 </script>
 
 <!-- Interactive Edit / Reschedule Modal -->
-<div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:var(--card, #1a1a1a); border:1px solid var(--border, #333); border-radius:12px; width:100%; max-width:460px; padding:24px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
-    
+<div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(43,38,32,0.55); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:12px;">
+  <div style="background:#FFFFFF; border:1px solid #E8DEC8; border-radius:12px; width:100%; max-width:460px; padding:22px 18px; color:#2B2620; box-shadow:0 12px 36px rgba(43,38,32,0.16); max-height:90vh; overflow-y:auto;">
+
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
       <div>
-        <h3 id="modalApptClient" style="margin:0; font-size:18px; font-weight:600;">Client Name</h3>
-        <p id="modalApptTimeSpan" style="margin:4px 0 0; font-size:13px; color:var(--gold, #d4af37);">8:00 AM – 10:30 AM</p>
+        <h3 id="modalApptClient" style="margin:0; font-family:var(--serif); font-size:20px; font-weight:600; color:#2B2620;">Client Name</h3>
+        <p id="modalApptTimeSpan" style="margin:4px 0 0; font-size:12px; font-weight:700; color:#B5904B;">8:00 AM – 10:30 AM</p>
       </div>
-      <button onclick="closeAppointmentModal()" style="background:none; border:none; color:#888; font-size:20px; cursor:pointer;">&times;</button>
+      <button onclick="closeAppointmentModal()" style="background:#F7F4EE; border:1px solid #E8DEC8; border-radius:50%; width:30px; height:30px; color:#7A7060; font-size:18px; cursor:pointer;">&times;</button>
     </div>
 
     <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
       <div>
-        <label style="display:block; margin-bottom:4px; color:#aaa;">Service</label>
-        <select id="modalApptService" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-        </select>
+        <label class="form-label">Service</label>
+        <select id="modalApptService" class="form-input"></select>
       </div>
 
       <div>
-        <label style="display:block; margin-bottom:4px; color:#aaa;">Date</label>
-        <input type="date" id="modalApptDate" class="form-input" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;" />
+        <label class="form-label">Date</label>
+        <input type="date" id="modalApptDate" class="form-input"/>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
         <div>
-          <label style="display:block; margin-bottom:4px; color:#aaa;">Start Time</label>
-          <input type="text" id="modalApptTime" class="form-input" placeholder="e.g. 5:00 PM" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;" />
+          <label class="form-label">Start Time</label>
+          <input type="text" id="modalApptTime" class="form-input" placeholder="e.g. 5:00 PM"/>
         </div>
         <div>
-          <label style="display:block; margin-bottom:4px; color:#aaa;">Artist</label>
-          <select id="modalApptArtist" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-          </select>
+          <label class="form-label">Artist</label>
+          <select id="modalApptArtist" class="form-input"></select>
         </div>
       </div>
 
       <div>
-        <label style="display:block; margin-bottom:4px; color:#aaa;">Notes</label>
-        <textarea id="modalApptNotes" rows="3" style="width:100%; padding:8px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px; resize:vertical;"></textarea>
+        <label class="form-label">Notes</label>
+        <textarea id="modalApptNotes" rows="3" class="form-input" style="resize:vertical;"></textarea>
       </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
-      <button onclick="cancelCurrentAppointment()" style="padding:8px 14px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; font-weight:600; cursor:pointer;">Cancel Booking</button>
-      
-      <div style="display:flex; gap:10px;">
-        <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:8px 14px; cursor:pointer;">Close</button>
-        <button onclick="saveAppointmentChanges()" style="padding:8px 16px; background:var(--gold, #d4af37); color:#000; font-weight:600; border:none; border-radius:6px; cursor:pointer;">Save Changes</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-top:20px;">
+      <button onclick="cancelCurrentAppointment()" style="padding:9px 14px; background:#FFF3F3; color:#c0392b; border:1px solid #F5C6CB; border-radius:8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer;">Cancel Booking</button>
+
+      <div style="display:flex; gap:8px; margin-left:auto;">
+        <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:9px 14px;">Close</button>
+        <button onclick="saveAppointmentChanges()" class="btn-gold" style="padding:9px 16px;">Save Changes</button>
       </div>
     </div>
 
   </div>
 </div>
+
 <script>
 let currentModalAppt = null;
 
