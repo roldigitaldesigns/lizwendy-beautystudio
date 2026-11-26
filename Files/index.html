@@ -2533,6 +2533,73 @@ function goToStep3() {
   scrollTop();
 }
 
+async function syncArtistsFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('artists')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error || !Array.isArray(data) || data.length === 0) return;
+
+    const activeArtists = data.filter(a => a.is_active !== false);
+    const grid = document.querySelector('#panel-step3 .artist-grid');
+    if (!grid || activeArtists.length === 0) return;
+
+    const catTagMap = {
+      makeup: { en: 'Makeup', es: 'Maquillaje' },
+      nails: { en: 'Nails', es: 'Uñas' },
+      facial: { en: 'Facials', es: 'Faciales' },
+      waxing: { en: 'Waxing', es: 'Depilación' },
+      pmu: { en: 'PMU', es: 'PMU' },
+      lashext: { en: 'Lash Ext.', es: 'Pestañas' },
+    };
+
+    grid.innerHTML = activeArtists.map(art => {
+      const aid = String(art.id || '').toLowerCase().trim();
+      const name = art.name || aid;
+      const titleEn = art.title_en || 'Beauty Specialist';
+      const titleEs = art.title_es || titleEn;
+      const photo = art.photo_url || (aid === 'johanna' ? 'Images/Johanna.png' : 'Images/Wendy.jpeg');
+      const portfolio = art.portfolio_url || (aid === 'johanna'
+        ? 'https://www.instagram.com/johannanails01/'
+        : 'https://www.instagram.com/lizwendybeautystudiollc/');
+      const cats = Array.isArray(art.categories) ? art.categories : [];
+      const catsAttr = cats.length ? ` data-cats="${cats.join(',')}"` : '';
+
+      const tagsHtml = cats.map(c => {
+        const lbl = catTagMap[c] || { en: c, es: c };
+        return `<span class="artist-tag" data-en>${lbl.en}</span><span class="artist-tag" data-es>${lbl.es}</span>`;
+      }).join('');
+
+      return `
+        <div class="artist-card" id="artist-${aid}"${catsAttr} onclick="selectArtist('${aid}')">
+          <div class="artist-selected-check">✓</div>
+          <div class="artist-card-photo"><img src="${photo}" alt="${name}"></div>
+          <div class="artist-card-info">
+            <div class="artist-card-name">${name}</div>
+            <div class="artist-card-title" data-en>${titleEn}</div>
+            <div class="artist-card-title" data-es>${titleEs}</div>
+            <a href="${portfolio}" target="_blank" rel="noopener noreferrer" class="portfolio-link" onclick="event.stopPropagation()">
+              <span data-en>View Portfolio</span><span data-es>Ver Portafolio</span>
+            </a>
+            <div class="artist-card-tags">${tagsHtml}</div>
+            <button class="artist-select-btn" id="artist-${aid}-btn">
+              <span data-en>Select →</span><span data-es>Seleccionar →</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    filterArtists();
+  } catch (e) {
+    console.warn('Artist sync skipped:', e);
+  }
+}
+
+syncArtistsFromSupabase();
+
 function filterArtists() {
   document.querySelectorAll('.artist-card').forEach(card => {
     const cats = card.dataset.cats;
@@ -2541,7 +2608,8 @@ function filterArtists() {
     const visible = [...selectedCats].every(c => artistCats.includes(c));
     card.style.display = visible ? '' : 'none';
   });
-}
+}  
+
 
 async function goToStep4() {
   if (!selectedArtist) return;
