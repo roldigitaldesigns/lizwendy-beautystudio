@@ -609,10 +609,14 @@ tr:hover td { background: var(--gold-pale); }
     </div>
   </a>
   <div class="nav-actions">
+    <a href="https://rol-command-center.netlify.app/" target="_blank" rel="noopener noreferrer" class="nav-live-link" style="border-color:var(--gold); color:var(--gold-dim);">
+  <span class="live-label-full">Command Center ↗</span>
+  <span class="live-label-short">Command ↗</span>
+</a>
     <a href="/" class="nav-live-link">
-      <span class="live-label-full">← Live Site</span>
-      <span class="live-label-short">← Site</span>
-    </a>
+   <span class="live-label-full">← Live Site</span>
+   <span class="live-label-short">← Site</span>
+ </a>
     <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="handleLogout()">Sign Out</button>
   </div>
 </nav>
@@ -644,8 +648,6 @@ tr:hover td { background: var(--gold-pale); }
   <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('services')">Services & Pricing</button>
     <button class="tab-btn" onclick="switchTab('schedules')">Team & Hours</button>
-    <button class="tab-btn" onclick="switchTab('calendar')">Studio Calendar</button>
-    <button class="tab-btn" onclick="switchTab('appointments')">Appointments</button>
   </div>
 
   <!-- TAB 1: SERVICES -->
@@ -702,66 +704,6 @@ tr:hover td { background: var(--gold-pale); }
     </div>
   </div>
 
-  <!-- TAB: STUDIO CALENDAR -->
-  <div class="tab-pane" id="tab-calendar">
-    <div class="panel-header">
-      <div>
-        <h2 class="panel-title">Daily Schedule & Appointments</h2>
-        <p style="font-size:12px; color:var(--muted-lt);">Live visual timeline of team shifts, bookings, and time-off blocks.</p>
-      </div>
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <input type="date" class="form-input" id="calendarViewDate" onchange="renderCalendarTimeline()" style="width:150px; padding:7px 10px; font-size:12px;"/>
-        <button class="btn-logout" onclick="shiftCalendarDay(-1)">‹ Previous Day</button>
-        <button class="btn-logout" onclick="setCalendarToday()">Today</button>
-        <button class="btn-logout" onclick="shiftCalendarDay(1)">Next Day ›</button>
-      </div>
-    </div>
-
-    <!-- Calendar Timeline Board -->
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; padding:20px;">
-      <div id="calendarColumnsContainer" style="display:grid; grid-template-columns: 80px repeat(2, minmax(260px, 1fr)); gap:16px; min-width:620px;">
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 3: APPOINTMENTS -->
-  <div class="tab-pane" id="tab-appointments">
-    <div class="panel-header">
-      <div>
-        <h2 class="panel-title">Bookings Ledger</h2>
-        <p style="font-size:12px; color:var(--muted-lt);">Real-time appointments confirmed through the booking engine.</p>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <input type="text" class="search-input" id="apptSearch" placeholder="Search client, phone, service..." oninput="filterAppointments()" style="width:230px;"/>
-        <select class="form-input" id="apptArtistFilter" onchange="filterAppointments()" style="width:130px; padding:7px 10px; font-size:12px;">
-          <option value="all">All Artists</option>
-          <option value="liz">Liz Wendy</option>
-          <option value="johanna">Johanna</option>
-        </select>
-        <button class="btn-logout" onclick="loadAppointments()">Refresh ⟳</button>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th onclick="toggleSort('start_time')" style="cursor:pointer; user-select:none;">Date & Time <span id="sort-start_time">▼</span></th>
-            <th onclick="toggleSort('customer_name')" style="cursor:pointer; user-select:none;">Client <span id="sort-customer_name"></span></th>
-            <th>Phone</th>
-            <th onclick="toggleSort('artist_id')" style="cursor:pointer; user-select:none;">Artist <span id="sort-artist_id"></span></th>
-            <th>Services</th>
-            <th onclick="toggleSort('total_price')" style="cursor:pointer; user-select:none;">Total <span id="sort-total_price"></span></th>
-            <th>Deposit</th>
-          </tr>
-        </thead>
-        <tbody id="appointmentsTableBody">
-          <tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
 <!-- ── EDIT SERVICE MODAL ── -->
 <div class="modal-overlay" id="serviceModal">
@@ -858,6 +800,18 @@ tr:hover td { background: var(--gold-pale); }
     </div>
 
     <div class="form-group">
+   <label class="form-label">Portfolio / Instagram Link</label>
+   <input type="url" class="form-input" id="artistFieldPortfolio" placeholder="https://www.instagram.com/lizwendybeautystudiollc/"/>
+ </div>
+
+ <div class="form-group">
+   <label class="form-label">Artist Photo</label>
+   <input type="file" id="artistPhotoFile" accept="image/*" class="form-input" style="padding:6px;"/>
+   <input type="text" class="form-input" id="artistFieldPhotoUrl" placeholder="Or photo path/URL (e.g., Images/Wendy.jpeg)" style="margin-top:8px;"/>
+   <div id="artistPhotoPreview" style="margin-top:8px;"></div>
+ </div>
+
+    <div class="form-group">
       <label class="form-label">Categories Covered</label>
       <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-top:4px; background:var(--card2); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius);">
         <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
@@ -888,7 +842,7 @@ tr:hover td { background: var(--gold-pale); }
 
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn-gold" id="saveArtistBtn" onclick="saveArtist()" style="flex:1;">Save Member ✦</button>
-      <button class="btn-logout" id="deleteArtistBtn" onclick="deleteArtist()" style="display:none; color:var(--danger); border-color:var(--danger);">Deactivate</button>
+<button class="btn-logout" id="deleteArtistBtn" onclick="deleteArtist()" style="display:none; color:var(--danger); border-color:var(--danger);">Remove Artist</button>
     </div>
   </div>
 </div>
@@ -1323,6 +1277,14 @@ async function loadSchedules() {
 }
 
 // ── ARTIST MODAL LOGIC ──
+function renderArtistPhotoPreview(url) {
+  const el = document.getElementById('artistPhotoPreview');
+  if (!el) return;
+  el.innerHTML = url
+    ? `<img src="${url}" alt="Preview" style="width:64px; height:64px; border-radius:8px; object-fit:cover; border:1px solid var(--border);"/>`
+    : '<span style="font-size:11px; color:var(--muted);">No photo set</span>';
+}
+
 function openAddArtistModal() {
   document.getElementById('editArtistId').value = '';
   document.getElementById('artistModalTitle').textContent = 'Add Team Member';
@@ -1331,6 +1293,10 @@ function openAddArtistModal() {
   document.getElementById('artistFieldName').value = '';
   document.getElementById('artistFieldTitleEn').value = '';
   document.getElementById('artistFieldTitleEs').value = '';
+  document.getElementById('artistFieldPortfolio').value = '';
+  document.getElementById('artistPhotoFile').value = '';
+  document.getElementById('artistFieldPhotoUrl').value = '';
+  renderArtistPhotoPreview('');
   document.querySelectorAll('.artist-cat-check').forEach(c => c.checked = false);
   document.getElementById('artistFieldIsActive').checked = true;
   document.getElementById('deleteArtistBtn').style.display = 'none';
@@ -1348,13 +1314,17 @@ function openEditArtistModal(artistId) {
   document.getElementById('artistFieldName').value = art.name;
   document.getElementById('artistFieldTitleEn').value = art.title_en || '';
   document.getElementById('artistFieldTitleEs').value = art.title_es || '';
+  document.getElementById('artistFieldPortfolio').value = art.portfolio_url || '';
+  document.getElementById('artistPhotoFile').value = '';
+  document.getElementById('artistFieldPhotoUrl').value = art.photo_url || '';
+  renderArtistPhotoPreview(art.photo_url || '');
   const cats = art.categories || [];
   document.querySelectorAll('.artist-cat-check').forEach(c => {
     c.checked = cats.includes(c.value);
   });
 
   document.getElementById('artistFieldIsActive').checked = art.is_active;
-  document.getElementById('deleteArtistBtn').style.display = 'block';
+  document.getElementById('deleteArtistBtn').style.display = 'inline-block';
   document.getElementById('artistModal').style.display = 'flex';
 }
 
@@ -1364,58 +1334,93 @@ function closeArtistModal() {
 
 async function saveArtist() {
   const existingId = document.getElementById('editArtistId').value;
-  const id = existingId || document.getElementById('artistFieldId').value.trim().toLowerCase();
+  const id = existingId || document.getElementById('artistFieldId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const name = document.getElementById('artistFieldName').value.trim();
   const title_en = document.getElementById('artistFieldTitleEn').value.trim();
   const title_es = document.getElementById('artistFieldTitleEs').value.trim();
+  const portfolio_url = document.getElementById('artistFieldPortfolio').value.trim() || null;
   const is_active = document.getElementById('artistFieldIsActive').checked;
   const selectedCats = Array.from(document.querySelectorAll('.artist-cat-check:checked')).map(c => c.value);
+  const saveBtn = document.getElementById('saveArtistBtn');
 
   if (!id || !name) {
     alert('Please provide an Artist ID and Full Name.');
     return;
   }
 
-  const payload = { id, name, title_en, title_es, is_active, categories: selectedCats };
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
 
-  let error;
-  if (existingId) {
-    ({ error } = await sbClient.from('artists').update(payload).eq('id', existingId));
-  } else {
-    ({ error } = await sbClient.from('artists').insert([payload]));
-    if (!error) {
-      const defaultShifts = [
-        { artist_id: id, day_of_week: 1, start_hour: 540, end_hour: 1140, is_active: true },
-        { artist_id: id, day_of_week: 2, start_hour: 540, end_hour: 1140, is_active: true },
-        { artist_id: id, day_of_week: 3, start_hour: 540, end_hour: 1140, is_active: true },
-        { artist_id: id, day_of_week: 4, start_hour: 540, end_hour: 1140, is_active: true },
-        { artist_id: id, day_of_week: 5, start_hour: 540, end_hour: 1140, is_active: true },
-        { artist_id: id, day_of_week: 6, start_hour: 480, end_hour: 960, is_active: true },
-        { artist_id: id, day_of_week: 0, start_hour: 540, end_hour: 1020, is_active: false }
-      ];
-      await sbClient.from('artist_schedules').insert(defaultShifts);
+  try {
+    let photo_url = document.getElementById('artistFieldPhotoUrl').value.trim() || null;
+    const file = document.getElementById('artistPhotoFile').files[0];
+
+    if (file) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `artists/${id}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await sbClient.storage
+        .from('service-photos')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: pubData } = sbClient.storage.from('service-photos').getPublicUrl(path);
+      if (pubData && pubData.publicUrl) photo_url = pubData.publicUrl;
     }
-  }
 
-  if (error) {
-    alert('Failed to save artist: ' + error.message);
-    return;
-  }
+    const payload = { id, name, title_en, title_es, portfolio_url, photo_url, is_active, categories: selectedCats };
 
-  closeArtistModal();
-  loadSchedules();
+    let error;
+    if (existingId) {
+      ({ error } = await sbClient.from('artists').update(payload).eq('id', existingId));
+    } else {
+      ({ error } = await sbClient.from('artists').insert([payload]));
+      if (!error) {
+        const defaultShifts = [
+          { artist_id: id, day_of_week: 1, start_hour: 540, end_hour: 1140, is_active: true },
+          { artist_id: id, day_of_week: 2, start_hour: 540, end_hour: 1140, is_active: true },
+          { artist_id: id, day_of_week: 3, start_hour: 540, end_hour: 1140, is_active: true },
+          { artist_id: id, day_of_week: 4, start_hour: 540, end_hour: 1140, is_active: true },
+          { artist_id: id, day_of_week: 5, start_hour: 540, end_hour: 1140, is_active: true },
+          { artist_id: id, day_of_week: 6, start_hour: 480, end_hour: 960, is_active: true },
+          { artist_id: id, day_of_week: 0, start_hour: 540, end_hour: 1020, is_active: false }
+        ];
+        await sbClient.from('artist_schedules').insert(defaultShifts);
+      }
+    }
+
+    if (error) {
+      alert('Failed to save artist: ' + error.message);
+      return;
+    }
+
+    closeArtistModal();
+    loadSchedules();
+  } catch (err) {
+    alert('Failed to save artist: ' + err.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Member ✦';
+  }
 }
 
 async function deleteArtist() {
   const id = document.getElementById('editArtistId').value;
-  if (!confirm(`Are you sure you want to deactivate this artist?`)) return;
+  if (!id) return;
+  const art = ALL_ARTISTS.find(a => a.id === id);
+  if (!confirm(`Remove ${art ? art.name : id} from the studio team and booking site?`)) return;
 
-  const { error } = await sbClient.from('artists').update({ is_active: false }).eq('id', id);
-  if (error) alert('Error: ' + error.message);
-  else {
-    closeArtistModal();
-    loadSchedules();
+  await sbClient.from('artist_schedules').delete().eq('artist_id', id);
+  await sbClient.from('artist_blackouts').delete().eq('artist_id', id);
+  const { error } = await sbClient.from('artists').delete().eq('id', id);
+
+  if (error) {
+    const { error: updErr } = await sbClient.from('artists').update({ is_active: false }).eq('id', id);
+    if (updErr) { alert('Error: ' + error.message); return; }
   }
+
+  closeArtistModal();
+  loadSchedules();
 }
 
 // ── TIME OFF & BLACKOUTS LOGIC ──
@@ -1637,557 +1642,7 @@ async function saveHoursChanges() {
   btn.disabled = false;
   btn.textContent = 'Save Working Hours ✦';
 }
-
-// ── APPOINTMENTS TAB ──
-let ALL_APPOINTMENTS = [];
-let CURRENT_SORT_COL = 'start_time';
-let CURRENT_SORT_ASC = true;
-
-async function loadAppointments() {
-  const tbody = document.getElementById('appointmentsTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color:var(--muted);">Loading appointments...</td></tr>`;
-
-  const { data, error } = await sbClient
-    .from('appointments')
-    .select('*')
-    .order('start_time', { ascending: true });
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
-    return;
-  }
-
-  ALL_APPOINTMENTS = data || [];
-  filterAppointments();
-}
-
-function cleanClientName(rawName) {
-  if (!rawName) return 'Client';
-  let cleaned = rawName.replace(/[\p{Emoji}\u200d]+/gu, '').trim();
-  if (cleaned.includes('—')) {
-    cleaned = cleaned.split('—')[0].trim();
-  } else if (cleaned.includes('-')) {
-    cleaned = cleaned.split('-')[0].trim();
-  }
-  return cleaned || rawName;
-}
-
-function toggleSort(col) {
-  if (CURRENT_SORT_COL === col) {
-    CURRENT_SORT_ASC = !CURRENT_SORT_ASC;
-  } else {
-    CURRENT_SORT_COL = col;
-    CURRENT_SORT_ASC = true;
-  }
-  updateSortIndicators();
-  filterAppointments();
-}
-
-function updateSortIndicators() {
-  ['start_time', 'customer_name', 'artist_id', 'total_price'].forEach(col => {
-    const el = document.getElementById(`sort-${col}`);
-    if (el) {
-      if (CURRENT_SORT_COL === col) {
-        el.textContent = CURRENT_SORT_ASC ? ' ▲' : ' ▼';
-        el.style.color = 'var(--gold)';
-      } else {
-        el.textContent = '';
-      }
-    }
-  });
-}
-
-function filterAppointments() {
-  const q = (document.getElementById('apptSearch')?.value || '').toLowerCase().trim();
-  const artist = document.getElementById('apptArtistFilter')?.value || 'all';
-
-  let filtered = ALL_APPOINTMENTS.filter(app => {
-    if (artist !== 'all' && app.artist_id !== artist) return false;
-
-    if (q) {
-      const name = (app.customer_name || '').toLowerCase();
-      const phone = (app.customer_phone || '').toLowerCase();
-      const email = (app.customer_email || '').toLowerCase();
-      const svcs = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(' ').toLowerCase();
-
-      return name.includes(q) || phone.includes(q) || email.includes(q) || svcs.includes(q);
-    }
-    return true;
-  });
-
-  filtered.sort((a, b) => {
-    let valA = a[CURRENT_SORT_COL];
-    let valB = b[CURRENT_SORT_COL];
-
-    if (CURRENT_SORT_COL === 'start_time') {
-      valA = new Date(valA || (a.appointment_date + ' ' + a.appointment_time)).getTime() || 0;
-      valB = new Date(valB || (b.appointment_date + ' ' + b.appointment_time)).getTime() || 0;
-    } else if (CURRENT_SORT_COL === 'total_price') {
-      valA = Number(valA) || 0;
-      valB = Number(valB) || 0;
-    } else if (CURRENT_SORT_COL === 'customer_name') {
-      valA = cleanClientName(valA).toLowerCase();
-      valB = cleanClientName(valB).toLowerCase();
-    } else if (typeof valA === 'string') {
-      valA = (valA || '').toLowerCase();
-      valB = (valB || '').toLowerCase();
-    }
-
-    if (valA < valB) return CURRENT_SORT_ASC ? -1 : 1;
-    if (valA > valB) return CURRENT_SORT_ASC ? 1 : -1;
-    return 0;
-  });
-
-  renderAppointmentsTable(filtered);
-}
-
-function renderAppointmentsTable(list) {
-  const tbody = document.getElementById('appointmentsTableBody');
-  if (!tbody) return;
-
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No matching appointments found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(app => {
-    const dateStr = `${app.appointment_date || ''} · ${app.appointment_time || ''}`;
-    const cleanName = cleanClientName(app.customer_name);
-    const svcNames = (app.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
-    const artistBadgeColor = app.artist_id === 'johanna' ? '#E8C84A' : 'var(--gold)';
-    const displayEmail = app.customer_email ? `<div style="font-size:11px; color:var(--muted);">${app.customer_email}</div>` : '';
-    const statusBadge = app.status === 'cancelled' 
-      ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid #ef4444;">Cancelled</span>` 
-      : `<span class="badge ${app.deposit_paid ? 'badge-active' : 'badge-hidden'}">${app.deposit_paid ? 'Paid' : 'Waived/None'}</span>`;
-
-    return `
-      <tr>
-        <td><strong>${dateStr}</strong></td>
-        <td>
-          <strong>${cleanName}</strong>
-          ${displayEmail}
-        </td>
-        <td><a href="tel:${app.customer_phone}" style="color:var(--text); text-decoration:none;">${app.customer_phone}</a></td>
-        <td>
-          <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:${artistBadgeColor};">
-            ${app.artist_id}
-          </span>
-        </td>
-        <td style="max-width:240px; font-size:12px;">${svcNames}</td>
-        <td style="color:var(--gold); font-weight:600;">$${Number(app.total_price || 0).toFixed(2)}</td>
-        <td>
-          ${statusBadge}
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// ── STUDIO CALENDAR TIMELINE ──
-const CAL_START_HOUR = 6;
-const CAL_END_HOUR = 21;
-const SLOT_HEIGHT = 60;
-
-function setCalendarToday() {
-  const today = new Date().toISOString().split('T')[0];
-  const input = document.getElementById('calendarViewDate');
-  if (input) input.value = today;
-  renderCalendarTimeline();
-}
-
-function shiftCalendarDay(offset) {
-  const input = document.getElementById('calendarViewDate');
-  if (!input) return;
-  const cur = input.value || new Date().toISOString().split('T')[0];
-  const d = new Date(cur + 'T00:00:00');
-  d.setDate(d.getDate() + offset);
-  input.value = d.toISOString().split('T')[0];
-  renderCalendarTimeline();
-}
-
-function getEndTimeString(timeStr, durationMin) {
-  if (!timeStr) return '';
-
-  const match = timeStr.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
-  if (!match) return '';
-
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const ampm = match[3] ? match[3].toUpperCase() : null;
-
-  if (ampm) {
-    if (ampm === 'PM' && hours !== 12) hours += 12;
-    if (ampm === 'AM' && hours === 12) hours = 0;
-  } else {
-    if (hours < 8) hours += 12;
-  }
-
-  const totalMinutes = hours * 60 + minutes + (parseInt(durationMin, 10) || 60);
-  const endHour24 = Math.floor(totalMinutes / 60) % 24;
-  const endMin = String(totalMinutes % 60).padStart(2, '0');
-
-  const endAmpm = endHour24 >= 12 ? 'PM' : 'AM';
-  const endDisplayHour = endHour24 % 12 || 12;
-
-  return `${endDisplayHour}:${endMin} ${endAmpm}`;
-}
-
-async function renderCalendarTimeline() {
-  const dateInput = document.getElementById('calendarViewDate');
-  if (!dateInput) return;
-  const dateStr = dateInput.value;
-  if (!dateStr) return;
-
-  const dt = new Date(dateStr + 'T00:00:00');
-  const dow = dt.getDay();
-
-  const container = document.getElementById('calendarColumnsContainer');
-  if (!container) return;
-
-  if (!window.ALL_ARTISTS || window.ALL_ARTISTS.length === 0) {
-    const { data: arts } = await sbClient.from('artists').select('*').order('name');
-    window.ALL_ARTISTS = arts || [];
-  }
-  if (!window.ALL_SCHEDS || window.ALL_SCHEDS.length === 0) {
-    const { data: scs } = await sbClient.from('artist_schedules').select('*');
-    window.ALL_SCHEDS = scs || [];
-  }
-
-  let visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
-  if (typeof CURRENT_USER_ROLE !== 'undefined' && CURRENT_USER_ROLE === 'staff' && CURRENT_ARTIST_ID) {
-    visibleArtists = visibleArtists.filter(a => a.id === CURRENT_ARTIST_ID);
-  }
-
-  if (visibleArtists.length === 0) {
-    visibleArtists = (window.ALL_ARTISTS || []).filter(a => a.is_active);
-  }
-
-  container.style.display = 'grid';
-  container.style.gridTemplateColumns = `80px repeat(${Math.max(1, visibleArtists.length)}, minmax(280px, 1fr))`;
-  container.style.gap = '16px';
-
-  const [{ data: dayAppts }, { data: dayBlackouts }] = await Promise.all([
-    sbClient.from('appointments').select('*').eq('appointment_date', dateStr).neq('status', 'cancelled'),
-    sbClient.from('artist_blackouts').select('*').lte('start_date', dateStr).gte('end_date', dateStr)
-  ]);
-
-  let timeColHtml = '<div class="cal-time-col">';
-  for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
-    timeColHtml += `<div class="cal-time-slot">${formatHour12(h)}</div>`;
-  }
-  timeColHtml += '</div>';
-
-  const artistColsHtml = visibleArtists.map(art => {
-    const artSched = (window.ALL_SCHEDS || []).find(s => s.artist_id === art.id && s.day_of_week === dow);
-    const isWorkingToday = artSched && artSched.is_active;
-
-    let gridLinesHtml = '';
-    for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
-      gridLinesHtml += `<div class="cal-slot-grid-line"></div>`;
-    }
-
-    let itemsHtml = '';
-
-    if (!isWorkingToday) {
-      itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(232,222,200,0.25); pointer-events:none; z-index:1;"></div>`;
-    } else {
-      const shiftStartHr = parseTimeToMinutes(artSched.start_hour, 540) / 60;
-      const shiftEndHr   = parseTimeToMinutes(artSched.end_hour, 1140) / 60;
-
-      if (shiftStartHr > CAL_START_HOUR) {
-        const topH = (shiftStartHr - CAL_START_HOUR) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:0; left:0; right:0; height:${topH}px; background:rgba(43,38,32,0.08); pointer-events:none; z-index:1;"></div>`;
-      }
-      if (shiftEndHr < CAL_END_HOUR) {
-        const botTop = (shiftEndHr - CAL_START_HOUR) * SLOT_HEIGHT;
-        const botH = (CAL_END_HOUR - shiftEndHr) * SLOT_HEIGHT;
-        itemsHtml += `<div style="position:absolute; top:${botTop}px; left:0; right:0; height:${botH}px; background:rgba(43,38,32,0.08); pointer-events:none; z-index:1;"></div>`;
-      }
-    }
-
-    const myBlackouts = (dayBlackouts || []).filter(b =>
-      String(b.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
-    );
-    
-    myBlackouts.forEach(b => {
-      if (!b.start_time || !b.end_time) {
-        itemsHtml += `<div class="cal-event-card cal-event-blackout" style="top:10px; bottom:10px;"><strong>TIME OFF: ${b.reason || 'Unavailable'}</strong><br/>All Day</div>`;
-      } else {
-        const [sh, sm] = b.start_time.split(':').map(Number);
-        const [eh, em] = b.end_time.split(':').map(Number);
-        const top = ((sh - CAL_START_HOUR) + (sm / 60)) * SLOT_HEIGHT;
-        const height = Math.max(35, (((eh - CAL_START_HOUR) + (em / 60)) * SLOT_HEIGHT) - top);
-        itemsHtml += `
-          <div class="cal-event-card cal-event-blackout" style="top:${top}px; height:${height}px;">
-            <strong>${b.reason || 'Blocked'}</strong>
-            <div>${formatHour12(sh)} – ${formatHour12(eh)}</div>
-          </div>`;
-      }
-    });
-
-    const myAppts = (dayAppts || []).filter(a => 
-      String(a.artist_id || '').toLowerCase().trim() === String(art.id || '').toLowerCase().trim()
-    );
-
-    myAppts.forEach(a => {
-      if (!a.appointment_time && !a.start_time) return;
-
-      let h = 0, m = 0;
-      if (a.appointment_time) {
-        const match = a.appointment_time.match(/(\d+):(\d+)\s*(am|pm)?/i);
-        if (match) {
-          h = parseInt(match[1], 10);
-          m = parseInt(match[2], 10);
-          const period = (match[3] || '').toLowerCase();
-          if (period === 'pm' && h < 12) h += 12;
-          if (period === 'am' && h === 12) h = 0;
-        }
-      } else if (a.start_time) {
-        const stDate = new Date(a.start_time);
-        h = stDate.getHours();
-        m = stDate.getMinutes();
-      }
-
-      let dur = Number(a.duration_minutes);
-
-      if (!dur || isNaN(dur) || dur <= 0) {
-        const rawBlob = [
-          a.customer_name || '',
-          a.notes || '',
-          Array.isArray(a.services) ? a.services.map(s => typeof s === 'string' ? s : (s.name || '')).join(' ') : String(a.services || '')
-        ].join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        if (rawBlob.includes('clase') || rawBlob.includes('curso')) {
-          dur = 180;
-        } else if (rawBlob.includes('cejas combo') || rawBlob.includes('powder brow') || rawBlob.includes('microblading') || (rawBlob.includes('colorete') && rawBlob.includes('labios'))) {
-          dur = 150;
-        } else if (rawBlob.includes('pmu') || rawBlob.includes('brows') || rawBlob.includes('cejas') || rawBlob.includes('labios')) {
-          dur = 120;
-        } else if (rawBlob.includes('acrilic') || rawBlob.includes('acrylic') || rawBlob.includes('full set') || rawBlob.includes('juego completo')) {
-          dur = 90;
-        } else if ((rawBlob.includes('mani') && rawBlob.includes('pedi')) || (rawBlob.includes('gel') && rawBlob.includes('pedicure'))) {
-          dur = 90;
-        } else if (rawBlob.includes('manicure') || rawBlob.includes('mani')) {
-          dur = 30;
-        } else {
-          dur = 60;
-        }
-      }
-      const top = ((h - CAL_START_HOUR) + (m / 60)) * SLOT_HEIGHT;
-      const height = Math.max(58, Math.round((dur / 60) * SLOT_HEIGHT) - 2);
-      const svcs = (a.services || []).map(s => typeof s === 'string' ? s : s.name).join(', ');
-
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const dispH = h % 12 || 12;
-      const dispM = m < 10 ? '0' + m : m;
-      const cleanTime = `${dispH}:${dispM} ${ampm}`;
-
-      const finishTime = getEndTimeString(cleanTime, dur);
-      const timeRangeDisplay = `${cleanTime} – ${finishTime}`;
-
-      itemsHtml += `
-        <div class="cal-event-card cal-event-booking" style="top:${top}px; height:${height}px;" onclick="openAppointmentModal('${a.id}')">
-          <div class="card-title">${cleanClientName(a.customer_name)}</div>
-          <div class="card-svc">${svcs || 'Appointment'}</div>
-          <div class="card-meta">✦ ${timeRangeDisplay}</div>
-        </div>`;
-    });
-
-    return `
-      <div class="cal-artist-col">
-        <div class="cal-artist-header">${art.name}</div>
-        <div class="cal-canvas">
-          ${gridLinesHtml}
-          ${itemsHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  container.innerHTML = timeColHtml + artistColsHtml;
-}
-</script>
-
-<!-- Interactive Edit / Reschedule Modal -->
-<div id="appointmentDetailModal" style="display:none; position:fixed; inset:0; background:rgba(43,38,32,0.55); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:12px;">
-  <div style="background:#FFFFFF; border:1px solid #E8DEC8; border-radius:12px; width:100%; max-width:460px; padding:22px 18px; color:#2B2620; box-shadow:0 12px 36px rgba(43,38,32,0.16); max-height:90vh; overflow-y:auto;">
-
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
-      <div>
-        <h3 id="modalApptClient" style="margin:0; font-family:var(--serif); font-size:20px; font-weight:600; color:#2B2620;">Client Name</h3>
-        <p id="modalApptTimeSpan" style="margin:4px 0 0; font-size:12px; font-weight:700; color:#B5904B;">8:00 AM – 10:30 AM</p>
-      </div>
-      <button onclick="closeAppointmentModal()" style="background:#F7F4EE; border:1px solid #E8DEC8; border-radius:50%; width:30px; height:30px; color:#7A7060; font-size:18px; cursor:pointer;">&times;</button>
-    </div>
-
-    <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-      <div>
-        <label class="form-label">Service</label>
-        <select id="modalApptService" class="form-input"></select>
-      </div>
-
-      <div>
-        <label class="form-label">Date</label>
-        <input type="date" id="modalApptDate" class="form-input"/>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label class="form-label">Start Time</label>
-          <input type="text" id="modalApptTime" class="form-input" placeholder="e.g. 5:00 PM"/>
-        </div>
-        <div>
-          <label class="form-label">Artist</label>
-          <select id="modalApptArtist" class="form-input"></select>
-        </div>
-      </div>
-
-      <div>
-        <label class="form-label">Notes</label>
-        <textarea id="modalApptNotes" rows="3" class="form-input" style="resize:vertical;"></textarea>
-      </div>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-top:20px;">
-      <button onclick="cancelCurrentAppointment()" style="padding:9px 14px; background:#FFF3F3; color:#c0392b; border:1px solid #F5C6CB; border-radius:8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer;">Cancel Booking</button>
-
-      <div style="display:flex; gap:8px; margin-left:auto;">
-        <button onclick="closeAppointmentModal()" class="btn-logout" style="padding:9px 14px;">Close</button>
-        <button onclick="saveAppointmentChanges()" class="btn-gold" style="padding:9px 16px;">Save Changes</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-let currentModalAppt = null;
-
-async function openAppointmentModal(apptId) {
-  if (!apptId) return;
-
-  const { data: appt, error } = await sbClient
-    .from('appointments')
-    .select('*')
-    .eq('id', apptId)
-    .single();
-
-  if (error || !appt) {
-    alert("Could not load appointment details: " + (error ? error.message : 'Not found'));
-    return;
-  }
-
-  currentModalAppt = appt;
-
-  const artistSelect = document.getElementById('modalApptArtist');
-  if (artistSelect && window.ALL_ARTISTS && window.ALL_ARTISTS.length > 0) {
-    artistSelect.innerHTML = window.ALL_ARTISTS
-      .filter(art => art.is_active !== false)
-      .map(art => `<option value="${art.id}">${art.name}</option>`)
-      .join('');
-    artistSelect.value = appt.artist_id;
-  }
-
-  const serviceSelect = document.getElementById('modalApptService');
-  if (serviceSelect && window.ALL_SERVICES && window.ALL_SERVICES.length > 0) {
-    serviceSelect.innerHTML = window.ALL_SERVICES
-      .map(s => `<option value="${s.id || s.name_en}">${s.name_en || s.name} (${s.duration_minutes || s.duration || 60}m)</option>`)
-      .join('');
-
-    const currentSvc = Array.isArray(appt.services) && appt.services[0] 
-      ? (typeof appt.services[0] === 'object' ? (appt.services[0].id || appt.services[0].name) : appt.services[0])
-      : '';
-    if (currentSvc) {
-      const matchOpt = Array.from(serviceSelect.options).find(opt => opt.value === currentSvc || opt.text.includes(currentSvc));
-      if (matchOpt) serviceSelect.value = matchOpt.value;
-    }
-  }
-
-  const finishTime = getEndTimeString(appt.appointment_time, appt.duration_minutes);
-  document.getElementById('modalApptClient').textContent = cleanClientName(appt.customer_name);
-  document.getElementById('modalApptTimeSpan').textContent = `${appt.appointment_time} – ${finishTime}`;
-  document.getElementById('modalApptDate').value = appt.appointment_date || '';
-  document.getElementById('modalApptTime').value = appt.appointment_time || '';
-  document.getElementById('modalApptNotes').value = appt.notes || '';
-
-  const modalEl = document.getElementById('appointmentDetailModal');
-  if (modalEl) modalEl.style.display = 'flex';
-}
-
-function closeAppointmentModal() {
-  const modalEl = document.getElementById('appointmentDetailModal');
-  if (modalEl) modalEl.style.display = 'none';
-  currentModalAppt = null;
-}
-
-async function saveAppointmentChanges() {
-  if (!currentModalAppt) return;
-
-  const updatedDate = document.getElementById('modalApptDate').value;
-  const updatedTime = document.getElementById('modalApptTime').value;
-  const updatedArtist = document.getElementById('modalApptArtist').value;
-  const updatedNotes = document.getElementById('modalApptNotes').value;
-  const selectedSvcVal = document.getElementById('modalApptService').value;
-
-  let updatedServices = currentModalAppt.services;
-  let updatedDuration = currentModalAppt.duration_minutes;
-
-  if (window.ALL_SERVICES) {
-    const foundSvc = window.ALL_SERVICES.find(s => (s.id && s.id === selectedSvcVal) || s.name_en === selectedSvcVal || s.name === selectedSvcVal);
-    if (foundSvc) {
-      updatedServices = [{ name: foundSvc.name_en || foundSvc.name, duration: foundSvc.duration_minutes || foundSvc.duration || 60 }];
-      updatedDuration = foundSvc.duration_minutes || foundSvc.duration || 60;
-    }
-  }
-
-  const { error } = await sbClient
-    .from('appointments')
-    .update({
-      appointment_date: updatedDate,
-      appointment_time: updatedTime,
-      artist_id: updatedArtist,
-      notes: updatedNotes,
-      services: updatedServices,
-      duration_minutes: updatedDuration
-    })
-    .eq('id', currentModalAppt.id);
-
-  if (error) {
-    alert("Failed to save changes: " + error.message);
-    return;
-  }
-
-  closeAppointmentModal();
-  if (typeof renderCalendarTimeline === 'function') {
-    await renderCalendarTimeline();
-  }
-}
-
-async function cancelCurrentAppointment() {
-  if (!currentModalAppt) return;
-
-  const clientName = cleanClientName(currentModalAppt.customer_name);
-  const confirmCancel = confirm(`Are you sure you want to cancel the appointment for ${clientName}?`);
-  if (!confirmCancel) return;
-
-  const { error } = await sbClient
-    .from('appointments')
-    .update({ status: 'cancelled' })
-    .eq('id', currentModalAppt.id);
-
-  if (error) {
-    alert("Failed to cancel appointment: " + error.message);
-    return;
-  }
-
-  closeAppointmentModal();
-  if (typeof renderCalendarTimeline === 'function') {
-    await renderCalendarTimeline();
-  }
-}
-
-initAuth();
+initAuth()
 </script>
 </body>
 </html>
