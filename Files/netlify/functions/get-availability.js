@@ -114,18 +114,23 @@ exports.handler = async (event) => {
         }
       }
 
-      // 5b. Check Schedules
+     // 5b. Check Schedules (supports both whole hours <24 and total minutes >=24 like 1155 = 19:15)
+      const toMins = (v, defMins) => {
+        const n = Number(v);
+        if (Number.isNaN(n)) return defMins;
+        return n >= 24 ? Math.round(n) : Math.round(n * 60);
+      };
+
       const scRes = await fetch(`${SUPABASE_URL}/rest/v1/artist_schedules?artist_id=eq.${artistId}&day_of_week=eq.${dow}&select=start_hour,end_hour,is_active`, { headers: sbHeaders });
       const schedulesData = await scRes.json();
-      console.log("SUPABASE RESPONSE:", schedulesData);
       const schedules = (Array.isArray(schedulesData) && schedulesData.length > 0) ? schedulesData[0] : null;
 
       if (schedules && schedules.is_active) {
-        shift = [schedules.start_hour, schedules.end_hour];
+        shift = [toMins(schedules.start_hour, 540), toMins(schedules.end_hour, 1140)];
       } else if (schedules && !schedules.is_active) {
         shift = null;
       } else {
-        shift = fallbackHours;
+        shift = fallbackHours ? [toMins(fallbackHours[0], 540), toMins(fallbackHours[1], 1140)] : null;
       }
 
       // 5c. Fetch Supabase Appointments (excluding cancelled)
@@ -300,8 +305,10 @@ exports.handler = async (event) => {
         isFullyBlocked: isBlackedOut,
         busyIntervals: mergedIntervals,
         takenSlots: Array.from(takenSlotsSet),
-        shiftStart: shift[0],
-        shiftEnd: shift[1]
+        shiftStart: shift[0] >= 24 ? Math.floor(shift[0] / 60) : shift[0],
+        shiftEnd: shift[1] >= 24 ? Math.ceil(shift[1] / 60) : shift[1],
+        shiftStartMinutes: shift[0] >= 24 ? shift[0] : shift[0] * 60,
+        shiftEndMinutes: shift[1] >= 24 ? shift[1] : shift[1] * 60,
       }),
     };
 
