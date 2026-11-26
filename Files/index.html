@@ -2739,9 +2739,16 @@ function renderSlots(date) {
   }
   const offset = getNYOffset(formatDateISO(date));
 
-  const shiftStartMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftStart).padStart(2, '0')}:00:00${offset}`).getTime();
-  const shiftEndMs = new Date(`${formatDateISO(date)}T${String(currentAvailability.shiftEnd).padStart(2, '0')}:00:00${offset}`).getTime();
+  const startTotalMins = Number.isFinite(currentAvailability.shiftStartMinutes)
+    ? currentAvailability.shiftStartMinutes
+    : (Number(currentAvailability.shiftStart) >= 24 ? Number(currentAvailability.shiftStart) : Number(currentAvailability.shiftStart) * 60);
+  const endTotalMins = Number.isFinite(currentAvailability.shiftEndMinutes)
+    ? currentAvailability.shiftEndMinutes
+    : (Number(currentAvailability.shiftEnd) >= 24 ? Number(currentAvailability.shiftEnd) : Number(currentAvailability.shiftEnd) * 60);
 
+  const dayMidnightMs = new Date(`${formatDateISO(date)}T00:00:00${offset}`).getTime();
+  const shiftStartMs = dayMidnightMs + startTotalMins * 60000;
+  const shiftEndMs   = dayMidnightMs + endTotalMins * 60000;
   for (let timeMs = shiftStartMs; timeMs + (reqMinutes * 60000) <= shiftEndMs; timeMs += (stepMinutes * 60000)) {
     const slotEndMs = timeMs + (reqMinutes * 60000);
     const hasCollision = (currentAvailability.busyIntervals || []).some(busy => (timeMs < busy.end && slotEndMs > busy.start));
