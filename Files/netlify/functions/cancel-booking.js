@@ -108,12 +108,10 @@ exports.handler = async (event) => {
     // privateExtendedProperty matches only events carrying this exact
     // key=value pair, so at most one event can come back. Bounded to
     // "yesterday onward" — past appointments can't meaningfully be cancelled.
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const found = await calendar.events.list({
+
+  const found = await calendar.events.list({
       calendarId: CALENDAR_ID,
       privateExtendedProperty: `cancelToken=${token}`,
-      timeMin: dayAgo.toISOString(),
-      singleEvents: true,
       maxResults: 1,
     });
 
