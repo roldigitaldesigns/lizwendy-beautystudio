@@ -485,6 +485,10 @@ exports.handler = async (event) => {
 
 /* ── EMAIL: Customer Confirmation (via Gmail SMTP) ── */
 async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, icsContent, lang }) {
+  if (process.env.PAUSE_EMAILS === 'true') {
+    return { ok: false, skipped: 'emails_paused' };
+  }
+
   const transporter = getGmailTransport();
   if (!transporter || !email) {
     console.warn('sendCustomerEmail: Gmail SMTP not configured or no customer email');
@@ -550,6 +554,10 @@ async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable,
 
 /* ── EMAIL: Studio Notification (via Gmail SMTP) ── */
 async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
+  if (process.env.PAUSE_EMAILS === 'true') {
+    return { ok: false, skipped: 'emails_paused' };
+  }
+
   const transporter = getGmailTransport();
   const artistDisplay = artist || 'Liz Wendy Cedeño';
   const recipientEmail = ARTIST_EMAILS[artistDisplay] || STUDIO_EMAIL;
@@ -599,3 +607,9 @@ function formatTime(slot) {
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
+```[cite: 16]
+
+### Next Steps
+1. Paste this complete code into `Files/netlify/functions/create-booking.js` and click **Commit changes...** → **Commit changes**[cite: 16, 18].
+2. In Supabase → **Table Editor** → `appointments`, check `status = cancelled` and set any uncancelled upcoming appointments back to `confirmed`.
+3. Once you're ready to stop the false cancellation bug permanently, let me know and we'll remove the `if (!gcalEv)` auto-cancel block in `sync-calendar.js` before turning emails back on.
