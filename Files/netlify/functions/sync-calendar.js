@@ -65,6 +65,14 @@ function toE164(raw) {
   return digits ? `+${digits}` : '';
 }
 
+function fallbackE164FromId(evId) {
+  let hash = 0;
+  for (const ch of String(evId || '0')) {
+    hash = (hash * 31 + ch.charCodeAt(0)) % 10000000;
+  }
+  return `+1000${String(Math.abs(hash)).padStart(7, '0')}`;
+}
+
 function toCents(dollars) {
   const num = parseFloat(dollars);
   return Number.isFinite(num) ? Math.round(num * 100) : 0;
@@ -233,7 +241,9 @@ exports.handler = async (event) => {
           const phoneMatch = description.match(/Phone:\s*([^\n\r]+)/i);
           phone = phoneMatch ? phoneMatch[1].trim() : '';
         }
-        const normalizedPhone = phone ? toE164(phone) : `+1000${ev.id.slice(-7)}`;
+const normalizedPhone = (phone && toE164(phone).length >= 8)
+  ? toE164(phone)
+  : fallbackE164FromId(ev.id);
 
         let email = extProps.customerEmail || '';
         if (!email) {
