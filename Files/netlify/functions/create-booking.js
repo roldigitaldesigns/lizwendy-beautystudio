@@ -7,12 +7,15 @@
  *   date: "YYYY-MM-DD", time: "HH:MM",
  *   services: [{ name, price }],
  *   total: number,
- *   artist: string
+ *   artist: string,
+ *   durationMinutes: number,
+ *   lang: "en" | "es"
  * }
  */
 
 const { google } = require('googleapis');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
 const { recordLedgerEvent, toE164, toCents } = require('./_lib/ledger');
 
@@ -165,6 +168,9 @@ const PRIVATE_KEY   = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n
 const STUDIO_EMAIL  = process.env.STUDIO_EMAIL;
 const JOHANNA_EMAIL = process.env.JOHANNA_EMAIL;
 
+const GMAIL_USER         = process.env.GMAIL_USER;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+
 const CALENDAR_IDS = {
   'Liz Wendy Cedeño': process.env.GOOGLE_CALENDAR_ID,
   'Johanna':          process.env.JOHANNA_CALENDAR_ID,
@@ -185,20 +191,58 @@ const ARTIST_EMAILS = {
   'Johanna':          JOHANNA_EMAIL,
 };
 
-const EMAILJS_SERVICE_ID        = process.env.EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_CUSTOMER = process.env.EMAILJS_TEMPLATE_CUSTOMER;
-const EMAILJS_TEMPLATE_STUDIO   = process.env.EMAILJS_TEMPLATE_STUDIO;
-const EMAILJS_PUBLIC_KEY        = process.env.EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY       = process.env.EMAILJS_PRIVATE_KEY;
-
-const TWILIO_ACCOUNT_SID     = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN      = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
-const TWILIO_TEMPLATE_SID    = process.env.TWILIO_TEMPLATE_SID;
-
 const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+let gmailTransporter = null;
+function getGmailTransport() {
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) return null;
+  if (!gmailTransporter) {
+    gmailTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD,
+      },
+    });
+  }
+  return gmailTransporter;
+}
+
+function escapeIcsText(str) {
+  return String(str || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+function formatIcsDateUTC(dt) {
+  const iso = dt.toISOString().replace(/[-:]/g, '').split('.')[0];
+  return `${iso}Z`;
+}
+
+function buildCalendarInviteIcs({ uid, startDate, endDate, summary, description, location }) {
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Liz Wendy Beauty Studio//Booking//EN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${formatIcsDateUTC(new Date())}`,
+    `DTSTART:${formatIcsDateUTC(startDate)}`,
+    `DTEND:${formatIcsDateUTC(endDate)}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -311,7 +355,7 @@ exports.handler = async (event) => {
       summary: `💅 ${fullName} — ${serviceList}`,
       description: [
         `Client: ${fullName}`,
-        email ? `Email: ${email}` : `Email: (not provided — phone booking, WhatsApp confirmation sent)`,
+        email ? `Email: ${email}` : `Email: (not provided — phone booking)`,
         `Phone: ${phone}`,
         `Services: ${serviceList}`,
         `Estimated Total: ${totalStr}`,
@@ -382,16 +426,41 @@ exports.handler = async (event) => {
       actor:            'customer',
     });
 
-    // ── 6. SEND NOTIFICATIONS IN PARALLEL WITH 4.5s TIMEOUT ──
+    // ── 6. SEND NOTIFICATIONS IN PARALLEL ──
     try {
-      const customerConfirmation = email
-        ? sendCustomerEmail({ firstName: cleanFirst, fullName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang })
-        : sendWhatsAppConfirmation({ firstName: cleanFirst, phone, dateReadable, timeReadable, serviceList, totalStr, artist, cancelUrl });
+      const icsContent = buildCalendarInviteIcs({
+        uid: `${cancelToken}@lizwendybeautystudiollc.com`,
+        startDate: eventStart,
+        endDate: eventEnd,
+        summary: `Liz Wendy Beauty Studio — ${serviceList}`,
+        description: `Artist: ${artist || 'Liz Wendy Cedeño'}\nServices: ${serviceList}\nManage or cancel: ${cancelUrl}`,
+        location: '76 Livingston Ave, New Brunswick, NJ 08901',
+      });
 
-      await Promise.allSettled([
-        customerConfirmation,
+      const tasks = [
         sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }),
-      ]);
+      ];
+
+      if (email) {
+        tasks.push(
+          sendCustomerEmail({
+            firstName: cleanFirst,
+            fullName,
+            email,
+            dateReadable,
+            timeReadable,
+            serviceList,
+            totalStr,
+            notes,
+            artist,
+            cancelUrl,
+            icsContent,
+            lang,
+          })
+        );
+      }
+
+      await Promise.allSettled(tasks);
     } catch (notifyErr) {
       console.error('Customer/studio notification failed (booking confirmed):', notifyErr);
     }
@@ -414,150 +483,113 @@ exports.handler = async (event) => {
   }
 };
 
-/* ── EMAIL: Customer Confirmation (via EmailJS) ── */
-async function sendCustomerEmail({ firstName, fullName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, lang }) {
-  const artistDisplay = artist || 'Liz Wendy Cedeño';
-  const isEs = lang === 'es';
-
-  const emailCopy = isEs
-    ? {
-        subject: `Cita Confirmada: ${serviceList} el ${dateReadable}`,
-        intro:   `¡Hola ${firstName}! Tu cita con ${artistDisplay} ha sido confirmada. Por favor revisa los detalles a continuación.`,
-        outro:   (notes ? `Tus notas: ${notes}\n\n` : '') +
-                 'Por favor llega 5 minutos antes. Si necesitas reprogramar o cancelar, avísanos con al menos 24 horas de anticipación.\n\n¡Te esperamos pronto! ✨',
-      }
-    : {
-        subject: `Appointment Confirmed: ${serviceList} on ${dateReadable}`,
-        intro:   `Hi ${firstName}! Your appointment with ${artistDisplay} has been confirmed. Please review your details below.`,
-        outro:   (notes ? `Your notes: ${notes}\n\n` : '') +
-                 'Please arrive 5 minutes early. If you need to reschedule or cancel, kindly let us know at least 24 hours in advance.\n\nWe look forward to seeing you! ✨',
-      };
-
-  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    signal: AbortSignal.timeout(4500),
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id:  EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_CUSTOMER,
-      user_id:     EMAILJS_PUBLIC_KEY,
-      accessToken: EMAILJS_PRIVATE_KEY,
-      template_params: {
-        to_email:         email,
-        // Template variables used in HTML template:
-        client_name:      firstName,
-        artist:           artistDisplay,
-        appointment_date: dateReadable,
-        appointment_time: timeReadable,
-        services:         serviceList,
-        cancel_link:      cancelUrl,
-        // Extra aliases for compatibility:
-        first_name:       firstName,
-        full_name:        fullName,
-        artist_name:      artistDisplay,
-        date:             dateReadable,
-        time:             timeReadable,
-        total:            totalStr,
-        notes_line:       notes || '',
-        cancel_url:       cancelUrl,
-        subject_override: emailCopy.subject,
-        intro_override:   emailCopy.intro,
-        outro_override:   emailCopy.outro,
-      },
-    }),
-  });
-
-  const text = await res.text();
-  if (!res.ok) console.error('sendCustomerEmail error:', res.status, text);
-  return { ok: res.ok, status: res.status, response: text };
-}
-
-/* ── WHATSAPP: Customer Confirmation (via Twilio) ── */
-async function sendWhatsAppConfirmation({ firstName, phone, dateReadable, timeReadable, serviceList, totalStr, artist, cancelUrl }) {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_NUMBER || !TWILIO_TEMPLATE_SID) {
-    console.error('sendWhatsAppConfirmation: Twilio not configured');
-    return { ok: false, skipped: 'twilio_not_configured' };
+/* ── EMAIL: Customer Confirmation (via Gmail SMTP) ── */
+async function sendCustomerEmail({ firstName, email, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl, icsContent, lang }) {
+  const transporter = getGmailTransport();
+  if (!transporter || !email) {
+    console.warn('sendCustomerEmail: Gmail SMTP not configured or no customer email');
+    return { ok: false, skipped: 'gmail_not_configured' };
   }
 
-  const digits = String(phone).replace(/\D/g, '');
-  const e164 = digits.length === 10 ? `+1${digits}` : `+${digits}`;
-  const toWhatsApp = `whatsapp:${e164}`;
+  const artistDisplay = artist || 'Liz Wendy Cedeño';
+  const es = lang === 'es';
 
-  const body = new URLSearchParams({
-    From: TWILIO_WHATSAPP_NUMBER,
-    To: toWhatsApp,
-    ContentSid: TWILIO_TEMPLATE_SID,
-    ContentVariables: JSON.stringify({
-      '1': firstName,
-      '2': serviceList,
-      '3': artist || 'Liz Wendy Cedeño',
-      '4': dateReadable,
-      '5': timeReadable,
-    }),
+  const subject = es
+    ? `Cita Confirmada: ${serviceList} el ${dateReadable}`
+    : `Appointment Confirmed: ${serviceList} on ${dateReadable}`;
+
+  const greeting = es
+    ? `¡Hola ${firstName}! Tu cita con <strong>${artistDisplay}</strong> ha sido confirmada.`
+    : `Hi ${firstName}! Your appointment with <strong>${artistDisplay}</strong> has been confirmed.`;
+
+  const reminderNote = es
+    ? 'Por favor llega 5 minutos antes. Si necesitas reprogramar o cancelar, avísanos con al menos 24 horas de anticipación.'
+    : 'Please arrive 5 minutes early. If you need to reschedule or cancel, kindly let us know at least 24 hours in advance.';
+
+  const notesHtml = notes
+    ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #E8DEC8;font-size:12px;color:#7A7060;"><strong>${es ? 'Notas' : 'Notes'}:</strong> ${notes}</div>`
+    : '';
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #E8DEC8;border-radius:10px;background:#FCFBF8;color:#2B2620;">
+      <h2 style="margin:0 0 12px;color:#947234;">Liz Wendy Beauty Studio</h2>
+      <p style="margin:0 0 16px;font-size:14px;line-height:1.5;">${greeting}</p>
+      <div style="background:#FFFFFF;border:1px solid #E8DEC8;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;">
+        <div><strong>${es ? 'Artista' : 'Artist'}:</strong> ${artistDisplay}</div>
+        <div><strong>${es ? 'Fecha' : 'Date'}:</strong> ${dateReadable}</div>
+        <div><strong>${es ? 'Hora' : 'Time'}:</strong> ${timeReadable}</div>
+        <div><strong>${es ? 'Servicios' : 'Services'}:</strong> ${serviceList}</div>
+        <div><strong>${es ? 'Total Estimado' : 'Estimated Total'}:</strong> ${totalStr}</div>
+        <div><strong>${es ? 'Ubicación' : 'Location'}:</strong> 76 Livingston Ave, New Brunswick, NJ 08901</div>
+        ${notesHtml}
+      </div>
+      <p style="margin:0 0 16px;font-size:12px;color:#7A7060;line-height:1.5;">${reminderNote}</p>
+      <p style="margin:0;font-size:12px;">
+        <a href="${cancelUrl}" style="color:#947234;font-weight:bold;">${es ? 'Administrar o Cancelar Cita' : 'Manage or Cancel Appointment'}</a>
+      </p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: `"Liz Wendy Beauty Studio" <${GMAIL_USER}>`,
+    to: email,
+    subject,
+    html,
+    attachments: icsContent
+      ? [{
+          filename: 'liz-wendy-appointment.ics',
+          content: icsContent,
+          contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+        }]
+      : [],
   });
 
-  const res = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-    {
-      method: 'POST',
-      signal: AbortSignal.timeout(4500),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
-      },
-      body,
-    }
-  );
-
-  const text = await res.text();
-  return { ok: res.ok, status: res.status, response: text };
+  console.log(`sendCustomerEmail → ${email} | messageId:`, info.messageId);
+  return { ok: true, messageId: info.messageId };
 }
 
-/* ── EMAIL: Studio Notification (via EmailJS) ── */
+/* ── EMAIL: Studio Notification (via Gmail SMTP) ── */
 async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReadable, serviceList, totalStr, notes, artist, cancelUrl }) {
+  const transporter = getGmailTransport();
   const artistDisplay = artist || 'Liz Wendy Cedeño';
-  const notesText = notes ? notes : 'None';
-  const notesLine = notes ? `📝 Notes: ${notes}` : '';
-
   const recipientEmail = ARTIST_EMAILS[artistDisplay] || STUDIO_EMAIL;
-  const ccEmail = (recipientEmail !== STUDIO_EMAIL) ? STUDIO_EMAIL : '';
+  const ccEmail = (recipientEmail && STUDIO_EMAIL && recipientEmail !== STUDIO_EMAIL) ? STUDIO_EMAIL : undefined;
 
-  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    signal: AbortSignal.timeout(4500),
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id:  EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_STUDIO,
-      user_id:     EMAILJS_PUBLIC_KEY,
-      accessToken: EMAILJS_PRIVATE_KEY,
-      template_params: {
-        to_email:       recipientEmail,
-        cc_email:       ccEmail,
-        // Template variables used in HTML template:
-        full_name:      fullName,
-        client_phone:   phone,
-        client_email:   email || 'Not provided (Phone/WhatsApp)',
-        artist:         artistDisplay,
-        date:           dateReadable,
-        time:           timeReadable,
-        services:       serviceList,
-        client_notes:   notesText,
-        // Extra aliases for compatibility:
-        customer_email: email || 'Not provided',
-        phone:          phone,
-        artist_name:    artistDisplay,
-        total:          totalStr,
-        notes_line:     notesLine,
-        cancel_url:     cancelUrl,
-        cancelUrl:      cancelUrl,
-      },
-    }),
+  if (!transporter || !recipientEmail) {
+    console.warn('sendStudioEmail: Gmail SMTP not configured or no recipient email');
+    return { ok: false, skipped: 'gmail_not_configured' };
+  }
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #E8DEC8;border-radius:10px;background:#FCFBF8;color:#2B2620;">
+      <h2 style="margin:0 0 12px;color:#947234;">New Appointment Booked</h2>
+      <div style="background:#FFFFFF;border:1px solid #E8DEC8;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;">
+        <div><strong>Client:</strong> ${fullName}</div>
+        <div><strong>Phone:</strong> ${phone}</div>
+        <div><strong>Email:</strong> ${email || 'Not provided'}</div>
+        <div><strong>Artist:</strong> ${artistDisplay}</div>
+        <div><strong>Date:</strong> ${dateReadable}</div>
+        <div><strong>Time:</strong> ${timeReadable}</div>
+        <div><strong>Services:</strong> ${serviceList}</div>
+        <div><strong>Estimated Total:</strong> ${totalStr}</div>
+        <div><strong>Notes:</strong> ${notes || 'None'}</div>
+      </div>
+      <p style="margin:0;font-size:12px;">
+        <a href="${cancelUrl}" style="color:#947234;font-weight:bold;">View / Cancel Booking Link</a>
+      </p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: `"Liz Wendy Beauty Studio" <${GMAIL_USER}>`,
+    to: recipientEmail,
+    cc: ccEmail,
+    subject: `New Booking: ${fullName} — ${dateReadable} at ${timeReadable}`,
+    html,
   });
 
-  const text = await res.text();
-  if (!res.ok) console.error('sendStudioEmail error:', res.status, text);
-  return { ok: res.ok, status: res.status, response: text };
+  console.log(`sendStudioEmail → ${recipientEmail} | messageId:`, info.messageId);
+  return { ok: true, messageId: info.messageId };
 }
 
 /* ── UTIL ── */
