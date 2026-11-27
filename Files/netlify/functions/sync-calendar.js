@@ -59,6 +59,7 @@ function getGmailTransport() {
 }
 
 function toE164(raw) {
+  
   const digits = String(raw || '').replace(/\D/g, '');
   if (digits.length === 10) return `+1${digits}`;
   if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
@@ -71,6 +72,10 @@ function fallbackE164FromId(evId) {
     hash = (hash * 31 + ch.charCodeAt(0)) % 10000000;
   }
   return `+1000${String(Math.abs(hash)).padStart(7, '0')}`;
+}
+
+function isUuid(val) {
+  return typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
 }
 
 function toCents(dollars) {
@@ -274,11 +279,10 @@ const normalizedPhone = (phone && toE164(phone).length >= 8)
           });
         }
 
-        bookingsToUpsert.push({
+      const bookingRow = {
           tenant_id: TENANT_ID,
           external_ref: externalRef,
           customer_phone: normalizedPhone,
-          artist_id: artist.artistId,
           channel: 'web',
           locale: 'es',
           price_cents: priceCents,
@@ -287,8 +291,11 @@ const normalizedPhone = (phone && toE164(phone).length >= 8)
           duration_minutes: durationMinutes,
           reschedule_count: 0,
           was_deflected: false,
-        });
-
+        };
+        if (isUuid(artist.artistId)) {
+          bookingRow.artist_id = artist.artistId;
+        }
+        bookingsToUpsert.push(bookingRow);
         insertedForArtist++;
       }
 
