@@ -59,7 +59,6 @@ function getGmailTransport() {
 }
 
 function toE164(raw) {
-  
   const digits = String(raw || '').replace(/\D/g, '');
   if (digits.length === 10) return `+1${digits}`;
   if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
@@ -136,8 +135,8 @@ async function supabaseFetch(endpoint, options = {}) {
 
 async function sendCalendarChangeEmail({ toEmail, cc, subject, intro, detailRows, outro }) {
   if (process.env.PAUSE_EMAILS === 'true') {
-  return { ok: false, skipped: 'emails_paused' };
-}
+    return { ok: false, skipped: 'emails_paused' };
+  }
   const transporter = getGmailTransport();
   if (!transporter || !toEmail) {
     return { ok: false, skipped: 'gmail_not_configured_or_no_email' };
@@ -205,7 +204,7 @@ exports.handler = async (event) => {
       const items = calRes.data.items || [];
       let insertedForArtist = 0;
 
-      // Map active Google Calendar events by cancelToken so we can detect edits/deletes
+      // Map active Google Calendar events by cancelToken so we can detect time edits
       const activeEventsByToken = new Map();
 
       for (const ev of items) {
@@ -249,9 +248,9 @@ exports.handler = async (event) => {
           const phoneMatch = description.match(/Phone:\s*([^\n\r]+)/i);
           phone = phoneMatch ? phoneMatch[1].trim() : '';
         }
-const normalizedPhone = (phone && toE164(phone).length >= 8)
-  ? toE164(phone)
-  : fallbackE164FromId(ev.id);
+        const normalizedPhone = (phone && toE164(phone).length >= 8)
+          ? toE164(phone)
+          : fallbackE164FromId(ev.id);
 
         let email = extProps.customerEmail || '';
         if (!email) {
@@ -281,26 +280,27 @@ const normalizedPhone = (phone && toE164(phone).length >= 8)
             email: email,
           });
         }
-const bookingRow = {
-  tenant_id: TENANT_ID,
-  external_ref: externalRef,
-  customer_phone: normalizedPhone,
-  artist_id: isUuid(artist.artistId) ? artist.artistId : null,
-  channel: 'web',
-  locale: 'es',
-  price_cents: priceCents,
-  status: 'booked',
-  appointment_at: startTime.toISOString(),
-  duration_minutes: durationMinutes,
-  reschedule_count: 0,
-  was_deflected: false,
-};
-bookingsToUpsert.push(bookingRow);
+
+        const bookingRow = {
+          tenant_id: TENANT_ID,
+          external_ref: externalRef,
+          customer_phone: normalizedPhone,
+          artist_id: isUuid(artist.artistId) ? artist.artistId : null,
+          channel: 'web',
+          locale: 'es',
+          price_cents: priceCents,
+          status: 'booked',
+          appointment_at: startTime.toISOString(),
+          duration_minutes: durationMinutes,
+          reschedule_count: 0,
+          was_deflected: false,
+        };
+        bookingsToUpsert.push(bookingRow);
         insertedForArtist++;
       }
 
       // Compare upcoming Supabase appointments for this artist against Google Calendar
-      let cancelledSynced = 0;
+      const cancelledSynced = 0;
       let timeUpdatedSynced = 0;
 
       if (SUPABASE_URL && SUPABASE_KEY) {
@@ -319,45 +319,14 @@ bookingsToUpsert.push(bookingRow);
         for (const appt of appts || []) {
           if (!appt.cancel_token) continue;
           const gcalEv = activeEventsByToken.get(appt.cancel_token);
+          if (!gcalEv) continue;
+
           const servicesText = Array.isArray(appt.services)
             ? appt.services.map((s) => (typeof s === 'string' ? s : s.name)).join(', ')
             : String(appt.services || 'Appointment');
           const firstName = String(appt.customer_name || 'Client').split(' ')[0];
 
-          // 1. Deleted/cancelled directly on Google Calendar
-          if (!gcalEv) {
-            cancelledSynced++;
-            changeAlerts.push({ type: 'cancelled_on_gcal', token: appt.cancel_token, email: appt.customer_email });
-
-            if (!isDryRun) {
-              await supabaseFetch(
-                `appointments?id=eq.${encodeURIComponent(appt.id)}`,
-                {
-                  method: 'PATCH',
-                  body: JSON.stringify({ status: 'cancelled' }),
-                }
-              );
-
-              if (appt.customer_email) {
-                await sendCalendarChangeEmail({
-                  toEmail: appt.customer_email,
-                  cc: STUDIO_EMAIL && appt.customer_email !== STUDIO_EMAIL ? STUDIO_EMAIL : undefined,
-                  subject: `Appointment Update — ${formatDateReadable(appt.appointment_date)}`,
-                  intro: `Hi ${firstName}, your upcoming appointment with <strong>${artist.name}</strong> has been cancelled/removed from the schedule.`,
-                  detailRows: [
-                    { label: 'Artist', value: artist.name },
-                    { label: 'Date', value: formatDateReadable(appt.appointment_date) },
-                    { label: 'Time', value: formatTime12h(appt.appointment_time) },
-                    { label: 'Services', value: servicesText },
-                  ],
-                  outro: `If you would like to book a new time, visit <a href="${SITE_URL}" style="color:#947234;">${SITE_URL}</a> or reach out to the studio directly.`,
-                });
-              }
-            }
-            continue;
-          }
-
-          // 2. Moved/edited directly on Google Calendar
+          // Moved/edited directly on Google Calendar
           const calStartIso = gcalEv.start?.dateTime;
           if (calStartIso) {
             const { dateStr: calDate, timeStr: calTime } = getNYDateAndTime(calStartIso);
@@ -455,3 +424,11 @@ bookingsToUpsert.push(bookingRow);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message, stack: err.stack }) };
   }
 };
+```[cite: 13]
+
+### What to Do Next
+1. Paste this into `Files/netlify/functions/sync-calendar.js` and commit it[cite: 13].
+2. Keep `PAUSE_EMAILS=true` and the GitHub Actions workflow disabled for a bit while you double-check the restored rows in Supabase[cite: 3, 4, 13].
+3. When you're ready to resume emails and workflows, set `PAUSE_EMAILS=false` in Netlify and re-enable **Studio Hourly Sync & Lifecycle Emails** in GitHub Actions[cite: 3, 4].
+
+Would you like to add the **"Add to Calendar" (`.ics`)** button to the `index.html` confirmation screen next?
