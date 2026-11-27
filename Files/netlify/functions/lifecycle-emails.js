@@ -122,6 +122,13 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
+  if (process.env.PAUSE_EMAILS === 'true') {
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ paused: true, sent_24h: 0, sent_sameday: 0, sent_followup: 0 }),
+  };
+}
 
   if (CRON_SECRET) {
     const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
