@@ -25,16 +25,15 @@
  * privateExtendedProperty search, which matches at most one event.
  */
 const { createClient } = require('@supabase/supabase-js');
+const { google } = require('googleapis');
+const nodemailer = require('nodemailer');
+const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   : null;
-
-
-
-const { google } = require('googleapis');
-const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -42,25 +41,8 @@ const PRIVATE_KEY  = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'
 const STUDIO_EMAIL   = process.env.STUDIO_EMAIL;
 const JOHANNA_EMAIL  = process.env.JOHANNA_EMAIL;
 
-const EMAILJS_SERVICE_ID       = process.env.EMAILJS_SERVICE_ID;
-// Reuses the existing customer confirmation template — no third template needed.
-// The subject, intro, and outro are passed as dynamic variables so the same
-// template handles both confirmations and cancellation notices cleanly.
-const EMAILJS_TEMPLATE_CUSTOMER = process.env.EMAILJS_TEMPLATE_CUSTOMER;
-const EMAILJS_PUBLIC_KEY        = process.env.EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY       = process.env.EMAILJS_PRIVATE_KEY;
-
-// ── TWILIO WHATSAPP (cancellation notice when no email was given at booking) ──
-// Same credentials used for booking confirmations in create-booking.js.
-const TWILIO_ACCOUNT_SID     = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN      = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
-// Separate template recommended for cancellations (different message intent
-// than a confirmation) — falls back to the confirmation template's SID only
-// if a dedicated cancellation template hasn't been created/approved yet.
-const TWILIO_CANCEL_TEMPLATE_SID = process.env.TWILIO_CANCEL_TEMPLATE_SID || process.env.TWILIO_TEMPLATE_SID;
-
-const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
+const GMAIL_USER         = process.env.GMAIL_USER;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
 // Same artistId convention as get-availability.js / create-booking.js
 const CALENDAR_IDS = {
@@ -72,6 +54,19 @@ const ARTIST_EMAILS = {
   liz:      STUDIO_EMAIL,
   johanna:  JOHANNA_EMAIL,
 };
+
+function getGmailTransport() {
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) return null;
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: GMAIL_USER,
+      pass: GMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -142,14 +137,6 @@ exports.handler = async (event) => {
     const customerEmail = props.customerEmail || '';
     const customerPhone = props.customerPhone || '';
 
-    // appointmentStart is the event's real ISO start timestamp (from the
-    // calendar event itself, not the human-readable string). cancel.html
-    // uses it to enforce the "no reschedule within 24 hours" rule on the
-    // client side. The backend (reschedule-booking.js) enforces the same
-    // rule independently — this is only so the UI can hide the reschedule
-    // calendar early rather than letting the customer pick a time and then
-    // get rejected. All-day events (no dateTime) return null.
-    // (Hoisted above the action branches so the ledger can use it too.)
     const appointmentStart = (booking.start && booking.start.dateTime) || null;
 
     // ── Command Center ledger identity (see reschedule-booking.js) ──
@@ -196,20 +183,17 @@ exports.handler = async (event) => {
       console.log(`cancel-booking: deleted event ${booking.id} (${details.services} / ${details.date})`);
 
       if (supabase) {
-  try {
-    await supabase
-      .from('appointments')
-      .update({ status: 'cancelled' })
-      .eq('cancel_token', token);
-  } catch (sbErr) {
-    console.error('cancel-booking: failed to update supabase status:', sbErr);
-  }
-}
-      
+        try {
+          await supabase
+            .from('appointments')
+            .update({ status: 'cancelled' })
+            .eq('cancel_token', token);
+        } catch (sbErr) {
+          console.error('cancel-booking: failed to update supabase status:', sbErr);
+        }
+      }
 
       // ── LEDGER (Command Center) ──
-      // The cancellation is real (event deleted), so record it. Runs in
-      // parallel with the notifications below; awaited before responding.
       const ledgerPromise = recordLedgerEvent({
         ...ledgerBase,
         event_type:      'cancelled',
@@ -220,29 +204,22 @@ exports.handler = async (event) => {
       // Notifications are isolated — a send failure must never make the
       // customer think the cancellation didn't happen (the event is already gone).
       try {
-        // Same routing rule as booking confirmations: email wins if present,
-        // otherwise fall back to WhatsApp via the stored phone number.
-        let customerNotification;
-        if (customerEmail) {
-          customerNotification = sendCancellationEmail({
-            toEmail: customerEmail,
-            cc: '',
-            subjectLine: (lang === 'es')
-              ? `Cita Cancelada — ${details.date}`
-              : `Appointment Cancelled — ${details.date}`,
-            introLine: (lang === 'es')
-              ? `Hola ${details.firstName}, tu cita ha sido cancelada.`
-              : `Hi ${details.firstName}, your appointment has been cancelled.`,
-            outroLine: (lang === 'es')
-              ? `¿Te gustaría reagendar? Reserva una nueva cita cuando quieras en lizwendybeautystudiollc.com — ¡nos encantaría verte pronto! ✨`
-              : `Would you like to reschedule? Book a new time anytime at lizwendybeautystudiollc.com — we'd love to see you soon! ✨`,
-            details,
-          });
-        } else if (customerPhone) {
-          customerNotification = sendWhatsAppCancellation({ phone: customerPhone, details, lang });
-        } else {
-          customerNotification = Promise.resolve({ skipped: 'no_contact_on_record' });
-        }
+        const customerNotification = customerEmail
+          ? sendCancellationEmail({
+              toEmail: customerEmail,
+              cc: '',
+              subjectLine: (lang === 'es')
+                ? `Cita Cancelada — ${details.date}`
+                : `Appointment Cancelled — ${details.date}`,
+              introLine: (lang === 'es')
+                ? `Hola ${details.firstName}, tu cita ha sido cancelada.`
+                : `Hi ${details.firstName}, your appointment has been cancelled.`,
+              outroLine: (lang === 'es')
+                ? `¿Te gustaría reagendar? Reserva una nueva cita cuando quieras en lizwendybeautystudiollc.com — ¡nos encantaría verte pronto! ✨`
+                : `Would you like to reschedule? Book a new time anytime at lizwendybeautystudiollc.com — we'd love to see you soon! ✨`,
+              details,
+            })
+          : Promise.resolve({ skipped: 'no_customer_email' });
 
         const results = await Promise.all([
           customerNotification,
@@ -278,98 +255,36 @@ exports.handler = async (event) => {
   }
 };
 
-/* ── EMAIL: Cancellation notice ──
-   Reuses EMAILJS_TEMPLATE_CUSTOMER with dynamic intro_override, outro_override,
-   and subject_override fields so no third template is needed.
-   The customer template must expose {{intro_override}}, {{outro_override}},
-   and use {{subject_override}} as its subject line — see setup notes. */
+/* ── EMAIL: Cancellation notice via Gmail SMTP ── */
 async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outroLine, details }) {
-  if (!EMAILJS_TEMPLATE_CUSTOMER) {
-    console.error('cancel-booking: EMAILJS_TEMPLATE_CUSTOMER not set — skipping email to', toEmail);
-    return { ok: false, skipped: 'no_template' };
+  const transporter = getGmailTransport();
+  if (!transporter || !toEmail) {
+    console.error('cancel-booking: GMAIL_USER/GMAIL_APP_PASSWORD or toEmail missing — skipping email to', toEmail);
+    return { ok: false, skipped: 'gmail_not_configured' };
   }
 
-  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id:  EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_CUSTOMER,
-      user_id:     EMAILJS_PUBLIC_KEY,
-      accessToken: EMAILJS_PRIVATE_KEY,
-      template_params: {
-        to_email:         toEmail,
-        cc_email:         cc || '',
-        client_name:      details.firstName || 'Valued Client',
-        artist:           details.artistName || 'Liz Wendy Cedeño',
-        appointment_date: details.date,
-        appointment_time: details.time,
-        services:         details.services,
-        cancel_link:      SITE_URL,
-        subject_override: subjectLine,
-        intro_override:   introLine,
-        outro_override:   outroLine,
-        date:             details.date,
-        time:             details.time,
-        artist_name:      details.artistName,
-        first_name:       details.firstName || '',
-        total:            'Cancelled',
-        notes_line:       '',
-        cancel_url:       SITE_URL,
-      },
-    }),
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #E8DEC8;border-radius:10px;background:#FCFBF8;color:#2B2620;">
+      <h2 style="margin:0 0 12px;color:#947234;">Liz Wendy Beauty Studio</h2>
+      <p style="margin:0 0 14px;font-size:14px;">${introLine}</p>
+      <div style="background:#FFFFFF;border:1px solid #E8DEC8;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;">
+        <div><strong>Artist:</strong> ${details.artistName || 'Liz Wendy Cedeño'}</div>
+        <div><strong>Date:</strong> ${details.date || '—'}</div>
+        <div><strong>Time:</strong> ${details.time || '—'}</div>
+        <div><strong>Services:</strong> ${details.services || '—'}</div>
+      </div>
+      <p style="margin:0;font-size:13px;color:#7A7060;">${outroLine}</p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: `"Liz Wendy Beauty Studio" <${GMAIL_USER}>`,
+    to: toEmail,
+    cc: cc || undefined,
+    subject: subjectLine,
+    html,
   });
 
-  const text = await res.text();
-  console.log(`sendCancellationEmail → ${toEmail} | status:`, res.status, '| response:', text);
-  return { ok: res.ok, status: res.status, response: text };
-}
-
-/* ── WHATSAPP: Cancellation notice (used when no email was given at booking) ──
-   Mirrors sendWhatsAppConfirmation in create-booking.js. Requires an approved
-   Twilio WhatsApp utility template (TWILIO_CANCEL_TEMPLATE_SID). If Twilio
-   isn't configured, logs and returns a skipped result — the calendar event
-   is already deleted regardless, so this must never throw. */
-async function sendWhatsAppCancellation({ phone, details, lang }) {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_NUMBER || !TWILIO_CANCEL_TEMPLATE_SID) {
-    console.error('sendWhatsAppCancellation: Twilio not fully configured — skipping WhatsApp send to', phone);
-    return { ok: false, skipped: 'twilio_not_configured' };
-  }
-
-  const digits = String(phone).replace(/\D/g, '');
-  const e164 = digits.length === 10 ? `+1${digits}` : `+${digits}`;
-  const toWhatsApp = `whatsapp:${e164}`;
-
-  console.log('sendWhatsAppCancellation → sending to:', toWhatsApp);
-
-  const body = new URLSearchParams({
-    From: TWILIO_WHATSAPP_NUMBER,
-    To: toWhatsApp,
-    ContentSid: TWILIO_CANCEL_TEMPLATE_SID,
-    // Template variables — must match the approved cancellation template's
-    // placeholder order exactly (e.g. {{1}} firstName, {{2}} service,
-    // {{3}} date, {{4}} time). Update once the template SID is confirmed.
-    ContentVariables: JSON.stringify({
-      '1': details.firstName,
-      '2': details.services,
-      '3': details.date,
-      '4': details.time,
-    }),
-  });
-
-  const res = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
-      },
-      body,
-    }
-  );
-
-  const text = await res.text();
-  console.log('sendWhatsAppCancellation → status:', res.status, '| response:', text);
-  return { ok: res.ok, status: res.status, response: text };
+  console.log(`sendCancellationEmail → ${toEmail} | messageId:`, info.messageId);
+  return { ok: true, messageId: info.messageId };
 }
