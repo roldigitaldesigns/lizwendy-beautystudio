@@ -278,24 +278,21 @@ const normalizedPhone = (phone && toE164(phone).length >= 8)
             email: email,
           });
         }
-
-      const bookingRow = {
-          tenant_id: TENANT_ID,
-          external_ref: externalRef,
-          customer_phone: normalizedPhone,
-          channel: 'web',
-          locale: 'es',
-          price_cents: priceCents,
-          status: 'booked',
-          appointment_at: startTime.toISOString(),
-          duration_minutes: durationMinutes,
-          reschedule_count: 0,
-          was_deflected: false,
-        };
-        if (isUuid(artist.artistId)) {
-          bookingRow.artist_id = artist.artistId;
-        }
-        bookingsToUpsert.push(bookingRow);
+const bookingRow = {
+  tenant_id: TENANT_ID,
+  external_ref: externalRef,
+  customer_phone: normalizedPhone,
+  artist_id: isUuid(artist.artistId) ? artist.artistId : null,
+  channel: 'web',
+  locale: 'es',
+  price_cents: priceCents,
+  status: 'booked',
+  appointment_at: startTime.toISOString(),
+  duration_minutes: durationMinutes,
+  reschedule_count: 0,
+  was_deflected: false,
+};
+bookingsToUpsert.push(bookingRow);
         insertedForArtist++;
       }
 
