@@ -135,6 +135,9 @@ async function supabaseFetch(endpoint, options = {}) {
 }
 
 async function sendCalendarChangeEmail({ toEmail, cc, subject, intro, detailRows, outro }) {
+  if (process.env.PAUSE_EMAILS === 'true') {
+  return { ok: false, skipped: 'emails_paused' };
+}
   const transporter = getGmailTransport();
   if (!transporter || !toEmail) {
     return { ok: false, skipped: 'gmail_not_configured_or_no_email' };
