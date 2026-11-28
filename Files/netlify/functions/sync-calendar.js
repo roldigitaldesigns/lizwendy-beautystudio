@@ -14,10 +14,10 @@ const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const STUDIO_EMAIL       = process.env.STUDIO_EMAIL;
 const JOHANNA_EMAIL      = process.env.JOHANNA_EMAIL;
 const SITE_URL           = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
+const CRON_SECRET        = process.env.CRON_SECRET || '';
 
 const TENANT_ID = '36f1a3fc-726b-4a30-b1c2-16e32be129b1';
 
-// Configure both artists' Google Calendar IDs and Supabase artist UUIDs
 const ARTIST_CALENDARS = [
   {
     key: 'liz',
@@ -90,9 +90,9 @@ function formatTime12h(hhmm) {
 }
 
 function formatDateReadable(dateStr) {
-  const d = new Date(`${dateStr}T12:00:00`);
+  const d = new Date(`${dateStr}T12:00:00Z`);
   if (isNaN(d.getTime())) return dateStr || '—';
-  return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  return `${DAYS[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 function getNYDateAndTime(isoString) {
@@ -174,6 +174,19 @@ exports.handler = async (event) => {
     'Access-Control-Allow-Origin': '*',
   };
 
+  if (CRON_SECRET) {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+    const headerSecret = event.headers?.['x-cron-secret'] || event.headers?.['X-Cron-Secret'] || '';
+    const querySecret = event.queryStringParameters?.secret || '';
+    if (
+      authHeader !== `Bearer ${CRON_SECRET}` &&
+      headerSecret !== CRON_SECRET &&
+      querySecret !== CRON_SECRET
+    ) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'unauthorized' }) };
+    }
+  }
+
   const isDryRun = event.queryStringParameters?.dryRun === 'true';
   const fromDate = event.queryStringParameters?.from || '2026-08-01T00:00:00Z';
 
@@ -204,7 +217,6 @@ exports.handler = async (event) => {
       const items = calRes.data.items || [];
       let insertedForArtist = 0;
 
-      // Map active Google Calendar events by cancelToken so we can detect time edits
       const activeEventsByToken = new Map();
 
       for (const ev of items) {
@@ -299,7 +311,6 @@ exports.handler = async (event) => {
         insertedForArtist++;
       }
 
-      // Compare upcoming Supabase appointments for this artist against Google Calendar
       const cancelledSynced = 0;
       let timeUpdatedSynced = 0;
 
@@ -326,7 +337,6 @@ exports.handler = async (event) => {
             : String(appt.services || 'Appointment');
           const firstName = String(appt.customer_name || 'Client').split(' ')[0];
 
-          // Moved/edited directly on Google Calendar
           const calStartIso = gcalEv.start?.dateTime;
           if (calStartIso) {
             const { dateStr: calDate, timeStr: calTime } = getNYDateAndTime(calStartIso);
@@ -424,11 +434,3 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message, stack: err.stack }) };
   }
 };
-```[cite: 13]
-
-### What to Do Next
-1. Paste this into `Files/netlify/functions/sync-calendar.js` and commit it[cite: 13].
-2. Keep `PAUSE_EMAILS=true` and the GitHub Actions workflow disabled for a bit while you double-check the restored rows in Supabase[cite: 3, 4, 13].
-3. When you're ready to resume emails and workflows, set `PAUSE_EMAILS=false` in Netlify and re-enable **Studio Hourly Sync & Lifecycle Emails** in GitHub Actions[cite: 3, 4].
-
-Would you like to add the **"Add to Calendar" (`.ics`)** button to the `index.html` confirmation screen next?
