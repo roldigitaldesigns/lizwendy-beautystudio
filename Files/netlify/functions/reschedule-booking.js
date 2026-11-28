@@ -31,7 +31,6 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
 
-// Supabase config (matching create-booking.js)
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
@@ -52,27 +51,21 @@ const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
 const SITE_URL = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
-// Short artistId → calendar. Matches get-availability.js / cancel-booking.js.
 const CALENDAR_IDS = {
   liz:     process.env.GOOGLE_CALENDAR_ID,
   johanna: process.env.JOHANNA_CALENDAR_ID,
 };
 
-// Short artistId → the full artist name stored on the event / shown to users.
 const ARTIST_NAMES = {
   liz:     'Liz Wendy Cedeño',
   johanna: 'Johanna',
 };
 
-// Short artistId → calendar color (mirrors create-booking.js CALENDAR_COLORS).
-// 5 = Banana (yellow), 11 = Tomato (red).
 const CALENDAR_COLORS = {
   liz:     '11',
   johanna: '5',
 };
 
-// Short artistId → notification inbox. Wendy is CC'd on Johanna's, matching
-// the booking/cancellation notification pattern.
 const ARTIST_EMAILS = {
   liz:     STUDIO_EMAIL,
   johanna: JOHANNA_EMAIL,
@@ -82,8 +75,7 @@ const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-// Reschedule is refused within this many ms of the current appointment start.
-const RESCHEDULE_CUTOFF_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RESCHEDULE_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
 let gmailTransporter = null;
 function getGmailTransport() {
@@ -134,6 +126,68 @@ function buildCalendarInviteIcs({ uid, startDate, endDate, summary, description,
   ].join('\r\n');
 }
 
+function formatTime(slot) {
+  const [h, m = 0] = String(slot || '09:00').split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m || 0).padStart(2, '0')} ${ampm}`;
+}
+
+async function sendRescheduleEmail({ toEmail, cc, subjectLine, introLine, outroLine, details, manageUrl, icsContent, isEs }) {
+  if (process.env.PAUSE_EMAILS === 'true') {
+    return { ok: false, skipped: 'emails_paused' };
+  }
+
+  const transporter = getGmailTransport();
+  if (!transporter || !toEmail) {
+    console.warn('sendRescheduleEmail: Gmail SMTP not configured or no recipient email');
+    return { ok: false, skipped: 'gmail_not_configured' };
+  }
+
+  const labels = {
+    artist: isEs ? 'Artista' : 'Artist',
+    date: isEs ? 'Fecha' : 'Date',
+    time: isEs ? 'Hora' : 'Time',
+    services: isEs ? 'Servicios' : 'Services',
+    location: isEs ? 'Ubicación' : 'Location',
+    cta: isEs ? 'Administrar Cita' : 'Manage Appointment',
+  };
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #E8DEC8;border-radius:10px;background:#FCFBF8;color:#2B2620;">
+      <h2 style="margin:0 0 12px;color:#947234;">Liz Wendy Beauty Studio</h2>
+      <p style="margin:0 0 14px;font-size:14px;line-height:1.5;">${introLine}</p>
+      <div style="background:#FFFFFF;border:1px solid #E8DEC8;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.6;">
+        <div><strong>${labels.artist}:</strong> ${details.artistName || 'Liz Wendy Cedeño'}</div>
+        <div><strong>${labels.date}:</strong> ${details.date || '—'}</div>
+        <div><strong>${labels.time}:</strong> ${details.time || '—'}</div>
+        <div><strong>${labels.services}:</strong> ${details.services || '—'}</div>
+        <div><strong>${labels.location}:</strong> 76 Livingston Ave, New Brunswick, NJ 08901</div>
+      </div>
+      <p style="margin:0 0 14px;font-size:13px;color:#7A7060;line-height:1.5;">${outroLine}</p>
+      ${manageUrl ? `<p style="margin:0;font-size:12px;"><a href="${manageUrl}" style="color:#947234;font-weight:bold;">${labels.cta}</a></p>` : ''}
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: `"Liz Wendy Beauty Studio" <${GMAIL_USER}>`,
+    to: toEmail,
+    cc: cc || undefined,
+    subject: subjectLine,
+    html,
+    attachments: icsContent
+      ? [{
+          filename: 'liz-wendy-appointment.ics',
+          content: icsContent,
+          contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+        }]
+      : [],
+  });
+
+  console.log(`sendRescheduleEmail → ${toEmail} | messageId:`, info.messageId);
+  return { ok: true, messageId: info.messageId };
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -151,7 +205,6 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body || '{}');
     const { token, artistId, newDate, newTime, lang } = data;
 
-    // ── VALIDATION ──
     if (!token || !/^[a-f0-9]{32}$/.test(token)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_link' }) };
     }
@@ -166,7 +219,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_time' }) };
     }
 
-    // ── AUTH ──
     const auth = new google.auth.JWT({
       email:  CLIENT_EMAIL,
       key:    PRIVATE_KEY,
@@ -174,8 +226,6 @@ exports.handler = async (event) => {
     });
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // ── FIND THE EXISTING BOOKING BY TOKEN ──
-    // Omitting singleEvents: true ensures future appointments match reliably.
     const found = await calendar.events.list({
       calendarId: CALENDAR_ID,
       privateExtendedProperty: `cancelToken=${token}`,
@@ -187,7 +237,6 @@ exports.handler = async (event) => {
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'not_found' }) };
     }
 
-    // ── 24-HOUR GATE (authoritative) ──
     const oldStart = oldEvent.start && oldEvent.start.dateTime
       ? new Date(oldEvent.start.dateTime)
       : null;
@@ -205,13 +254,11 @@ exports.handler = async (event) => {
       };
     }
 
-    // ── PRESERVE ORIGINAL DURATION ──
     const oldEnd = oldEvent.end && oldEvent.end.dateTime ? new Date(oldEvent.end.dateTime) : null;
     const originalDurationMin = (oldEnd && !isNaN(oldEnd.getTime()))
       ? Math.max(30, Math.round((oldEnd.getTime() - oldStart.getTime()) / 60000))
       : 60;
 
-    // ── BUILD THE NEW EVENT TIMES (with dynamic America/New_York EST/EDT offset) ──
     function getNYOffset(dStr) {
       const d = new Date(`${dStr}T12:00:00Z`);
       const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).formatToParts(d);
@@ -224,11 +271,9 @@ exports.handler = async (event) => {
     const offset = getNYOffset(newDate);
     const newStart = new Date(`${newDate}T${String(slotH).padStart(2,'0')}:${String(slotM).padStart(2,'0')}:00${offset}`);
 
-    // Keep exact 15-minute aligned duration matching index.html and create-booking.js
     const roundedDuration = Math.ceil(originalDurationMin / 15) * 15;
     const newEnd = new Date(newStart.getTime() + roundedDuration * 60 * 1000);
 
-    // ── CHECK THE NEW SLOT IS FREE ──
     const existing = await calendar.events.list({
       calendarId:   CALENDAR_ID,
       timeMin:      newStart.toISOString(),
@@ -244,7 +289,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // ── CARRY OVER BOOKING DETAILS FROM THE OLD EVENT ──
     const props = (oldEvent.extendedProperties && oldEvent.extendedProperties.private) || {};
     const firstName     = props.customerFirst || '';
     const customerEmail = props.customerEmail || '';
@@ -255,8 +299,8 @@ exports.handler = async (event) => {
     const ledgerRef  = props.ledgerRef || token;
     const priceCents = parseCents(props.priceCents);
 
-    const dateObj      = new Date(newDate + 'T12:00:00');
-    const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+    const dateObj      = new Date(newDate + 'T12:00:00Z');
+    const dateReadable = `${DAYS[dateObj.getUTCDay()]}, ${MONTHS[dateObj.getUTCMonth()]} ${dateObj.getUTCDate()}, ${dateObj.getUTCFullYear()}`;
     const timeReadable = formatTime(newTime);
 
     const oldDateReadable = props.dateReadable || '';
@@ -265,7 +309,6 @@ exports.handler = async (event) => {
     const newToken  = crypto.randomBytes(16).toString('hex');
     const manageUrl = `${SITE_URL}/cancel.html?token=${newToken}&artist=${artistId}`;
 
-    // ── 1. CREATE THE NEW EVENT (before deleting the old — see safety model) ──
     const newCalEvent = {
       summary: oldEvent.summary || `💅 ${firstName} — ${serviceList}`,
       description: [
@@ -300,7 +343,6 @@ exports.handler = async (event) => {
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: newCalEvent });
     console.log(`reschedule-booking: created new event for ${firstName} @ ${dateReadable} ${timeReadable}`);
 
-    // ── 2. DELETE THE OLD EVENT (only after the new one is safely created) ──
     try {
       await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: oldEvent.id });
       console.log(`reschedule-booking: deleted old event ${oldEvent.id}`);
@@ -308,7 +350,6 @@ exports.handler = async (event) => {
       console.error('reschedule-booking: OLD event delete failed (new event already created):', delErr);
     }
 
-    // ── 2b. UPDATE SUPABASE APPOINTMENTS TABLE ──
     if (supabase) {
       try {
         const { data: updatedAppt, error: sbErr } = await supabase
@@ -318,7 +359,9 @@ exports.handler = async (event) => {
             appointment_time: newTime,
             start_time: newStart.toISOString(),
             cancel_token: newToken,
-            updated_at: new Date().toISOString()
+            reminder_24h_sent: false,
+            reminder_sameday_sent: false,
+            updated_at: new Date().toISOString(),
           })
           .eq('cancel_token', token)
           .select();
@@ -326,7 +369,7 @@ exports.handler = async (event) => {
         if (sbErr) {
           console.error('reschedule-booking: Supabase update error:', sbErr.message);
         } else {
-          console.log(`reschedule-booking: Supabase appointment updated successfully:`, updatedAppt);
+          console.log('reschedule-booking: Supabase appointment updated successfully:', updatedAppt);
         }
       } catch (sbEx) {
         console.error('reschedule-booking: Supabase exception:', sbEx);
@@ -335,7 +378,6 @@ exports.handler = async (event) => {
       console.warn('reschedule-booking: Supabase client not initialized (missing keys)');
     }
 
-    // ── LEDGER (Command Center) ──
     const ledgerPromise = recordLedgerEvent({
       event_type:              'rescheduled',
       idempotency_key:         `resched:${token}:${newToken}`,
@@ -354,7 +396,6 @@ exports.handler = async (event) => {
       actor:                   'customer',
     });
 
-    // ── 3. NOTIFICATIONS VIA GMAIL SMTP ──
     try {
       const isEs = lang === 'es';
 
@@ -395,3 +436,29 @@ exports.handler = async (event) => {
         toEmail: artistInbox,
         cc: artistCc,
         subjectLine: `Cita Reprogramada — ${dateReadable}`,
+        introLine: `Aviso: la siguiente cita fue reprogramada desde ${movedFrom}${firstName ? ` (clienta: ${firstName})` : ''}.`,
+        outroLine: `El calendario ya fue actualizado con el nuevo horario.`,
+        details: { firstName, date: dateReadable, time: timeReadable, services: serviceList, artistName },
+        manageUrl,
+        icsContent: null,
+        isEs: false,
+      });
+
+      const results = await Promise.all([customerNotification, artistNotification]);
+      console.log('reschedule-booking email results:', JSON.stringify(results));
+    } catch (emailErr) {
+      console.error('reschedule-booking: notification emails failed (event already moved):', emailErr);
+    }
+
+    await ledgerPromise;
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, newToken }) };
+  } catch (err) {
+    console.error('reschedule-booking error:', err);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'server_error' }),
+    };
+  }
+};
