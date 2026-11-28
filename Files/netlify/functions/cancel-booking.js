@@ -32,7 +32,10 @@ const { recordLedgerEvent, toE164, parseCents } = require('./_lib/ledger');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      realtime: { enabled: false },
+    })
   : null;
 
 const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
@@ -44,7 +47,6 @@ const JOHANNA_EMAIL  = process.env.JOHANNA_EMAIL;
 const GMAIL_USER         = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
-// Same artistId convention as get-availability.js / create-booking.js
 const CALENDAR_IDS = {
   liz:      process.env.GOOGLE_CALENDAR_ID,
   johanna:  process.env.JOHANNA_CALENDAR_ID,
@@ -55,17 +57,21 @@ const ARTIST_EMAILS = {
   johanna:  JOHANNA_EMAIL,
 };
 
+let gmailTransporter = null;
 function getGmailTransport() {
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) return null;
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
-    },
-  });
+  if (!gmailTransporter) {
+    gmailTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD,
+      },
+    });
+  }
+  return gmailTransporter;
 }
 
 exports.handler = async (event) => {
@@ -77,7 +83,6 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
-  // GET (or anything but POST) never acts — core anti-auto-click safety.
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
@@ -86,7 +91,6 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body || '{}');
     const { action, token, artistId, lang } = data;
 
-    // Token format guard: exactly what create-booking generates (32 hex chars).
     if (!token || !/^[a-f0-9]{32}$/.test(token)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_link' }) };
     }
@@ -96,7 +100,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_link' }) };
     }
 
-    // ── AUTH ──
     const auth = new google.auth.JWT({
       email:  CLIENT_EMAIL,
       key:    PRIVATE_KEY,
@@ -104,12 +107,7 @@ exports.handler = async (event) => {
     });
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // ── FIND THE BOOKING BY TOKEN ──
-    // privateExtendedProperty matches only events carrying this exact
-    // key=value pair, so at most one event can come back. Bounded to
-    // "yesterday onward" — past appointments can't meaningfully be cancelled.
-
-  const found = await calendar.events.list({
+    const found = await calendar.events.list({
       calendarId: CALENDAR_ID,
       privateExtendedProperty: `cancelToken=${token}`,
       maxResults: 1,
@@ -117,8 +115,6 @@ exports.handler = async (event) => {
 
     const booking = found.data.items && found.data.items[0];
     if (!booking) {
-      // Already cancelled, or link is stale/invalid — same friendly answer
-      // either way (don't reveal which).
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'not_found' }) };
     }
 
@@ -130,17 +126,13 @@ exports.handler = async (event) => {
       time:       props.timeReadable  || '',
       services:   props.serviceList   || '',
     };
-    // Kept separate from `details` (not shown on the cancel.html confirmation
-    // screen) — only used internally to route the cancellation notice below.
     const customerEmail = props.customerEmail || '';
     const customerPhone = props.customerPhone || '';
 
     const appointmentStart = (booking.start && booking.start.dateTime) || null;
 
-    // ── Command Center ledger identity (see reschedule-booking.js) ──
-    // Stable across reschedules; pre-ledger bookings fall back to their token.
     const ledgerRef  = props.ledgerRef || token;
-    const priceCents = parseCents(props.priceCents); // null for pre-ledger bookings
+    const priceCents = parseCents(props.priceCents);
     const ledgerBase = {
       booking_ref:     ledgerRef,
       customer_phone:  toE164(customerPhone),
@@ -153,7 +145,6 @@ exports.handler = async (event) => {
       actor:           'customer',
     };
 
-    // Derive duration from event start/end or stored extendedProperties
     const evEndIso = (booking.end && booking.end.dateTime) || null;
     let durationMinutes = parseInt(props.durationMinutes, 10) || 60;
     if (appointmentStart && evEndIso) {
@@ -161,7 +152,6 @@ exports.handler = async (event) => {
       if (diffMin > 0) durationMinutes = diffMin;
     }
 
-    // ── STEP 1: LOOKUP ONLY ──
     if (action === 'lookup') {
       await recordLedgerEvent(
         { ...ledgerBase, event_type: 'cancel_intent', idempotency_key: `intent:${token}` },
@@ -175,7 +165,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // ── STEP 2: CONFIRMED CANCELLATION ──
     if (action === 'cancel') {
       await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: booking.id });
       console.log(`cancel-booking: deleted event ${booking.id} (${details.services} / ${details.date})`);
@@ -191,7 +180,6 @@ exports.handler = async (event) => {
         }
       }
 
-      // ── LEDGER (Command Center) ──
       const ledgerPromise = recordLedgerEvent({
         ...ledgerBase,
         event_type:      'cancelled',
@@ -199,8 +187,6 @@ exports.handler = async (event) => {
         locale:          lang === 'es' ? 'es' : 'en',
       });
 
-      // Notifications are isolated — a send failure must never make the
-      // customer think the cancellation didn't happen (the event is already gone).
       try {
         const customerNotification = customerEmail
           ? sendCancellationEmail({
@@ -235,7 +221,6 @@ exports.handler = async (event) => {
         console.error('cancel-booking: emails failed (event already deleted):', emailErr);
       }
 
-      // Must be awaited (serverless freezes after return). Resolves, never rejects.
       await ledgerPromise;
 
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
@@ -255,6 +240,10 @@ exports.handler = async (event) => {
 
 /* ── EMAIL: Cancellation notice via Gmail SMTP ── */
 async function sendCancellationEmail({ toEmail, cc, subjectLine, introLine, outroLine, details }) {
+  if (process.env.PAUSE_EMAILS === 'true') {
+    return { ok: false, skipped: 'emails_paused' };
+  }
+
   const transporter = getGmailTransport();
   if (!transporter || !toEmail) {
     console.error('cancel-booking: GMAIL_USER/GMAIL_APP_PASSWORD or toEmail missing — skipping email to', toEmail);
