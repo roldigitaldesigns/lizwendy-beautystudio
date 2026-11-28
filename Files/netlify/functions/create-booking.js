@@ -21,16 +21,18 @@ const { recordLedgerEvent, toE164, toCents } = require('./_lib/ledger');
 
 // — SUPABASE CONFIG —
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-  realtime: {
-    enabled: false,
-  },
-});
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = (SUPABASE_URL && SUPABASE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      realtime: {
+        enabled: false,
+      },
+    })
+  : null;
 
 // ── SERVICE DURATIONS (server-side fallback for voice bookings) ──
 const SERVICE_DURATIONS = {
@@ -143,6 +145,12 @@ try {
 }
 
 async function isDateBlackedOut(artistId, dateStr) {
+  if (!supabase) {
+    const schedule = SCHEDULES && SCHEDULES[artistId];
+    if (!schedule || !Array.isArray(schedule.blackout)) return false;
+    return schedule.blackout.some(r => dateStr >= r.from && dateStr <= r.to);
+  }
+
   try {
     const { data: blackouts } = await supabase
       .from('artist_blackouts')
@@ -182,8 +190,8 @@ const ARTIST_IDS = {
 };
 
 const CALENDAR_COLORS = {
-  'Liz Wendy Cedeño': '11', // Tomato
-  'Johanna':          '5',  // Banana
+  'Liz Wendy Cedeño': '11',
+  'Johanna':          '5',
 };
 
 const ARTIST_EMAILS = {
@@ -244,6 +252,13 @@ function buildCalendarInviteIcs({ uid, startDate, endDate, summary, description,
   ].join('\r\n');
 }
 
+function formatTime(slot) {
+  const [h, m = 0] = String(slot || '09:00').split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m || 0).padStart(2, '0')} ${ampm}`;
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -278,7 +293,6 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Booking is temporarily unavailable for this artist.' }) };
     }
 
-    // ── BLACKOUT GATE ──
     const requestArtistId = ARTIST_IDS[artist] || 'liz';
     if (await isDateBlackedOut(requestArtistId, date)) {
       return {
@@ -288,7 +302,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // ── 1. AUTH ──
     const auth = new google.auth.JWT({
       email:  CLIENT_EMAIL,
       key:    PRIVATE_KEY,
@@ -296,7 +309,6 @@ exports.handler = async (event) => {
     });
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // ── 2. DOUBLE-CHECK SLOT IS FREE ──
     const [slotH, slotM = 0] = time.split(':').map(Number);
 
     function getNYOffset(dStr) {
@@ -333,14 +345,12 @@ exports.handler = async (event) => {
       };
     }
 
-    // ── 3. CREATE CALENDAR EVENT ──
     const serviceList  = services.map(s => typeof s === 'string' ? s : s.name).join(', ');
     const totalStr     = total > 0 ? `$${total}` : 'TBD (consultation)';
-    const dateObj      = new Date(date + 'T12:00:00');
-    const dateReadable = `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+    const dateObj      = new Date(date + 'T12:00:00Z');
+    const dateReadable = `${DAYS[dateObj.getUTCDay()]}, ${MONTHS[dateObj.getUTCMonth()]} ${dateObj.getUTCDate()}, ${dateObj.getUTCFullYear()}`;
     const timeReadable = formatTime(time);
 
-    // Avoid duplicate first name if mobile autofill put full name into lastName
     const cleanFirst = String(firstName || '').trim();
     const cleanLast  = String(lastName || '').trim();
     const fullName   = (cleanLast && !cleanLast.toLowerCase().startsWith(cleanFirst.toLowerCase() + ' '))
@@ -385,30 +395,30 @@ exports.handler = async (event) => {
 
     await calendar.events.insert({ calendarId: CALENDAR_ID, resource: calEvent });
 
-    // ── 4. RECORD TO SUPABASE APPOINTMENTS TABLE ──
     const supabaseInsertPromise = supabase
-      .from('appointments')
-      .insert({
-        cancel_token:     cancelToken,
-        artist_id:        artistId,
-        customer_name:    fullName,
-        customer_email:   email || null,
-        customer_phone:   phone,
-        notes:            notes || null,
-        appointment_date: date,
-        appointment_time: time,
-        start_time:       eventStart.toISOString(),
-        duration_minutes: roundedDuration,
-        services:         services,
-        total_price:      total > 0 ? total : 0,
-        deposit_paid:     requestArtistId === 'liz',
-        status:           'confirmed'
-      })
-      .then(({ error }) => {
-        if (error) console.error('Supabase appointments insert error:', error.message);
-      });
+      ? supabase
+          .from('appointments')
+          .insert({
+            cancel_token:     cancelToken,
+            artist_id:        artistId,
+            customer_name:    fullName,
+            customer_email:   email || null,
+            customer_phone:   phone,
+            notes:            notes || null,
+            appointment_date: date,
+            appointment_time: time,
+            start_time:       eventStart.toISOString(),
+            duration_minutes: roundedDuration,
+            services:         services,
+            total_price:      total > 0 ? total : 0,
+            deposit_paid:     requestArtistId === 'liz',
+            status:           'confirmed'
+          })
+          .then(({ error }) => {
+            if (error) console.error('Supabase appointments insert error:', error.message);
+          })
+      : Promise.resolve();
 
-    // ── 5. LEDGER (Command Center) ──
     const ledgerPromise = recordLedgerEvent({
       event_type:       'created',
       idempotency_key:  `created:${cancelToken}`,
@@ -426,7 +436,6 @@ exports.handler = async (event) => {
       actor:            'customer',
     });
 
-    // ── 6. SEND NOTIFICATIONS IN PARALLEL ──
     try {
       const icsContent = buildCalendarInviteIcs({
         uid: `${cancelToken}@lizwendybeautystudiollc.com`,
@@ -599,17 +608,3 @@ async function sendStudioEmail({ fullName, email, phone, dateReadable, timeReada
   console.log(`sendStudioEmail → ${recipientEmail} | messageId:`, info.messageId);
   return { ok: true, messageId: info.messageId };
 }
-
-/* ── UTIL ── */
-function formatTime(slot) {
-  const [h, m = 0] = slot.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour = h % 12 || 12;
-  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-```[cite: 16]
-
-### Next Steps
-1. Paste this complete code into `Files/netlify/functions/create-booking.js` and click **Commit changes...** → **Commit changes**[cite: 16, 18].
-2. In Supabase → **Table Editor** → `appointments`, check `status = cancelled` and set any uncancelled upcoming appointments back to `confirmed`.
-3. Once you're ready to stop the false cancellation bug permanently, let me know and we'll remove the `if (!gcalEv)` auto-cancel block in `sync-calendar.js` before turning emails back on.
