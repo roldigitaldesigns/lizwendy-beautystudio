@@ -4,11 +4,7 @@
  * Automated Customer Lifecycle Emails via Gmail SMTP:
  *  1. 24-Hour Reminder (20h–28h before start_time)
  *  2. Same-Day Reminder (2h–6h before start_time)
- *  3. Next-Day Check-In & Google Review Request (18h–30h after end_time)
- *
- * Protected by optional CRON_SECRET header/query param so external cron
- * runners (GitHub Actions / cron-job.org) can trigger it hourly on any
- * Netlify plan.
+ *  [Stage 3 Next-Day Review / Rebook Follow-Up held pending studio approval]
  */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -30,7 +26,6 @@ const supabase = (SUPABASE_URL && SUPABASE_KEY)
 const GMAIL_USER         = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const SITE_URL           = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
-const GOOGLE_REVIEW_URL  = process.env.GOOGLE_REVIEW_URL || `${SITE_URL}`;
 const CRON_SECRET        = process.env.CRON_SECRET || '';
 
 const ARTIST_NAMES = {
@@ -62,9 +57,9 @@ function getGmailTransport() {
 }
 
 function formatDateReadable(dateStr) {
-  const d = new Date(`${dateStr}T12:00:00`);
+  const d = new Date(`${dateStr}T12:00:00Z`);
   if (isNaN(d.getTime())) return dateStr || '—';
-  return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  return `${DAYS[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 function formatTime12h(hhmm) {
@@ -122,13 +117,14 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
+
   if (process.env.PAUSE_EMAILS === 'true') {
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ paused: true, sent_24h: 0, sent_sameday: 0, sent_followup: 0 }),
-  };
-}
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ paused: true, sent_24h: 0, sent_sameday: 0, sent_followup: 0 }),
+    };
+  }
 
   if (CRON_SECRET) {
     const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
@@ -144,7 +140,7 @@ exports.handler = async (event) => {
 
   const isDryRun = event.queryStringParameters?.dryRun === 'true';
   const nowMs = Date.now();
-  const windowStartIso = new Date(nowMs - 36 * 60 * 60 * 1000).toISOString();
+  const windowStartIso = new Date(nowMs - 2 * 60 * 60 * 1000).toISOString();
   const windowEndIso   = new Date(nowMs + 30 * 60 * 60 * 1000).toISOString();
 
   try {
@@ -170,10 +166,7 @@ exports.handler = async (event) => {
       if (!appt.customer_email || !appt.start_time) continue;
 
       const startMs = new Date(appt.start_time).getTime();
-      const durationMs = (Number(appt.duration_minutes) || 60) * 60 * 1000;
-      const endMs = startMs + durationMs;
       const hoursUntilStart = (startMs - nowMs) / (1000 * 60 * 60);
-      const hoursSinceEnd   = (nowMs - endMs) / (1000 * 60 * 60);
 
       const firstName   = String(appt.customer_name || 'Valued Client').split(' ')[0];
       const artistName  = ARTIST_NAMES[appt.artist_id] || 'Liz Wendy Cedeño';
@@ -236,53 +229,6 @@ exports.handler = async (event) => {
           await supabase
             .from('appointments')
             .update({ reminder_sameday_sent: true })
-            .eq('id', appt.id);
-        }
-        continue;
-      }
-
-      // 3. Next-Day Check-In & Review / Rebook Prompt (18h to 30h after end)
-      if (!appt.followup_sent && hoursSinceEnd >= 18 && hoursSinceEnd <= 30) {
-        summary.sent_followup++;
-        const isNoShow = appt.attendance_status === 'no_show';
-        summary.actions.push({
-          stage: isNoShow ? 'noshow_rebook' : 'review_checkin',
-          id: appt.id,
-          email: appt.customer_email,
-        });
-
-        if (!isDryRun) {
-          if (isNoShow) {
-            await sendLifecycleEmail({
-              toEmail: appt.customer_email,
-              subject: 'We Missed You at Liz Wendy Beauty Studio',
-              intro: `Hi ${firstName}, we missed seeing you for your recent appointment with <strong>${artistName}</strong>.`,
-              rows: [
-                { label: 'Missed Service', value: serviceList },
-                { label: 'Original Date', value: `${dateStr} at ${timeStr}` },
-              ],
-              outro: 'Life happens! Whenever you are ready to get back on the schedule, you can book a new time online in seconds.',
-              ctaLabel: 'Book a New Appointment',
-              ctaUrl: SITE_URL,
-            });
-          } else {
-            await sendLifecycleEmail({
-              toEmail: appt.customer_email,
-              subject: 'Thank You for Visiting Liz Wendy Beauty Studio ✨',
-              intro: `Hi ${firstName}! Thank you so much for visiting <strong>${artistName}</strong> yesterday. We hope you love your ${serviceList}!`,
-              rows: [
-                { label: 'Artist', value: artistName },
-                { label: 'Services', value: serviceList },
-              ],
-              outro: 'Your feedback means the world to our small studio. If you had a 5-star experience, would you take 30 seconds to leave us a Google review?',
-              ctaLabel: 'Leave a Google Review',
-              ctaUrl: GOOGLE_REVIEW_URL,
-            });
-          }
-
-          await supabase
-            .from('appointments')
-            .update({ followup_sent: true })
             .eq('id', appt.id);
         }
       }
