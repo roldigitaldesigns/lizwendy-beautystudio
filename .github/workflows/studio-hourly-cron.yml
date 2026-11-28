@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Sync Google Calendar Edits & Cancellations
-        run: curl --fail-with-body -sS "https://lizwendybeautystudiollc.com/.netlify/functions/sync-calendar"
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body -sS -H "Authorization: Bearer $CRON_SECRET" \
+            "https://lizwendybeautystudiollc.com/.netlify/functions/sync-calendar"
 
       - name: Process Lifecycle Reminder & Review Emails
         env:
