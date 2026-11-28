@@ -9,12 +9,10 @@ const SUPABASE_KEY =
 const GMAIL_USER         = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const STUDIO_EMAIL       = process.env.STUDIO_EMAIL;
-const JOHANNA_EMAIL      = process.env.JOHANNA_EMAIL;
 const CRON_SECRET        = process.env.CRON_SECRET;
 const SITE_URL           = process.env.SITE_URL || 'https://lizwendybeautystudiollc.com';
 
 const DEFAULT_EXCLUDED_EMAILS = new Set([
-  'ramonlopez30798@gmail.com',
   'franyelisbatista21@gmail.com',
   'mrodriguez0808@hotmail.com',
 ]);
@@ -114,12 +112,13 @@ async function fetchUpcomingConfirmedAppointments() {
   return res.json();
 }
 
-function buildGroupedRecipients(rows, extraExcluded = new Set()) {
+function buildGroupedRecipients(rows, extraExcluded = new Set(), extraIncluded = new Set()) {
   const grouped = new Map();
 
   for (const row of rows || []) {
     const email = String(row.customer_email || '').trim().toLowerCase();
-    if (!email || DEFAULT_EXCLUDED_EMAILS.has(email) || extraExcluded.has(email)) {
+    if (!email) continue;
+    if (!extraIncluded.has(email) && (DEFAULT_EXCLUDED_EMAILS.has(email) || extraExcluded.has(email))) {
       continue;
     }
 
@@ -156,9 +155,9 @@ function renderApologyEmail(recipient) {
     .map(
       (a) => `
       <li style="margin-bottom:8px;">
-        <strong>Date:</strong> ${a.dateFormatted}<br/>
-        <strong>Time:</strong> ${a.timeFormatted} — <strong>Artist:</strong> ${a.artistName}<br/>
-        <strong>Service(s):</strong> ${a.servicesText}
+        <strong>Date / Fecha:</strong> ${a.dateFormatted}<br/>
+        <strong>Time / Hora:</strong> ${a.timeFormatted} — <strong>Artist / Artista:</strong> ${a.artistName}<br/>
+        <strong>Service(s) / Servicio(s):</strong> ${a.servicesText}
       </li>`
     )
     .join('');
@@ -182,11 +181,11 @@ function renderApologyEmail(recipient) {
         We are writing to sincerely apologize for an automated system issue earlier that sent an erroneous cancellation notice. Please disregard that message — <strong>your appointment(s) were never cancelled and remain open and confirmed on our schedule.</strong>
       </p>
       <div style="background:#FFFFFF;border:1px solid #E8DEC8;border-radius:8px;padding:14px 16px;margin:14px 0;font-size:13px;line-height:1.6;">
-        <div style="font-weight:bold;margin-bottom:8px;color:#947234;">Confirmed Appointment Details:</div>
+        <div style="font-weight:bold;margin-bottom:8px;color:#947234;">Confirmed Appointment Details / Detalles de Cita Confirmada:</div>
         <ul style="margin:0;padding-left:18px;">
           ${apptItemsHtml}
         </ul>
-        <div style="margin-top:8px;"><strong>Location:</strong> 76 Livingston Ave, New Brunswick, NJ 08901</div>
+        <div style="margin-top:8px;"><strong>Location / Ubicación:</strong> 76 Livingston Ave, New Brunswick, NJ 08901</div>
       </div>
       <p style="margin:0 0 12px;font-size:14px;line-height:1.55;">
         <strong>Hola ${recipient.firstName},</strong> te pedimos una sincera disculpa por un error automático del sistema que envió un aviso de cancelación por equivocación. Por favor ignora ese mensaje: <strong>tu(s) cita(s) sigue(n) activa(s) y confirmada(s) en nuestro calendario.</strong>
@@ -237,9 +236,15 @@ exports.handler = async (event) => {
         .map((e) => e.trim().toLowerCase())
         .filter(Boolean)
     );
+    const extraIncluded = new Set(
+      String(qs.include || '')
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean)
+    );
 
     const rows = await fetchUpcomingConfirmedAppointments();
-    const recipients = buildGroupedRecipients(rows, extraExcluded);
+    const recipients = buildGroupedRecipients(rows, extraExcluded, extraIncluded);
 
     const preview = recipients.map((r) => ({
       email: r.email,
@@ -259,6 +264,7 @@ exports.handler = async (event) => {
             recipient_count: preview.length,
             excluded_default: Array.from(DEFAULT_EXCLUDED_EMAILS),
             excluded_extra: Array.from(extraExcluded),
+            included_extra: Array.from(extraIncluded),
             recipients: preview,
           },
           null,
